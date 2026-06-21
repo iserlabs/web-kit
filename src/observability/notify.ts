@@ -3,8 +3,8 @@
 // only); no AsyncLocalStorage request-id fallback — request_id is an explicit
 // arg (spec §7, Layer-F deps out of scope).
 import { checkAndRecord } from "./dedup";
-import { alertDiscord } from "./discord";
 import type { EmbedField } from "./discord";
+import { alertDiscord } from "./discord";
 import { scrubPii } from "./scrub";
 import { getEmojiPrefix, type Kind, type Severity } from "./severity";
 
@@ -60,13 +60,11 @@ export async function notify(payload: NotifyPayload): Promise<void> {
     }
 
     const prefix = getEmojiPrefix(payload.severity, payload.kind);
-    const safeMessage =
-      typeof payload.message === "string" ? scrubPii(payload.message) : "";
+    const safeMessage = typeof payload.message === "string" ? scrubPii(payload.message) : "";
 
     const parts: string[] = [`${prefix} ${payload.title}`];
     if (safeMessage) parts.push(safeMessage);
-    if (suppressedCount > 0)
-      parts.push(`(${suppressedCount} suppressed since last alert)`);
+    if (suppressedCount > 0) parts.push(`(${suppressedCount} suppressed since last alert)`);
     if (payload.runbook_url) parts.push(`Runbook: ${payload.runbook_url}`);
     if (payload.request_id) parts.push(`request_id: ${payload.request_id}`);
     for (const f of payload.fields ?? []) {

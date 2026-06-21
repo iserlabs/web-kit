@@ -18,8 +18,6 @@ describe("observabilityEnv", () => {
   });
   it("rejects a non-https Sentry DSN", () => {
     const schema = z.object({ ...observabilityEnv.sentry });
-    expect(schema.safeParse({ SENTRY_DSN: "http://insecure" }).success).toBe(
-      false,
-    );
+    expect(schema.safeParse({ SENTRY_DSN: "http://insecure" }).success).toBe(false);
   });
 });

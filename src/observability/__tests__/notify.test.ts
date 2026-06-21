@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const alertDiscord = vi.fn();
 vi.mock("../discord", () => ({ alertDiscord }));
+
 import { __resetDedupForTests } from "../dedup";
 
 afterEach(() => {
@@ -28,7 +29,7 @@ describe("notify", () => {
       message: "for a@b.com",
     });
     expect(alertDiscord).toHaveBeenCalledTimes(1);
-    const [msg, level] = alertDiscord.mock.calls[0];
+    const [msg, level] = alertDiscord.mock.calls[0] ?? [];
     expect(level).toBe("warning");
     expect(msg).toContain("[email]");
     expect(msg).not.toContain("a@b.com");

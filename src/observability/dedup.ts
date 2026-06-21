@@ -23,10 +23,7 @@ function evictIfFull(): void {
   }
 }
 
-export function checkAndRecord(
-  errorKey: string,
-  ttlMs: number = DEFAULT_TTL_MS,
-): DedupResult {
+export function checkAndRecord(errorKey: string, ttlMs: number = DEFAULT_TTL_MS): DedupResult {
   const now = Date.now();
   const existing = cache.get(errorKey);
 

@@ -3,9 +3,7 @@ import { scrubEvent, scrubObject, scrubPii } from "../scrub";
 
 describe("scrubPii", () => {
   it("redacts emails and phones in free text", () => {
-    expect(scrubPii("reach me at a@b.com or 201-555-0142")).toBe(
-      "reach me at [email] or [phone]",
-    );
+    expect(scrubPii("reach me at a@b.com or 201-555-0142")).toBe("reach me at [email] or [phone]");
   });
 });
 

@@ -35,7 +35,7 @@ describe("discord transport", () => {
     const { alertDiscord } = await import("../discord");
     await alertDiscord("db down", "critical");
     expect(post).toHaveBeenCalledTimes(1);
-    const body = post.mock.calls[0][1].body;
+    const body = post.mock.calls[0]?.[1]?.body;
     expect(body.content).toBe("@everyone");
     expect(body.embeds[0].title).toContain("CRITICAL");
   });
@@ -44,7 +44,7 @@ describe("discord transport", () => {
     process.env.VERCEL_ENV = "preview";
     const { alertDiscord } = await import("../discord");
     await alertDiscord("db down", "critical");
-    expect(post.mock.calls[0][1].body.content).toBeUndefined();
+    expect(post.mock.calls[0]?.[1]?.body.content).toBeUndefined();
   });
 
   it("skips silently when the bot token is missing", async () => {

@@ -31,9 +31,7 @@ export function buildEmbed(spec: Embed): Embed {
   return {
     ...spec,
     title: spec.title ? truncate(spec.title, EMBED_TITLE_MAX) : undefined,
-    description: spec.description
-      ? truncate(spec.description, EMBED_DESCRIPTION_MAX)
-      : undefined,
+    description: spec.description ? truncate(spec.description, EMBED_DESCRIPTION_MAX) : undefined,
     fields: spec.fields?.map((f) => ({
       ...f,
       value: truncate(f.value, EMBED_FIELD_VALUE_MAX),
@@ -61,9 +59,7 @@ export async function postDiscordMessage(
   }
   const channelId = process.env[channelEnvKey];
   if (!channelId) {
-    console.warn(
-      `[observability] discord_channel_not_configured ${channelEnvKey}`,
-    );
+    console.warn(`[observability] discord_channel_not_configured ${channelEnvKey}`);
     return;
   }
   await client.post(Routes.channelMessages(channelId), {
@@ -85,9 +81,7 @@ export async function alertDiscord(
 ): Promise<void> {
   const style = SEVERITY_STYLE[level];
   const content =
-    level === "critical" && process.env.VERCEL_ENV === "production"
-      ? "@everyone"
-      : undefined;
+    level === "critical" && process.env.VERCEL_ENV === "production" ? "@everyone" : undefined;
   const fullTitle = `${style.prefix}: ${message}`;
   const overflowed = fullTitle.length > EMBED_TITLE_MAX;
   await postDiscordMessage("DISCORD_ALERTS_CHANNEL_ID", content, {

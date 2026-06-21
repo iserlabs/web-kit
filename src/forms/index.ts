@@ -47,9 +47,7 @@ export function createContactHandler<T>(opts: ContactHandlerOptions<T>) {
       ({ id } = await opts.sender.send({
         to: opts.to,
         from: opts.from,
-        subject: opts.subject
-          ? opts.subject(parsed.data)
-          : "New contact form submission",
+        subject: opts.subject ? opts.subject(parsed.data) : "New contact form submission",
         text: opts.text(parsed.data),
       }));
     } catch (err) {

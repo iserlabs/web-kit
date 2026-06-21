@@ -36,7 +36,7 @@ describe("createContactHandler observation hooks", () => {
     });
     await expect(handle({ email: "a@b.com" })).rejects.toThrow("resend down");
     expect(onSendError).toHaveBeenCalledTimes(1);
-    expect(onSendError.mock.calls[0][0]).toEqual({ email: "a@b.com" });
+    expect(onSendError.mock.calls[0]?.[0]).toEqual({ email: "a@b.com" });
   });
 
   it("does not call hooks on a validation failure", async () => {

@@ -24,9 +24,7 @@ export interface BaseSentryOptions {
   beforeSend: typeof scrubEvent;
 }
 
-export function baseSentryOptions(
-  params: BaseSentryOptionsParams,
-): BaseSentryOptions {
+export function baseSentryOptions(params: BaseSentryOptionsParams): BaseSentryOptions {
   return {
     dsn: params.dsn,
     environment: params.environment,
