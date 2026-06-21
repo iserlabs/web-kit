@@ -16,6 +16,13 @@ export interface ContactHandlerOptions<T> {
   sender: ContactSender;
   text: (data: T) => string;
   subject?: (data: T) => string;
+  /** Observation seam for the observability lead rail. Wire `notifyLead`
+   *  here to announce a successful submission. Never imports observability —
+   *  the caller passes the callback, keeping the dependency one-way. */
+  onSuccess?: (data: T, id: string) => void | Promise<void>;
+  /** Wire `notify({ severity: "critical" })` here to alert on a failed send.
+   *  The error still propagates after the hook runs. */
+  onSendError?: (data: T, err: unknown) => void | Promise<void>;
 }
 
 export type ContactResult =
@@ -35,12 +42,23 @@ export function createContactHandler<T>(opts: ContactHandlerOptions<T>) {
       }
       return { ok: false, errors };
     }
-    const { id } = await opts.sender.send({
-      to: opts.to,
-      from: opts.from,
-      subject: opts.subject ? opts.subject(parsed.data) : "New contact form submission",
-      text: opts.text(parsed.data),
-    });
+    let id: string;
+    try {
+      ({ id } = await opts.sender.send({
+        to: opts.to,
+        from: opts.from,
+        subject: opts.subject
+          ? opts.subject(parsed.data)
+          : "New contact form submission",
+        text: opts.text(parsed.data),
+      }));
+    } catch (err) {
+      // Observation seam: let the caller alert (notify) before the error
+      // propagates. The hook must not swallow the failure.
+      await opts.onSendError?.(parsed.data, err);
+      throw err;
+    }
+    await opts.onSuccess?.(parsed.data, id);
     return { ok: true, id };
   };
 }
