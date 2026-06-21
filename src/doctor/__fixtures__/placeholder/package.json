@@ -1,0 +1,4 @@
+{
+  "name": "iser-labs-starter",
+  "dependencies": { "@iserlabs/web-kit": "github:iserlabs/web-kit#v0.1.0" }
+}

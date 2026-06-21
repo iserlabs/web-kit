@@ -1,0 +1,5 @@
+{
+  "name": "fountain-creek-inn",
+  "packageManager": "pnpm@10.33.0",
+  "dependencies": { "@iserlabs/web-kit": "github:iserlabs/web-kit#v0.1.0" }
+}

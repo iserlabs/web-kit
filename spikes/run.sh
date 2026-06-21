@@ -18,8 +18,8 @@ echo "== Tailwind @import-from-package =="
   && echo "PASS tailwind" || { echo "FAIL tailwind"; fail=1; }
 
 echo "== bin runs (plain node) =="
-( cd "$ROOT/biome-fixture" && pnpm exec web-kit doctor . | grep -q "web-kit" ) \
-  && echo "PASS bin" || { echo "FAIL bin (expected until Task 10)"; }
+( cd "$ROOT/biome-fixture" && pnpm exec web-kit doctor . | grep -q "web-kit doctor: OK" ) \
+  && echo "PASS bin" || { echo "FAIL bin"; fail=1; }
 
 echo "== TS subpath import via tsx =="
 ( cd "$ROOT/biome-fixture" && pnpm exec tsx -e "import('@iserlabs/web-kit/utils').then(m => { if (typeof m !== 'object') process.exit(1) })" ) \
