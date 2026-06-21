@@ -28,10 +28,14 @@ export function checkAndRecord(errorKey: string, ttlMs: number = DEFAULT_TTL_MS)
   const existing = cache.get(errorKey);
 
   if (!existing || now - existing.lastSentAt > existing.ttlMs) {
+    // Carry the count suppressed during the just-expired window forward to
+    // this send, so the first alert of a new window can report the catch-up
+    // total ("(N suppressed since last alert)"). A brand-new key carries 0.
+    const carriedOver = existing ? existing.suppressedSince : 0;
     cache.delete(errorKey); // bump to end of insertion order (LRU)
     cache.set(errorKey, { lastSentAt: now, ttlMs, suppressedSince: 0 });
     evictIfFull();
-    return { shouldSend: true, suppressedCount: 0 };
+    return { shouldSend: true, suppressedCount: carriedOver };
   }
 
   existing.suppressedSince += 1;
