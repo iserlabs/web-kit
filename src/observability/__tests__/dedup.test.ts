@@ -18,13 +18,24 @@ describe("checkAndRecord", () => {
       suppressedCount: 2,
     });
   });
-  it("sends again after the TTL elapses", () => {
+  it("sends again after the TTL elapses (no carry-over when nothing was suppressed)", () => {
     vi.useFakeTimers();
     checkAndRecord("k", 1000);
     vi.advanceTimersByTime(1001);
     expect(checkAndRecord("k", 1000)).toEqual({
       shouldSend: true,
       suppressedCount: 0,
+    });
+  });
+  it("carries the suppressed count forward into the next window's first send", () => {
+    vi.useFakeTimers();
+    checkAndRecord("k", 1000); // send, window opens
+    checkAndRecord("k", 1000); // suppressed -> 1
+    checkAndRecord("k", 1000); // suppressed -> 2
+    vi.advanceTimersByTime(1001);
+    expect(checkAndRecord("k", 1000)).toEqual({
+      shouldSend: true,
+      suppressedCount: 2,
     });
   });
 });
