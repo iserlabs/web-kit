@@ -1,1 +1,4 @@
-{ "name": "some-site", "dependencies": {} }
+{
+  "name": "some-site",
+  "dependencies": {}
+}

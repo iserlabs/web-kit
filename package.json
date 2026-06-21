@@ -5,7 +5,9 @@
   "type": "module",
   "license": "MIT",
   "packageManager": "pnpm@10.33.0",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "exports": {
     "./biome": "./src/biome/biome.base.json",
     "./tsconfig": "./src/tsconfig/tsconfig.base.json",
@@ -16,14 +18,21 @@
     "./env": "./src/env/index.ts",
     "./utils": "./src/utils/index.ts"
   },
-  "bin": { "web-kit": "./bin/web-kit.mjs" },
-  "files": ["src", "bin", "README.md", "CHANGELOG.md"],
+  "bin": {
+    "web-kit": "./bin/web-kit.mjs"
+  },
+  "files": [
+    "src",
+    "bin",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "lint": "biome check .",
-    "format": "biome format --write ."
+    "lint": "biome check src bin",
+    "format": "biome format --write src bin"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -33,11 +42,14 @@
     "zod": ">=3.23.0"
   },
   "peerDependenciesMeta": {
-    "zod": { "optional": true }
+    "zod": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
     "@tailwindcss/cli": "^4.0.0",
+    "@types/node": "^26.0.0",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",

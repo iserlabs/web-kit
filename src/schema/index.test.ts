@@ -3,7 +3,11 @@ import { breadcrumb, faq, lodgingBusiness, organization } from "./index";
 
 describe("schema builders", () => {
   it("organization includes context, type and optional fields", () => {
-    const o = organization({ name: "Acme", url: "https://acme.com", sameAs: ["https://x.com/acme"] });
+    const o = organization({
+      name: "Acme",
+      url: "https://acme.com",
+      sameAs: ["https://x.com/acme"],
+    });
     expect(o["@context"]).toBe("https://schema.org");
     expect(o["@type"]).toBe("Organization");
     expect(o.sameAs).toEqual(["https://x.com/acme"]);
@@ -15,15 +19,15 @@ describe("schema builders", () => {
       { name: "Rooms", url: "https://x.com/rooms" },
     ]);
     const items = b.itemListElement as Array<{ position: number; name: string }>;
-    expect(items[0].position).toBe(1);
-    expect(items[1].position).toBe(2);
+    expect(items[0]?.position).toBe(1);
+    expect(items[1]?.position).toBe(2);
   });
 
   it("faq maps questions to accepted answers", () => {
     const f = faq([{ question: "Pets?", answer: "Yes." }]);
     const main = f.mainEntity as Array<{ name: string; acceptedAnswer: { text: string } }>;
-    expect(main[0].name).toBe("Pets?");
-    expect(main[0].acceptedAnswer.text).toBe("Yes.");
+    expect(main[0]?.name).toBe("Pets?");
+    expect(main[0]?.acceptedAnswer.text).toBe("Yes.");
   });
 
   it("lodgingBusiness maps the postal address", () => {

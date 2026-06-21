@@ -1,7 +1,12 @@
 import type { ZodType } from "zod";
 
 export interface ContactSender {
-  send(message: { to: string; from: string; subject: string; text: string }): Promise<{ id: string }>;
+  send(message: {
+    to: string;
+    from: string;
+    subject: string;
+    text: string;
+  }): Promise<{ id: string }>;
 }
 
 export interface ContactHandlerOptions<T> {
@@ -24,7 +29,9 @@ export function createContactHandler<T>(opts: ContactHandlerOptions<T>) {
       const errors: Record<string, string[]> = {};
       for (const issue of parsed.error.issues) {
         const key = issue.path.join(".") || "_";
-        (errors[key] ??= []).push(issue.message);
+        const existing = errors[key] ?? [];
+        existing.push(issue.message);
+        errors[key] = existing;
       }
       return { ok: false, errors };
     }

@@ -1,3 +1,4 @@
 {
-  "extends": ["./src/biome/biome.base.json"]
+  "extends": ["./src/biome/biome.base.json"],
+  "files": { "includes": ["**", "!**/*.css"] }
 }

@@ -40,7 +40,11 @@ export function runDoctor(siteDir) {
 
   const ts = readJson(join(siteDir, "tsconfig.json"));
   if (ts && !String(ts.extends || "").includes("@iserlabs/web-kit")) {
-    add("warn", "tsconfig-not-extending", "tsconfig.json does not extend @iserlabs/web-kit/tsconfig");
+    add(
+      "warn",
+      "tsconfig-not-extending",
+      "tsconfig.json does not extend @iserlabs/web-kit/tsconfig",
+    );
   }
 
   const scripts = pkg.scripts || {};
