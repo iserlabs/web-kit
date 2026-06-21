@@ -1,6 +1,6 @@
 {
   "name": "@iserlabs/web-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "type": "module",
   "license": "MIT",
@@ -16,7 +16,9 @@
     "./schema": "./src/schema/index.ts",
     "./forms": "./src/forms/index.ts",
     "./env": "./src/env/index.ts",
-    "./utils": "./src/utils/index.ts"
+    "./utils": "./src/utils/index.ts",
+    "./observability": "./src/observability/index.ts",
+    "./observability/server": "./src/observability/server.ts"
   },
   "bin": {
     "web-kit": "./bin/web-kit.mjs"
@@ -39,17 +41,27 @@
     "tailwind-merge": "^3.0.0"
   },
   "peerDependencies": {
+    "@discordjs/rest": ">=2.4.0",
+    "discord-api-types": ">=0.37.100",
     "zod": ">=3.23.0"
   },
   "peerDependenciesMeta": {
+    "@discordjs/rest": {
+      "optional": true
+    },
+    "discord-api-types": {
+      "optional": true
+    },
     "zod": {
       "optional": true
     }
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
+    "@discordjs/rest": "^2.4.0",
     "@tailwindcss/cli": "^4.0.0",
     "@types/node": "^26.0.0",
+    "discord-api-types": "^0.37.100",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
