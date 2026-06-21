@@ -1,0 +1,1 @@
+{ "name": "spike-tailwind", "private": true, "dependencies": { "@iserlabs/web-kit": "file:../..", "@tailwindcss/cli": "^4.3.0", "tailwindcss": "^4.3.0" } }

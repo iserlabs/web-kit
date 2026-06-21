@@ -1,0 +1,1 @@
+{ "name": "spike-biome", "private": true, "dependencies": { "@iserlabs/web-kit": "file:../..", "@biomejs/biome": "^2.5.0", "tsx": "^4.22.0" } }

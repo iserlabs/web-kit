@@ -2,3 +2,4 @@ node_modules
 *.log
 spikes/**/node_modules
 spikes/**/out.css
+spikes/**/pnpm-lock.yaml
