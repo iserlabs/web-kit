@@ -32,17 +32,20 @@ if (cmd === "audit") {
   const tierIdx = args.indexOf("--tier");
   const tier = tierIdx >= 0 ? args[tierIdx + 1] : "required";
   const dir = positionalDir(args);
-  if (tier === "extended") {
-    console.log("web-kit audit: extended tier is Phase 2b — not yet implemented");
-    process.exit(0);
-  }
-  const { runRequiredAudit } = await import("../src/audits/index.mjs");
-  const findings = await runRequiredAudit(dir);
+  const findings =
+    tier === "extended"
+      ? await (await import("../src/audits/extended/index.mjs")).runExtendedAudit(dir)
+      : await (await import("../src/audits/index.mjs")).runRequiredAudit(dir);
   for (const f of findings) {
     console.log(`[${f.severity}] ${f.code}${f.route ? ` (${f.route})` : ""}: ${f.message}`);
   }
   const errors = findings.filter((f) => f.severity === "error").length;
-  console.log(errors ? `web-kit audit: FAILED (${errors} error)` : "web-kit audit: OK");
+  const warns = findings.filter((f) => f.severity === "warn").length;
+  console.log(
+    errors
+      ? `web-kit audit (${tier}): FAILED (${errors} error)`
+      : `web-kit audit (${tier}): OK${warns ? ` (${warns} warn)` : ""}`,
+  );
   process.exit(errors ? 1 : 0);
 }
 
