@@ -1,1 +1,1 @@
-{ "name": "spike-biome", "private": true, "packageManager": "pnpm@10.33.0", "dependencies": { "@iserlabs/web-kit": "file:../..", "@biomejs/biome": "^2.5.0", "tsx": "^4.22.0" } }
+{ "name": "spike-biome", "private": true, "packageManager": "pnpm@10.33.0", "dependencies": { "@iserlabs/web-kit": "file:../..", "@biomejs/biome": "2.5.0", "tsx": "4.22.4" } }

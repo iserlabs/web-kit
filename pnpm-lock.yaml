@@ -1,7 +1,7 @@
 lockfileVersion: '9.0'
 
 settings:
-  autoInstallPeers: false
+  autoInstallPeers: true
   excludeLinksFromLockfile: false
 
 importers:
@@ -9,65 +9,65 @@ importers:
   .:
     dependencies:
       clsx:
-        specifier: ^2.1.1
+        specifier: 2.1.1
         version: 2.1.1
       culori:
-        specifier: ^4.0.2
+        specifier: 4.0.2
         version: 4.0.2
       fast-xml-parser:
-        specifier: ^5.9.3
+        specifier: 5.9.3
         version: 5.9.3
       node-html-parser:
-        specifier: ^8.0.2
+        specifier: 8.0.2
         version: 8.0.2
       tailwind-merge:
-        specifier: ^3.0.0
+        specifier: 3.6.0
         version: 3.6.0
     devDependencies:
       '@axe-core/playwright':
-        specifier: ^4.11.3
+        specifier: 4.11.3
         version: 4.11.3(playwright-core@1.61.0)
       '@biomejs/biome':
-        specifier: ^2.0.0
+        specifier: 2.5.0
         version: 2.5.0
       '@discordjs/rest':
-        specifier: ^2.4.0
+        specifier: 2.6.1
         version: 2.6.1
       '@tailwindcss/cli':
-        specifier: ^4.0.0
+        specifier: 4.3.1
         version: 4.3.1
       '@types/node':
-        specifier: ^26.0.0
+        specifier: 26.0.0
         version: 26.0.0
       chrome-launcher:
-        specifier: ^1.2.1
+        specifier: 1.2.1
         version: 1.2.1
       discord-api-types:
-        specifier: ^0.37.100
+        specifier: 0.37.120
         version: 0.37.120
       http-server:
-        specifier: ^14.1.1
+        specifier: 14.1.1
         version: 14.1.1
       lighthouse:
-        specifier: ^13.4.0
+        specifier: 13.4.0
         version: 13.4.0
       playwright:
-        specifier: ^1.61.0
+        specifier: 1.61.0
         version: 1.61.0
       tailwindcss:
-        specifier: ^4.0.0
+        specifier: 4.3.1
         version: 4.3.1
       tsx:
-        specifier: ^4.19.0
+        specifier: 4.22.4
         version: 4.22.4
       typescript:
-        specifier: ^5.7.0
+        specifier: 5.9.3
         version: 5.9.3
       vitest:
-        specifier: ^3.0.0
+        specifier: 3.2.6
         version: 3.2.6(@types/node@26.0.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
       zod:
-        specifier: ^3.23.0
+        specifier: 3.25.76
         version: 3.25.76
 
 packages:

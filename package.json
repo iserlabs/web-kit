@@ -6,7 +6,7 @@
   "license": "MIT",
   "packageManager": "pnpm@10.33.0",
   "engines": {
-    "node": ">=20"
+    "node": "v26.3.1"
   },
   "exports": {
     "./biome": "./src/biome/biome.base.json",
@@ -40,16 +40,16 @@
     "format": "biome format --write src bin"
   },
   "dependencies": {
-    "clsx": "^2.1.1",
-    "culori": "^4.0.2",
-    "fast-xml-parser": "^5.9.3",
-    "node-html-parser": "^8.0.2",
-    "tailwind-merge": "^3.0.0"
+    "clsx": "2.1.1",
+    "culori": "4.0.2",
+    "fast-xml-parser": "5.9.3",
+    "node-html-parser": "8.0.2",
+    "tailwind-merge": "3.6.0"
   },
   "peerDependencies": {
-    "@discordjs/rest": ">=2.4.0",
-    "discord-api-types": ">=0.37.100",
-    "zod": ">=3.23.0"
+    "@discordjs/rest": "2.6.1",
+    "discord-api-types": "0.38.49",
+    "zod": "4.4.3"
   },
   "peerDependenciesMeta": {
     "@discordjs/rest": {
@@ -63,20 +63,20 @@
     }
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.11.3",
-    "@biomejs/biome": "^2.0.0",
-    "@discordjs/rest": "^2.4.0",
-    "@tailwindcss/cli": "^4.0.0",
-    "@types/node": "^26.0.0",
-    "chrome-launcher": "^1.2.1",
-    "discord-api-types": "^0.37.100",
-    "http-server": "^14.1.1",
-    "lighthouse": "^13.4.0",
-    "playwright": "^1.61.0",
-    "tailwindcss": "^4.0.0",
-    "tsx": "^4.19.0",
-    "typescript": "^5.7.0",
-    "vitest": "^3.0.0",
-    "zod": "^3.23.0"
+    "@axe-core/playwright": "4.11.3",
+    "@biomejs/biome": "2.5.0",
+    "@discordjs/rest": "2.6.1",
+    "@tailwindcss/cli": "4.3.1",
+    "@types/node": "26.0.0",
+    "chrome-launcher": "1.2.1",
+    "discord-api-types": "0.37.120",
+    "http-server": "14.1.1",
+    "lighthouse": "13.4.0",
+    "playwright": "1.61.0",
+    "tailwindcss": "4.3.1",
+    "tsx": "4.22.4",
+    "typescript": "5.9.3",
+    "vitest": "3.2.6",
+    "zod": "3.25.76"
   }
 }
