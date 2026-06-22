@@ -35,3 +35,20 @@ For Next sites, transpile it: `next.config.ts` → `transpilePackages: ["@iserla
 
 ### Conformance
 - `pnpm exec web-kit doctor` — checks an adopting site's baseline (skips non-adopters).
+
+### Audits (required tier)
+Add `web-kit.audits.config.mjs` at the site root:
+
+    export default {
+      previewCommand: "pnpm build && pnpm start --port 4321",
+      baseUrl: "http://localhost:4321",
+      pageTypes: { "/": "home", "/rooms": "lodging" },
+      expectedSchema: { home: ["Organization"], lodging: ["LodgingBusiness"] },
+      headers: { requireCsp: true },
+      contrast: { cssFile: "src/app/globals.css", minRatio: 4.5 },
+      // severity: { "header-xcto-missing": "off" }, // per-check override
+    };
+
+Then gate CI with `web-kit audit --tier required` (crawls the preview server,
+fails on any `error` finding). Extended tier (Lighthouse / axe / CWV) ships in a
+later release.

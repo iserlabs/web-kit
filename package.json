@@ -17,6 +17,7 @@
     "./forms": "./src/forms/index.ts",
     "./env": "./src/env/index.ts",
     "./utils": "./src/utils/index.ts",
+    "./audits": "./src/audits/index.mjs",
     "./observability": "./src/observability/index.ts",
     "./observability/env": "./src/observability/env.ts",
     "./observability/server": "./src/observability/server.ts"
@@ -39,6 +40,9 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "culori": "^4.0.2",
+    "fast-xml-parser": "^5.9.3",
+    "node-html-parser": "^8.0.2",
     "tailwind-merge": "^3.0.0"
   },
   "peerDependencies": {
@@ -63,6 +67,7 @@
     "@tailwindcss/cli": "^4.0.0",
     "@types/node": "^26.0.0",
     "discord-api-types": "^0.37.100",
+    "http-server": "^14.1.1",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
