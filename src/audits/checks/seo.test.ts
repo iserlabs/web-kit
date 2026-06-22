@@ -30,8 +30,13 @@ describe("checkSeoMeta", () => {
     expect(codes("<html><body><h1>a</h1><h1>b</h1></body></html>")).toContain("seo-h1-count");
   });
 
-  it("flags an image with no alt", () => {
+  it("flags an image with no alt attribute", () => {
     const c = codes(`<html><body><h1>x</h1><img src="a.jpg"></body></html>`);
     expect(c).toContain("seo-img-alt");
+  });
+
+  it("allows an explicit empty alt (decorative image, WCAG/axe convention)", () => {
+    const c = codes(`<html><body><h1>x</h1><img src="bg.jpg" alt=""></body></html>`);
+    expect(c).not.toContain("seo-img-alt");
   });
 });
