@@ -29,9 +29,11 @@ export function checkSeoMeta(html, opts) {
   if (h1s.length !== 1) err("seo-h1-count", `Expected exactly one <h1>, found ${h1s.length}`);
 
   for (const img of root.querySelectorAll("img")) {
-    const alt = img.getAttribute("alt");
-    if (alt === undefined || alt.trim() === "") {
-      err("seo-img-alt", `<img src="${img.getAttribute("src") ?? "?"}"> missing alt text`);
+    // Flag a *missing* alt attribute (a forgotten alt). An explicit empty
+    // alt="" is the correct WCAG/axe convention for a decorative image — the
+    // author declaring "skip me" — so it is intentional and not an error.
+    if (img.getAttribute("alt") === undefined) {
+      err("seo-img-alt", `<img src="${img.getAttribute("src") ?? "?"}"> has no alt attribute`);
     }
   }
 
