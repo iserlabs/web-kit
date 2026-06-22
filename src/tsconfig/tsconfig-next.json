@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": "Shared base for Next.js 16 app sites. Sites extend this and add plugins(next), paths, include/exclude. Deliberately omits noUncheckedIndexedAccess / verbatimModuleSyntax (too strict for existing Next app code — they belong to the lib-oriented ./tsconfig).",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "jsx": "react-jsx",
+    "forceConsistentCasingInFileNames": true
+  }
+}

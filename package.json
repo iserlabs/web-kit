@@ -11,6 +11,7 @@
   "exports": {
     "./biome": "./src/biome/biome.base.json",
     "./tsconfig": "./src/tsconfig/tsconfig.base.json",
+    "./tsconfig-next": "./src/tsconfig/tsconfig-next.json",
     "./tailwind": "./src/tailwind/contract.css",
     "./seo": "./src/seo/index.ts",
     "./schema": "./src/schema/index.ts",

@@ -1,0 +1,1 @@
+{ "extends": "@iserlabs/web-kit/tsconfig-next", "compilerOptions": { "plugins": [{ "name": "next" }], "paths": { "@/*": ["./src/*"] } }, "include": ["x.tsx"] }
