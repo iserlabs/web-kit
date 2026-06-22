@@ -7,9 +7,15 @@ import { startPreview, waitForReady } from "./preview.mjs";
 import { parseSitemap } from "./sitemap.mjs";
 
 async function resolveRoutes(config) {
-  if (config.routes) return config.routes;
-  const res = await fetch(`${config.baseUrl}/sitemap.xml`);
-  return parseSitemap(await res.text(), config.baseUrl);
+  if (config.routes?.length) return config.routes;
+  try {
+    const res = await fetch(`${config.baseUrl}/sitemap.xml`);
+    const routes = parseSitemap(await res.text());
+    if (routes.length) return routes;
+  } catch {
+    // no/invalid sitemap — fall through to the home route
+  }
+  return ["/"]; // never audit zero routes (a vacuous pass is worse than no audit)
 }
 
 export async function runRequiredAudit(siteDir) {
@@ -32,6 +38,6 @@ export async function runRequiredAudit(siteDir) {
 
     return findings;
   } finally {
-    server.stop();
+    await server.stop();
   }
 }

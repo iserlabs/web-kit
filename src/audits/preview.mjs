@@ -16,16 +16,22 @@ export async function waitForReady(baseUrl, timeoutMs, fetchImpl = fetch) {
 
 export function startPreview(previewCommand) {
   // detached → the child leads its own process group, so we can tear down the
-  // whole tree (shell + server) with a single group kill (avoids orphaned ports).
+  // whole tree (shell + server, e.g. `pnpm build && pnpm start` → next start)
+  // with a single group kill (avoids orphaned ports).
   const child = spawn(previewCommand, { shell: true, stdio: "ignore", detached: true });
   child.unref?.();
   return {
-    stop() {
-      try {
-        if (child.pid) process.kill(-child.pid, "SIGTERM");
-      } catch {
-        // already exited
-      }
+    async stop() {
+      const signalGroup = (sig) => {
+        try {
+          if (child.pid) process.kill(-child.pid, sig);
+        } catch {
+          // already exited / no such process group
+        }
+      };
+      signalGroup("SIGTERM");
+      await sleep(500);
+      signalGroup("SIGKILL"); // forceful fallback for deep trees that ignore SIGTERM
     },
   };
 }
