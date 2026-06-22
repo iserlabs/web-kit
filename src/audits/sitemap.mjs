@@ -1,6 +1,13 @@
 import { XMLParser } from "fast-xml-parser";
 
-export function parseSitemap(xml, baseUrl) {
+/**
+ * Extract route *paths* from a sitemap XML. Robust to the sitemap using the
+ * production/canonical origin (e.g. https://example.com) while the audit crawls
+ * a local preview server — we take each <loc>'s pathname regardless of origin.
+ * @param {string} xml
+ * @returns {string[]}
+ */
+export function parseSitemap(xml) {
   const parsed = new XMLParser().parse(xml);
   const urls = parsed?.urlset?.url;
   if (!urls) return [];
@@ -8,5 +15,11 @@ export function parseSitemap(xml, baseUrl) {
   return list
     .map((u) => String(u.loc ?? ""))
     .filter(Boolean)
-    .map((loc) => loc.replace(baseUrl, "") || "/");
+    .map((loc) => {
+      try {
+        return new URL(loc).pathname || "/";
+      } catch {
+        return loc.startsWith("/") ? loc : "/";
+      }
+    });
 }

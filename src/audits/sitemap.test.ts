@@ -9,11 +9,20 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
 </urlset>`;
 
 describe("parseSitemap", () => {
-  it("extracts route paths and strips the base URL", () => {
-    expect(parseSitemap(xml, "http://localhost:4321")).toEqual(["/", "/rooms"]);
+  it("extracts route paths", () => {
+    expect(parseSitemap(xml)).toEqual(["/", "/rooms"]);
+  });
+
+  it("extracts paths even when the sitemap uses the production origin (not the crawl base)", () => {
+    const prod = `<urlset>
+      <url><loc>https://example.com/</loc></url>
+      <url><loc>https://example.com/about</loc></url>
+    </urlset>`;
+    // The crawl base is localhost; the sitemap uses the canonical origin — must still yield paths.
+    expect(parseSitemap(prod)).toEqual(["/", "/about"]);
   });
 
   it("returns an empty array for a sitemap with no urls", () => {
-    expect(parseSitemap("<urlset></urlset>", "http://localhost:4321")).toEqual([]);
+    expect(parseSitemap("<urlset></urlset>")).toEqual([]);
   });
 });
