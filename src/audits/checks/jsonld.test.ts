@@ -19,6 +19,18 @@ describe("checkJsonLd", () => {
     expect(codes).toContain("jsonld-type-missing");
   });
 
+  it("finds @type nested inside a @graph container", () => {
+    const html = withType(
+      JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": [{ "@type": "LodgingBusiness" }, { "@type": "WebSite" }],
+      }),
+    );
+    expect(
+      checkJsonLd(html, { route: "/", expectedTypes: ["LodgingBusiness", "WebSite"] }),
+    ).toEqual([]);
+  });
+
   it("flags invalid JSON", () => {
     const html = withType("{ not json }");
     const codes = checkJsonLd(html, { route: "/", expectedTypes: [] }).map(
