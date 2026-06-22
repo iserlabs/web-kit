@@ -22,11 +22,11 @@ or commit SHA in their `package.json` (`github:iserlabs/web-kit#<ref>`).
 
 ## Exports
 
-`@iserlabs/web-kit/{biome, tsconfig, tailwind, seo, schema, forms, env, utils,
-audits, observability, observability/env, observability/server}`. Notes:
+`@iserlabs/web-kit/{biome, tsconfig, tsconfig-next, tailwind, seo, schema, forms,
+env, utils, audits, observability, observability/env, observability/server}`. Notes:
 - `tsconfig` is **lib-oriented** (ES2022 / `noUncheckedIndexedAccess` /
-  `verbatimModuleSyntax`) and breaks Next apps — Next sites use their own
-  `tsconfig.json` that extends sensible defaults for Next.js directly.
+  `verbatimModuleSyntax`) and breaks Next apps — Next sites extend
+  `tsconfig-next` instead (the Next-safe preset).
 - `tailwind` is the shadcn-base-nova-aligned token contract (share the contract,
   not the costume).
 - `observability` provides error/event notification helpers (dedup, severity
