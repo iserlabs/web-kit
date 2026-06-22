@@ -50,5 +50,24 @@ Add `web-kit.audits.config.mjs` at the site root:
     };
 
 Then gate CI with `web-kit audit --tier required` (crawls the preview server,
-fails on any `error` finding). Extended tier (Lighthouse / axe / CWV) ships in a
-later release.
+fails on any `error` finding).
+
+### Audits (extended tier — opt-in, browser-backed)
+`web-kit audit --tier extended` adds **Lighthouse** (perf/SEO/best-practices/a11y
+scores + CWV) and **axe** (WCAG a11y) per route. Findings default to `warn`
+(advisory) — opt a code up to `error` via `severity` to make it a gate.
+
+The browser tools are **install-on-demand** (the kit stays lean for required-only
+sites):
+
+    pnpm add -D lighthouse chrome-launcher @axe-core/playwright playwright
+    pnpm exec playwright install chromium
+
+Configure in `web-kit.audits.config.mjs`:
+
+    extended: {
+      // lighthouse: false,            // or { thresholds: { performance: 0.9, seo: 0.95 } }
+      // axe: false,                   // or { tags: ["wcag2a","wcag2aa"] }
+      // cwv: { thresholds: { lcp: 2500, cls: 0.1 } },
+      // routes: ["/"],                // defaults to the required-tier route list
+    }
