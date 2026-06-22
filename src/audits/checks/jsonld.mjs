@@ -1,5 +1,22 @@
 import { parse } from "node-html-parser";
 
+// Collect every @type from a JSON-LD value, descending into top-level arrays
+// and `@graph` containers (the standard way to express multiple entities on a
+// page — used by Next sites and SEO libs alike).
+function collectTypes(node, into) {
+  if (!node || typeof node !== "object") return;
+  if (Array.isArray(node)) {
+    for (const n of node) collectTypes(n, into);
+    return;
+  }
+  const t = node["@type"];
+  if (Array.isArray(t)) for (const x of t) into.add(x);
+  else if (t) into.add(t);
+  if (Array.isArray(node["@graph"])) {
+    for (const n of node["@graph"]) collectTypes(n, into);
+  }
+}
+
 export function checkJsonLd(html, opts) {
   const root = parse(html);
   const findings = [];
@@ -17,11 +34,7 @@ export function checkJsonLd(html, opts) {
       err("jsonld-invalid", "A ld+json block is not valid JSON");
       continue;
     }
-    for (const node of Array.isArray(data) ? data : [data]) {
-      const t = node?.["@type"];
-      if (Array.isArray(t)) for (const x of t) seenTypes.add(x);
-      else if (t) seenTypes.add(t);
-    }
+    collectTypes(data, seenTypes);
   }
 
   for (const expected of opts.expectedTypes) {
