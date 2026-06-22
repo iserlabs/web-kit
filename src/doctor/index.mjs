@@ -23,10 +23,15 @@ export function runDoctor(siteDir) {
     return { adopted: false, ok: true, findings: [] };
   }
 
+  // The canonical template opts itself out of identity checks via a marker file
+  // or package.json field, so it can carry the placeholder name/identity legitimately.
+  const templateMarker = readJson(join(siteDir, "web-kit.template.json"));
+  const isTemplate = templateMarker?.template === true || pkg["web-kit"]?.template === true;
+
   if (!pkg.packageManager || !String(pkg.packageManager).startsWith("pnpm@")) {
     add("error", "no-pnpm-pin", "packageManager is not pinned to pnpm@<version>");
   }
-  if (pkg.name === "iser-labs-starter") {
+  if (!isTemplate && pkg.name === "iser-labs-starter") {
     add("error", "placeholder-name", 'package.json "name" is still "iser-labs-starter"');
   }
 

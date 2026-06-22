@@ -30,4 +30,11 @@ describe("runDoctor", () => {
     expect(codes).toContain("placeholder-name");
     expect(codes).toContain("no-pnpm-pin");
   });
+
+  it("skips the identity check for the template (web-kit.template.json marker)", () => {
+    const r = runDoctor(fx("template"));
+    expect(r.adopted).toBe(true);
+    expect(r.ok).toBe(true);
+    expect(r.findings.map((f: { code: string }) => f.code)).not.toContain("placeholder-name");
+  });
 });
