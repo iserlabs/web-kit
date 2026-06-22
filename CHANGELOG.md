@@ -1,10 +1,13 @@
 # Changelog
 
 ## Unreleased
+- landstar donor-parity (replacing its general scripts with the kit): still pending.
+
+## 0.4.0
 - Audits (required tier): `web-kit audit --tier required` — server-crawl gate for SEO-meta, JSON-LD, token-palette contrast, and security headers. New subpath `@iserlabs/web-kit/audits`, configured per site by `web-kit.audits.config.mjs`. Per-check severity overrides; fails on `error`.
 - Audits (extended tier): `web-kit audit --tier extended` — Lighthouse (perf/SEO/best-practices/a11y + CWV) and axe (WCAG) per route, advisory `warn` by default. Browser deps dynamically imported + install-on-demand to keep required-only sites lean.
 - Audit hardening: origin-agnostic sitemap paths, decorative `alt=""` allowed, `@graph` JSON-LD `@type` collection, process-group preview teardown.
-- landstar donor-parity (replacing its general scripts with the kit): still pending.
+- First **tagged** release of the audits + `tsconfig-next` work — consolidates the fleet off SHA pins back onto a tag so Renovate can auto-bump it.
 
 ## 0.3.1
 - `observability` `checkAndRecord` accepts an optional injectable `now` (3rd arg, defaults to `Date.now()`) and rolls the window over at exactly `ttlMs` (`>=`) — so a deduped alert fires on the boundary instead of one tick later. Backward-compatible; lets landstar drop its last local dedup copy.
