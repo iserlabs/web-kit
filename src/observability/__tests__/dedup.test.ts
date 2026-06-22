@@ -38,4 +38,20 @@ describe("checkAndRecord", () => {
       suppressedCount: 2,
     });
   });
+  it("accepts an injectable `now` and rolls over at exactly ttlMs (>=)", () => {
+    const t0 = 1_000_000;
+    expect(checkAndRecord("k", 1000, t0)).toEqual({
+      shouldSend: true,
+      suppressedCount: 0,
+    });
+    expect(checkAndRecord("k", 1000, t0 + 500)).toEqual({
+      shouldSend: false,
+      suppressedCount: 1,
+    });
+    // Exactly at the boundary → new window sends, carrying the 1 suppressed.
+    expect(checkAndRecord("k", 1000, t0 + 1000)).toEqual({
+      shouldSend: true,
+      suppressedCount: 1,
+    });
+  });
 });

@@ -3,6 +3,9 @@
 ## Unreleased
 - Audits (required tier): `web-kit audit --tier required` — server-crawl gate for SEO-meta, JSON-LD, token-palette contrast, and security headers. New subpath `@iserlabs/web-kit/audits`, configured per site by `web-kit.audits.config.mjs`. Per-check severity overrides; fails on `error`. Extended tier (Lighthouse/axe/CWV) + landstar donor-parity are Phase 2b.
 
+## 0.3.1
+- `observability` `checkAndRecord` accepts an optional injectable `now` (3rd arg, defaults to `Date.now()`) and rolls the window over at exactly `ttlMs` (`>=`) — so a deduped alert fires on the boundary instead of one tick later. Backward-compatible; lets landstar drop its last local dedup copy.
+
 ## 0.3.0
 - `observability` dedup now **carries the suppressed count forward** into the next window's first alert (no more silently-forgotten suppressions across a window roll-over).
 - **`observabilityEnv` moved** from the `./observability` barrel to its own subpath **`@iserlabs/web-kit/observability/env`** — the client-safe barrel is now **zod-free**, so a Layer-B site importing `baseSentryOptions` never has to install zod. (Breaking for the unreleased v0.2.0 barrel export only; no shipped consumers.)

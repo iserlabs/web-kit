@@ -23,11 +23,17 @@ function evictIfFull(): void {
   }
 }
 
-export function checkAndRecord(errorKey: string, ttlMs: number = DEFAULT_TTL_MS): DedupResult {
-  const now = Date.now();
+export function checkAndRecord(
+  errorKey: string,
+  ttlMs: number = DEFAULT_TTL_MS,
+  // Optional injectable clock for deterministic tests; defaults to the real
+  // wall clock. The window rolls over at exactly `ttlMs` (`>=`) so an alert
+  // fires on the boundary rather than being suppressed one tick longer.
+  now: number = Date.now(),
+): DedupResult {
   const existing = cache.get(errorKey);
 
-  if (!existing || now - existing.lastSentAt > existing.ttlMs) {
+  if (!existing || now - existing.lastSentAt >= existing.ttlMs) {
     // Carry the count suppressed during the just-expired window forward to
     // this send, so the first alert of a new window can report the catch-up
     // total ("(N suppressed since last alert)"). A brand-new key carries 0.
