@@ -1,7 +1,7 @@
 lockfileVersion: '9.0'
 
 settings:
-  autoInstallPeers: false
+  autoInstallPeers: true
   excludeLinksFromLockfile: false
 
 importers:
@@ -43,8 +43,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       discord-api-types:
-        specifier: ^0.37.100
-        version: 0.37.120
+        specifier: ^0.38.0
+        version: 0.38.49
       http-server:
         specifier: ^14.1.1
         version: 14.1.1
@@ -1287,9 +1287,6 @@ packages:
 
   devtools-protocol@0.0.1625959:
     resolution: {integrity: sha512-wRBSU330hwOLLcb3N4NIe3eFs6MgT6ku3AiZONjnTSJ7f3dVchJfn6nE0Lfos9jK1na15bgp7xLhaCx40Y47NQ==}
-
-  discord-api-types@0.37.120:
-    resolution: {integrity: sha512-7xpNK0EiWjjDFp2nAhHXezE4OUWm7s1zhc/UXXN6hnFFU8dfoPHgV0Hx0RPiCa3ILRpdeh152icc68DGCyXYIw==}
 
   discord-api-types@0.38.49:
     resolution: {integrity: sha512-XnqcWmnFZFAE8ZM8SHAw9DIV8D3Or00rMQ8iQLotrEA2PmXhl+ykaf6L6q4l474hrSUH1JaYcv+iOMRWp2p6Tg==}
@@ -3129,8 +3126,6 @@ snapshots:
   devtools-protocol@0.0.1624250: {}
 
   devtools-protocol@0.0.1625959: {}
-
-  discord-api-types@0.37.120: {}
 
   discord-api-types@0.38.49: {}
 
