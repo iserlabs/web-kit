@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
-    "@biomejs/biome": "^2.0.0",
+    "@biomejs/biome": "^2.5.1",
     "@discordjs/rest": "^2.4.0",
     "@tailwindcss/cli": "^4.0.0",
     "@types/node": "^26.0.0",
