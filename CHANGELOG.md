@@ -3,6 +3,9 @@
 ## Unreleased
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
+## 0.5.0
+- **`@iserlabs/web-kit/network`** — new export: The Xenia Network member registry (`networkMembers`, `memberById`, `footerMembersFor`, `managementBrands`, `engines`, `brandListLabel`, `XENIA_NETWORK`, `STREAMLINED_ID`, `includeStreamlinedInBrandFooters`) plus the JSON-LD builder (`networkGraph`, `NETWORK_ID`). Pure data + functions; first fleet-content module in the kit. Lifted verbatim from `xenia-hospitality-operations` so every affiliated site consumes one source of truth (Xenia Network rollout, plan 2 of 4). Schema models the umbrella with `subOrganization`/`memberOf` — never `sameAs`; Columbus excluded by design.
+
 ## 0.4.0
 - Audits (required tier): `web-kit audit --tier required` — server-crawl gate for SEO-meta, JSON-LD, token-palette contrast, and security headers. New subpath `@iserlabs/web-kit/audits`, configured per site by `web-kit.audits.config.mjs`. Per-check severity overrides; fails on `error`.
 - Audits (extended tier): `web-kit audit --tier extended` — Lighthouse (perf/SEO/best-practices/a11y + CWV) and axe (WCAG) per route, advisory `warn` by default. Browser deps dynamically imported + install-on-demand to keep required-only sites lean.
