@@ -68,7 +68,7 @@ export const networkMembers: readonly NetworkMember[] = [
     id: "xenia-ops",
     name: "Xenia Operations",
     role: "engine",
-    url: "https://xenia.host",
+    url: "https://ops.xenia.host",
     blurb:
       "Remote, done-for-you hospitality operations desk — guest messaging, coordination, escalation.",
     routeBy: { kind: "need", label: "Run it for me, remotely" },

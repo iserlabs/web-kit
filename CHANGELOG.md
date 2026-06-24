@@ -3,6 +3,9 @@
 ## Unreleased
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
+## 0.5.1
+- `network`: **Xenia Operations moved to its own subdomain** — `xenia-ops.url` is now `https://ops.xenia.host` (was `https://xenia.host`). `xenia.host` is reserved for the Xenia Network umbrella, so `XENIA_NETWORK.url` (`https://xenia.host/network`) is unchanged. Data-only; no API change.
+
 ## 0.5.0
 - **`@iserlabs/web-kit/network`** — new export: The Xenia Network member registry (`networkMembers`, `memberById`, `footerMembersFor`, `managementBrands`, `engines`, `brandListLabel`, `XENIA_NETWORK`, `STREAMLINED_ID`, `includeStreamlinedInBrandFooters`) plus the JSON-LD builder (`networkGraph`, `NETWORK_ID`). Pure data + functions; first fleet-content module in the kit. Lifted verbatim from `xenia-hospitality-operations` so every affiliated site consumes one source of truth (Xenia Network rollout, plan 2 of 4). Schema models the umbrella with `subOrganization`/`memberOf` — never `sameAs`; Columbus excluded by design.
 
