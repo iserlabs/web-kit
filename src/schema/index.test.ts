@@ -11,6 +11,20 @@ describe("schema builders", () => {
     expect(o["@context"]).toBe("https://schema.org");
     expect(o["@type"]).toBe("Organization");
     expect(o.sameAs).toEqual(["https://x.com/acme"]);
+    expect(o.memberOf).toBeUndefined();
+  });
+
+  it("organization includes memberOf when provided", () => {
+    const o = organization({
+      name: "Acme",
+      url: "https://acme.com",
+      memberOf: { "@type": "Organization", name: "The Network", url: "https://net.example" },
+    });
+    expect(o.memberOf).toEqual({
+      "@type": "Organization",
+      name: "The Network",
+      url: "https://net.example",
+    });
   });
 
   it("breadcrumb numbers positions from 1", () => {
