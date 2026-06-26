@@ -5,6 +5,11 @@ export interface OrganizationInput {
   url: string;
   logo?: string;
   sameAs?: string[];
+  /**
+   * Parent org(s) this organization belongs to. For Xenia Network members pass
+   * `xeniaNetworkMemberOf` from `@iserlabs/web-kit/network`.
+   */
+  memberOf?: Record<string, unknown> | Record<string, unknown>[];
 }
 export function organization(input: OrganizationInput): JsonLd {
   return {
@@ -14,6 +19,7 @@ export function organization(input: OrganizationInput): JsonLd {
     url: input.url,
     ...(input.logo ? { logo: input.logo } : {}),
     ...(input.sameAs ? { sameAs: input.sameAs } : {}),
+    ...(input.memberOf ? { memberOf: input.memberOf } : {}),
   };
 }
 

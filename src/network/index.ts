@@ -131,6 +131,36 @@ type JsonLd = Record<string, unknown>;
 /** @id for the network Organization node. */
 export const NETWORK_ID = `${XENIA_NETWORK.url}#network`;
 
+/** Apex landing for the network — the human-facing link target for member badges. */
+export const XENIA_NETWORK_HOME = "https://xenia.host";
+
+/**
+ * Canonical `memberOf` reference every member site emits in its own Organization
+ * JSON-LD. The `@id` ties each member back to the single network node defined in
+ * `networkGraph()`; `name` + `url` keep it self-contained for crawlers that read
+ * the member page in isolation. Pass to `organization({ memberOf })`.
+ */
+export const xeniaNetworkMemberOf = {
+  "@type": "Organization",
+  "@id": NETWORK_ID,
+  name: XENIA_NETWORK.name,
+  url: XENIA_NETWORK_HOME,
+} as const;
+
+/**
+ * Shared membership copy so every member's footer badge and homepage trust band
+ * read identically. Brand names stay verbatim; only connective prose lives here.
+ */
+export const MEMBERSHIP_COPY = {
+  kicker: "Part of The Xenia Network",
+  standard: "Held to one standard.",
+  tagline: XENIA_NETWORK.tagline,
+  /** apex landing (footer badge) */
+  homeHref: XENIA_NETWORK_HOME,
+  /** roster page ("Explore the network →") */
+  exploreHref: XENIA_NETWORK.url,
+} as const;
+
 /**
  * JSON-LD @graph for The Xenia Network: one parent Organization whose
  * `subOrganization` lists every member, with each member emitting `memberOf`
