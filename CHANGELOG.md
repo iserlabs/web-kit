@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **`@iserlabs/web-kit/proof`** — new export: `OPERATING_RECORD`, the founder's owner-attested career totals as the single canonical proof dataset shared verbatim by every Xenia Network site's "Operating Record" proof strip (`OperatingRecord`/`OperatingRecordStat` types). Pure data; strict-canonical — kills the prior per-site drift (237/240 STRs, 16,100+/16,500+/16,000+/14,000+ reservations, 500+/600+ claims). Sites that can't yet bump the pinned ref keep a verbatim `src/content/operating-record.ts` port + invariant test as the drift guard.
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
 ## 0.5.0
