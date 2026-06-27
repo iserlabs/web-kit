@@ -16,6 +16,7 @@
     "./seo": "./src/seo/index.ts",
     "./schema": "./src/schema/index.ts",
     "./network": "./src/network/index.ts",
+    "./proof": "./src/proof/index.ts",
     "./forms": "./src/forms/index.ts",
     "./env": "./src/env/index.ts",
     "./utils": "./src/utils/index.ts",
