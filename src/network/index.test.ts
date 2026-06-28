@@ -52,6 +52,18 @@ describe("network registry", () => {
   it("formats the brand list label", () => {
     expect(brandListLabel()).toBe("Palisade Stays, Right Hand Host & Ikoi Homes");
   });
+
+  it("marks footerGuestCareCredit true only where guest care is run by Ops", () => {
+    const credit = Object.fromEntries(networkMembers.map((m) => [m.id, m.footerGuestCareCredit]));
+    expect(credit).toEqual({
+      palisade: true,
+      rhh: true,
+      ikoi: true,
+      steadfast: true,
+      "xenia-ops": false,
+      streamlined: false,
+    });
+  });
 });
 
 describe("networkGraph", () => {

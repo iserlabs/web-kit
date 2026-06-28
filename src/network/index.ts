@@ -21,6 +21,14 @@ export interface NetworkMember {
   blurb: string;
   /** how the hub router lists this member */
   routeBy: RouteBy;
+  /**
+   * Whether the member's footer shows the "Guest care by Xenia Hospitality
+   * Operations" credit. True for the management brands (Palisade, RHH, Ikoi)
+   * and Steadfast — guest/property care run by Ops; false for Xenia Operations
+   * (it IS Ops — no self-credit) and Streamlined (self-manage systems/advisory —
+   * provides no guest care).
+   */
+  footerGuestCareCredit: boolean;
 }
 
 export const XENIA_NETWORK = {
@@ -46,6 +54,7 @@ export const networkMembers: readonly NetworkMember[] = [
     blurb:
       "Founder-led STR & furnished-rental management for Northern New Jersey and the Lower Hudson Valley.",
     routeBy: { kind: "market", label: "Northern NJ & Lower Hudson Valley" },
+    footerGuestCareCredit: true,
   },
   {
     id: "rhh",
@@ -55,6 +64,7 @@ export const networkMembers: readonly NetworkMember[] = [
     url: "https://right-hand-host.vercel.app",
     blurb: "Boutique, founder-led short-term-rental management in Colorado Springs & Denver.",
     routeBy: { kind: "market", label: "Colorado Springs & Denver" },
+    footerGuestCareCredit: true,
   },
   {
     id: "ikoi",
@@ -63,6 +73,7 @@ export const networkMembers: readonly NetworkMember[] = [
     url: "https://ikoihomes.com",
     blurb: "Boutique short-term-rental management in Big Bear Lake, California.",
     routeBy: { kind: "market", label: "Big Bear Lake, CA" },
+    footerGuestCareCredit: true,
   },
   {
     id: "xenia-ops",
@@ -72,6 +83,7 @@ export const networkMembers: readonly NetworkMember[] = [
     blurb:
       "Remote, done-for-you hospitality operations desk — guest messaging, coordination, escalation.",
     routeBy: { kind: "need", label: "Run it for me, remotely" },
+    footerGuestCareCredit: false,
   },
   {
     id: "steadfast",
@@ -81,6 +93,7 @@ export const networkMembers: readonly NetworkMember[] = [
     blurb:
       "Field property care — turnover support, inspections, preventative care, photo/video reporting.",
     routeBy: { kind: "need", label: "Care for the physical property" },
+    footerGuestCareCredit: true,
   },
   {
     id: "streamlined",
@@ -93,6 +106,7 @@ export const networkMembers: readonly NetworkMember[] = [
       kind: "need",
       label: "Run it myself, smarter (systems & automation)",
     },
+    footerGuestCareCredit: false,
   },
 ];
 
