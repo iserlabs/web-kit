@@ -9,7 +9,10 @@ pass=0; fail=0
 make_repo() {
   local changed="$1"; local noparent="${2:-}"
   local d; d="$(mktemp -d)"
-  git -C "$d" init -q; git -C "$d" config user.email t@t.t; git -C "$d" config user.name t
+  [ -n "$d" ] || { echo "mktemp failed" >&2; exit 1; }
+  git -C "$d" init -q
+  git -C "$d" config core.excludesFile /dev/null
+  git -C "$d" config user.email t@t.t; git -C "$d" config user.name t
   mkdir -p "$d/src"; echo base > "$d/src/page.tsx"
   git -C "$d" add -A; git -C "$d" commit -qm base
   if [ "$noparent" = "--no-parent" ]; then echo "$d"; return; fi
@@ -35,6 +38,12 @@ assert "docs/ change is skipped"             0 "$(make_repo docs/x.md)"    VERCE
 assert "real source change builds"           1 "$(make_repo src/page.tsx)" VERCEL_ENV=production
 assert "content .md change builds"           1 "$(make_repo src/content/post.md)" VERCEL_ENV=production
 assert "no parent commit builds (failsafe)"  1 "$(make_repo x --no-parent)" VERCEL_ENV=production
+
+assert ".editorconfig change is skipped"     0 "$(make_repo .editorconfig)" VERCEL_ENV=production
+assert ".vscode change is skipped"           0 "$(make_repo .vscode/settings.json)" VERCEL_ENV=production
+assert "test file change is skipped"         0 "$(make_repo src/foo.test.ts)" VERCEL_ENV=production
+R="$(make_repo CLAUDE.md)"; git -C "$R" commit -q --amend -m "docs: tweak [build]"
+assert "[build] in message overrides inert skip" 1 "$R" VERCEL_ENV=production
 
 echo "----- $pass passed, $fail failed -----"
 [ "$fail" = 0 ]
