@@ -37,6 +37,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:ignore-script": "bash scripts/ci/vercel-ignore.test.sh",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src bin",
     "format": "biome format --write src bin"
