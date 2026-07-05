@@ -33,7 +33,9 @@ export interface NetworkMember {
 
 export const XENIA_NETWORK = {
   name: "The Xenia Network",
-  url: "https://xenia.host/network",
+  // The Network now lives on its own subdomain; the apex xenia.host is the
+  // Xenia Hospitality Operations marketing site (member id "xenia-ops").
+  url: "https://network.xenia.host",
   tagline: "Founder-led hospitality companies sharing one operating standard.",
 } as const;
 
@@ -145,8 +147,8 @@ type JsonLd = Record<string, unknown>;
 /** @id for the network Organization node. */
 export const NETWORK_ID = `${XENIA_NETWORK.url}#network`;
 
-/** Apex landing for the network — the human-facing link target for member badges. */
-export const XENIA_NETWORK_HOME = "https://xenia.host";
+/** The Network's home, the human-facing link target for member badges. */
+export const XENIA_NETWORK_HOME = "https://network.xenia.host";
 
 /**
  * Canonical `memberOf` reference every member site emits in its own Organization
