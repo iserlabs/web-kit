@@ -73,7 +73,7 @@ describe("networkGraph", () => {
   it("has a parent network node with six subOrganizations", () => {
     const parent = nodes.find((n) => n["@id"] === NETWORK_ID);
     expect(parent).toBeDefined();
-    expect((parent?.subOrganization as unknown[]).length).toBe(6);
+    expect(parent?.subOrganization).toHaveLength(6);
   });
 
   it("links members with memberOf and never sameAs", () => {
