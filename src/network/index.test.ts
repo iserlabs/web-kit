@@ -21,7 +21,7 @@ describe("network registry", () => {
   });
 
   it("classifies three brands and three engines", () => {
-    expect(managementBrands().map((m) => m.id)).toEqual(["palisade", "rhh", "ikoi"]);
+    expect(managementBrands().map((m) => m.id)).toEqual(["palisade", "sun-mountain-stays", "ikoi"]);
     expect(engines().map((m) => m.id)).toEqual(["xenia-ops", "steadfast", "streamlined"]);
   });
 
@@ -31,8 +31,8 @@ describe("network registry", () => {
     expect(s?.routeBy.kind).toBe("need");
   });
 
-  it("links Right Hand Host to the live site until DNS cutover", () => {
-    expect(memberById("rhh")?.url).toBe("https://right-hand-host.vercel.app");
+  it("links Sun Mountain Stays to its live Colorado Springs site", () => {
+    expect(memberById("sun-mountain-stays")?.url).toBe("https://sunmountainstays.com");
   });
 
   it("mutes Streamlined on a management-brand footer, omitting self", () => {
@@ -50,14 +50,14 @@ describe("network registry", () => {
   });
 
   it("formats the brand list label", () => {
-    expect(brandListLabel()).toBe("Palisade Stays, Right Hand Host & Ikoi Homes");
+    expect(brandListLabel()).toBe("Palisade Stays, Sun Mountain Stays & Ikoi Homes");
   });
 
   it("marks footerGuestCareCredit true only where guest care is run by Ops", () => {
     const credit = Object.fromEntries(networkMembers.map((m) => [m.id, m.footerGuestCareCredit]));
     expect(credit).toEqual({
       palisade: true,
-      rhh: true,
+      "sun-mountain-stays": false,
       ikoi: true,
       steadfast: true,
       "xenia-ops": false,

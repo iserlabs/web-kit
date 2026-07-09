@@ -23,10 +23,10 @@ export interface NetworkMember {
   routeBy: RouteBy;
   /**
    * Whether the member's footer shows the "Guest care by Xenia Hospitality
-   * Operations" credit. True for the management brands (Palisade, RHH, Ikoi)
-   * and Steadfast — guest/property care run by Ops; false for Xenia Operations
-   * (it IS Ops — no self-credit) and Streamlined (self-manage systems/advisory —
-   * provides no guest care).
+   * Operations" credit. True for the management brands whose guest care Ops runs
+   * (Palisade, Ikoi) and Steadfast; false for Xenia Operations (it IS Ops, no
+   * self-credit), Streamlined (self-manage systems/advisory, provides no guest
+   * care), and Sun Mountain Stays (runs guest care in-house by design).
    */
   footerGuestCareCredit: boolean;
 }
@@ -59,14 +59,14 @@ export const networkMembers: readonly NetworkMember[] = [
     footerGuestCareCredit: true,
   },
   {
-    id: "rhh",
-    name: "Right Hand Host",
+    id: "sun-mountain-stays",
+    name: "Sun Mountain Stays",
     role: "brand",
-    // Domain not cut over yet — link to the live site until DNS moves (spec §6).
-    url: "https://right-hand-host.vercel.app",
-    blurb: "Boutique, founder-led short-term-rental management in Colorado Springs & Denver.",
-    routeBy: { kind: "market", label: "Colorado Springs & Denver" },
-    footerGuestCareCredit: true,
+    url: "https://sunmountainstays.com",
+    blurb: "Founder-led, in-house short-term-rental management in Colorado Springs, Colorado.",
+    routeBy: { kind: "market", label: "Colorado Springs, Colorado" },
+    // In-house guest care by design, so no Xenia Operations guest-care credit.
+    footerGuestCareCredit: false,
   },
   {
     id: "ikoi",
@@ -135,7 +135,7 @@ export function engines(): NetworkMember[] {
   return networkMembers.filter((m) => m.role === "engine");
 }
 
-/** "Palisade Stays, Right Hand Host & Ikoi Homes" */
+/** "Palisade Stays, Sun Mountain Stays & Ikoi Homes" */
 export function brandListLabel(): string {
   const names = managementBrands().map((m) => m.name);
   if (names.length <= 1) return names.join("");
