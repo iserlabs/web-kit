@@ -24,7 +24,7 @@ export interface NetworkMember {
   /**
    * Whether the member's footer shows the "Guest care by Xenia Hospitality
    * Operations" credit. True for the management brands whose guest care Ops runs
-   * (Palisade, Ikoi) and Steadfast; false for Xenia Operations (it IS Ops, no
+   * (Palisade) and Steadfast; false for Xenia Operations (it IS Ops, no
    * self-credit), Streamlined (self-manage systems/advisory, provides no guest
    * care), and Sun Mountain Stays (runs guest care in-house by design).
    */
@@ -67,15 +67,6 @@ export const networkMembers: readonly NetworkMember[] = [
     routeBy: { kind: "market", label: "Colorado Springs, Colorado" },
     // In-house guest care by design, so no Xenia Operations guest-care credit.
     footerGuestCareCredit: false,
-  },
-  {
-    id: "ikoi",
-    name: "Ikoi Homes",
-    role: "brand",
-    url: "https://ikoihomes.com",
-    blurb: "Boutique short-term-rental management in Big Bear Lake, California.",
-    routeBy: { kind: "market", label: "Big Bear Lake, CA" },
-    footerGuestCareCredit: true,
   },
   {
     id: "xenia-ops",
@@ -135,7 +126,7 @@ export function engines(): NetworkMember[] {
   return networkMembers.filter((m) => m.role === "engine");
 }
 
-/** "Palisade Stays, Sun Mountain Stays & Ikoi Homes" */
+/** "Palisade Stays & Sun Mountain Stays" */
 export function brandListLabel(): string {
   const names = managementBrands().map((m) => m.name);
   if (names.length <= 1) return names.join("");

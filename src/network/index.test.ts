@@ -11,17 +11,17 @@ import {
 } from "./index";
 
 describe("network registry", () => {
-  it("has six members with unique ids", () => {
-    expect(networkMembers).toHaveLength(6);
-    expect(new Set(networkMembers.map((m) => m.id)).size).toBe(6);
+  it("has five members with unique ids", () => {
+    expect(networkMembers).toHaveLength(5);
+    expect(new Set(networkMembers.map((m) => m.id)).size).toBe(5);
   });
 
   it("excludes The Columbus Hotel", () => {
     expect(networkMembers.some((m) => m.name.toLowerCase().includes("columbus"))).toBe(false);
   });
 
-  it("classifies three brands and three engines", () => {
-    expect(managementBrands().map((m) => m.id)).toEqual(["palisade", "sun-mountain-stays", "ikoi"]);
+  it("classifies two brands and three engines", () => {
+    expect(managementBrands().map((m) => m.id)).toEqual(["palisade", "sun-mountain-stays"]);
     expect(engines().map((m) => m.id)).toEqual(["xenia-ops", "steadfast", "streamlined"]);
   });
 
@@ -39,18 +39,18 @@ describe("network registry", () => {
     const ids = footerMembersFor("palisade").map((m) => m.id);
     expect(ids).not.toContain("streamlined");
     expect(ids).not.toContain("palisade");
-    expect(ids).toHaveLength(4);
+    expect(ids).toHaveLength(3);
   });
 
   it("keeps Streamlined on an engine-site footer", () => {
     const ids = footerMembersFor("xenia-ops").map((m) => m.id);
     expect(ids).toContain("streamlined");
     expect(ids).not.toContain("xenia-ops");
-    expect(ids).toHaveLength(5);
+    expect(ids).toHaveLength(4);
   });
 
   it("formats the brand list label", () => {
-    expect(brandListLabel()).toBe("Palisade Stays, Sun Mountain Stays & Ikoi Homes");
+    expect(brandListLabel()).toBe("Palisade Stays & Sun Mountain Stays");
   });
 
   it("marks footerGuestCareCredit true only where guest care is run by Ops", () => {
@@ -58,7 +58,6 @@ describe("network registry", () => {
     expect(credit).toEqual({
       palisade: true,
       "sun-mountain-stays": false,
-      ikoi: true,
       steadfast: true,
       "xenia-ops": false,
       streamlined: false,
@@ -70,10 +69,10 @@ describe("networkGraph", () => {
   const graph = networkGraph();
   const nodes = graph["@graph"] as Array<Record<string, unknown>>;
 
-  it("has a parent network node with six subOrganizations", () => {
+  it("has a parent network node with five subOrganizations", () => {
     const parent = nodes.find((n) => n["@id"] === NETWORK_ID);
     expect(parent).toBeDefined();
-    expect((parent?.subOrganization as unknown[]).length).toBe(6);
+    expect((parent?.subOrganization as unknown[]).length).toBe(5);
   });
 
   it("links members with memberOf and never sameAs", () => {

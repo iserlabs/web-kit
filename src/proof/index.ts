@@ -5,8 +5,8 @@
  * so any consumer (Next app, CLI, test) can import it.
  *
  * STRICT-CANONICAL: these exact figures publish identically on all member sites
- * (Palisade Stays, Sun Mountain Stays, Ikoi Homes, Streamlined Stays, Xenia
- * Operations, Steadfast). The whole point is to kill the per-site drift that
+ * (Palisade Stays, Sun Mountain Stays, Streamlined Stays, Xenia Operations,
+ * Steadfast). The whole point is to kill the per-site drift that
  * previously stated one record as 237/240 STRs, 16,100+/16,500+/16,000+/14,000+
  * reservations, 500+/600+ claims, etc. Consistency across the network IS the
  * proof of "held to one standard".
