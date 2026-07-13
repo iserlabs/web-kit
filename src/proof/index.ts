@@ -47,7 +47,7 @@ export const OPERATING_RECORD: OperatingRecord = {
   stats: [
     { value: "237", label: "STRs operated" },
     { value: "116", label: "listings launched" },
-    { value: "16,100+", label: "reservations facilitated" },
+    { value: "16,800+", label: "reservations facilitated" },
     { value: "$89.5M+", label: "real estate stewarded" },
     { value: "73", label: "clients served" },
     { value: "23", label: "markets · 7 states" },
