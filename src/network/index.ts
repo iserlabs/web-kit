@@ -6,7 +6,7 @@
  * app imports - so any consumer (Next app, CLI, test) can import it.
  */
 
-export type MemberRole = "brand" | "engine";
+export type MemberRole = "brand" | "engine" | "advisory";
 
 export type RouteBy = { kind: "market"; label: string } | { kind: "need"; label: string };
 
@@ -99,6 +99,24 @@ export const networkMembers: readonly NetworkMember[] = [
       kind: "need",
       label: "Run it myself, smarter (systems & automation)",
     },
+    footerGuestCareCredit: false,
+  },
+];
+
+/**
+ * Advisory clients: independent brands the network ADVISES rather than operates.
+ * They belong on the network directory (so owners can find them) but are NOT
+ * network members: they are excluded from the `memberOf` JSON-LD, the peer
+ * footers, and `brandListLabel()`, because Xenia does not run them.
+ */
+export const advisoryClients: readonly NetworkMember[] = [
+  {
+    id: "ikoi",
+    name: "Ikoi Homes",
+    role: "advisory",
+    url: "https://ikoihomes.com",
+    blurb: "Boutique short-term-rental management in Big Bear Lake, California, advised by Xenia.",
+    routeBy: { kind: "market", label: "Big Bear Lake, CA" },
     footerGuestCareCredit: false,
   },
 ];

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  advisoryClients,
   brandListLabel,
   engines,
   footerMembersFor,
@@ -14,6 +15,16 @@ describe("network registry", () => {
   it("has five members with unique ids", () => {
     expect(networkMembers).toHaveLength(5);
     expect(new Set(networkMembers.map((m) => m.id)).size).toBe(5);
+  });
+
+  it("lists Ikoi Homes as an advisory client, not a member", () => {
+    expect(advisoryClients.map((m) => m.id)).toEqual(["ikoi"]);
+    expect(advisoryClients[0]?.role).toBe("advisory");
+    expect(advisoryClients[0]?.url).toBe("https://ikoihomes.com");
+    // Not a member: absent from the registry, the graph, and the brand label.
+    expect(networkMembers.some((m) => m.id === "ikoi")).toBe(false);
+    expect(JSON.stringify(networkGraph()).toLowerCase()).not.toContain("ikoi");
+    expect(brandListLabel()).not.toContain("Ikoi");
   });
 
   it("excludes The Columbus Hotel", () => {
