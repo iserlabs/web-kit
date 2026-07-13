@@ -1,9 +1,9 @@
 /**
- * The Xenia Network — member registry, selectors, and JSON-LD builder.
+ * The Xenia Network - member registry, selectors, and JSON-LD builder.
  *
  * Fleet-wide source of truth, consumed by every affiliated site via
- * `@iserlabs/web-kit/network`. PURE DATA + PURE FUNCTIONS ONLY — no React, no
- * app imports — so any consumer (Next app, CLI, test) can import it.
+ * `@iserlabs/web-kit/network`. PURE DATA + PURE FUNCTIONS ONLY - no React, no
+ * app imports - so any consumer (Next app, CLI, test) can import it.
  */
 
 export type MemberRole = "brand" | "engine";
@@ -74,7 +74,7 @@ export const networkMembers: readonly NetworkMember[] = [
     role: "engine",
     url: "https://xenia.host",
     blurb:
-      "Remote, done-for-you hospitality operations desk — guest messaging, coordination, escalation.",
+      "Remote, done-for-you hospitality operations desk: guest messaging, coordination, escalation.",
     routeBy: { kind: "need", label: "Run it for me, remotely" },
     footerGuestCareCredit: false,
   },
@@ -84,7 +84,7 @@ export const networkMembers: readonly NetworkMember[] = [
     role: "engine",
     url: "https://steadfast.xenia.host",
     blurb:
-      "Field property care — turnover support, inspections, preventative care, photo/video reporting.",
+      "Field property care: turnover support, inspections, preventative care, photo/video reporting.",
     routeBy: { kind: "need", label: "Care for the physical property" },
     footerGuestCareCredit: true,
   },
@@ -94,7 +94,7 @@ export const networkMembers: readonly NetworkMember[] = [
     role: "engine",
     url: "https://streamlinedstr.com",
     blurb:
-      "Nationwide STR systems, automation, and consulting — for owner-operators and portfolio managers who self-manage.",
+      "Nationwide STR systems, automation, and consulting for owner-operators and portfolio managers who self-manage.",
     routeBy: {
       kind: "need",
       label: "Run it myself, smarter (systems & automation)",
@@ -171,7 +171,7 @@ export const MEMBERSHIP_COPY = {
 /**
  * JSON-LD @graph for The Xenia Network: one parent Organization whose
  * `subOrganization` lists every member, with each member emitting `memberOf`
- * back to the parent. Uses parentOrganization/subOrganization/memberOf — never
+ * back to the parent. Uses parentOrganization/subOrganization/memberOf - never
  * `sameAs` (spec §5).
  */
 export function networkGraph(): { "@context": string; "@graph": JsonLd[] } {
