@@ -40,6 +40,11 @@ The `web-kit` bin (used by consumers as `pnpm wk:doctor` / `wk:audit`):
   present. Has a template-skip so the starter passes its own identity check.
 - `web-kit audit --tier required` — SEO, schema/JSON-LD, canonical, contrast,
   a11y, bundle. The merge-gate tier.
+- `web-kit audit --tier browser` — thirteen geometries per route in headless
+  Chrome: hero-fills-the-window, sideways scroll, clipped text, off-screen
+  elements, 44px tap targets, console errors, and a real-touch scroll test on
+  phone sizes. No dependencies (raw CDP over system Chrome). Read-only: it never
+  clicks, so it is safe to point at any route.
 - `web-kit audit --tier extended` — Lighthouse (perf/SEO/BP/a11y + CWV) + axe
   (WCAG), advisory `warn` by default. Browser deps (`lighthouse`,
   `chrome-launcher`, `@axe-core/playwright`, `playwright`) install on demand so

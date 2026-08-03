@@ -9,6 +9,10 @@ const DEFAULTS = {
   expectedSchema: {},
   contrast: { cssFile: "src/app/globals.css", minRatio: 4.5 },
   headers: { requireCsp: true },
+  /* The browser tier is opt-in per site only in what it looks FOR: with no heroSelector
+     it still checks overflow, clipping, tap targets, console errors and touch scrolling
+     on every route, which every site should pass. */
+  browser: { routes: null, heroSelector: null, heroRoutes: ["/"], minTapTarget: 44, settleMs: 2400, geometries: null },
   severity: {},
 };
 
@@ -24,6 +28,7 @@ export async function loadAuditConfig(siteDir) {
     ...user,
     contrast: { ...DEFAULTS.contrast, ...(user.contrast ?? {}) },
     headers: { ...DEFAULTS.headers, ...(user.headers ?? {}) },
+    browser: { ...DEFAULTS.browser, ...(user.browser ?? {}) },
     severity: { ...DEFAULTS.severity, ...(user.severity ?? {}) },
   };
 }
