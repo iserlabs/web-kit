@@ -33,7 +33,9 @@ if (cmd === "audit") {
   const tier = tierIdx >= 0 ? args[tierIdx + 1] : "required";
   const dir = positionalDir(args);
   const findings =
-    tier === "extended"
+    tier === "browser"
+      ? await (await import("../src/audits/browser/index.mjs")).runBrowserAudit(dir)
+      : tier === "extended"
       ? await (await import("../src/audits/extended/index.mjs")).runExtendedAudit(dir)
       : await (await import("../src/audits/index.mjs")).runRequiredAudit(dir);
   for (const f of findings) {
@@ -49,5 +51,5 @@ if (cmd === "audit") {
   process.exit(errors ? 1 : 0);
 }
 
-console.log("Usage: web-kit <doctor|audit> [--tier required|extended] [siteDir]");
+console.log("Usage: web-kit <doctor|audit> [--tier required|browser|extended] [siteDir]");
 process.exit(cmd ? 1 : 0);
