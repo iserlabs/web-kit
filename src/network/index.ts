@@ -1,12 +1,12 @@
 /**
- * The Xenia Network — member registry, selectors, and JSON-LD builder.
+ * The Xenia Network - member registry, selectors, and JSON-LD builder.
  *
  * Fleet-wide source of truth, consumed by every affiliated site via
- * `@iserlabs/web-kit/network`. PURE DATA + PURE FUNCTIONS ONLY — no React, no
- * app imports — so any consumer (Next app, CLI, test) can import it.
+ * `@iserlabs/web-kit/network`. PURE DATA + PURE FUNCTIONS ONLY - no React, no
+ * app imports - so any consumer (Next app, CLI, test) can import it.
  */
 
-export type MemberRole = "brand" | "engine";
+export type MemberRole = "brand" | "engine" | "advisory";
 
 export type RouteBy = { kind: "market"; label: string } | { kind: "need"; label: string };
 
@@ -24,7 +24,7 @@ export interface NetworkMember {
   /**
    * Whether the member's footer shows the "Guest care by Xenia Hospitality
    * Operations" credit. True for the management brands whose guest care Ops runs
-   * (Palisade, Ikoi) and Steadfast; false for Xenia Operations (it IS Ops, no
+   * (Palisade) and Steadfast; false for Xenia Operations (it IS Ops, no
    * self-credit), Streamlined (self-manage systems/advisory, provides no guest
    * care), and Sun Mountain Stays (runs guest care in-house by design).
    */
@@ -69,21 +69,12 @@ export const networkMembers: readonly NetworkMember[] = [
     footerGuestCareCredit: false,
   },
   {
-    id: "ikoi",
-    name: "Ikoi Homes",
-    role: "brand",
-    url: "https://ikoihomes.com",
-    blurb: "Boutique short-term-rental management in Big Bear Lake, California.",
-    routeBy: { kind: "market", label: "Big Bear Lake, CA" },
-    footerGuestCareCredit: true,
-  },
-  {
     id: "xenia-ops",
     name: "Xenia Operations",
     role: "engine",
     url: "https://xenia.host",
     blurb:
-      "Remote, done-for-you hospitality operations desk — guest messaging, coordination, escalation.",
+      "Remote, done-for-you hospitality operations desk: guest messaging, coordination, escalation.",
     routeBy: { kind: "need", label: "Run it for me, remotely" },
     footerGuestCareCredit: false,
   },
@@ -93,7 +84,7 @@ export const networkMembers: readonly NetworkMember[] = [
     role: "engine",
     url: "https://steadfast.xenia.host",
     blurb:
-      "Field property care — turnover support, inspections, preventative care, photo/video reporting.",
+      "Field property care: turnover support, inspections, preventative care, photo/video reporting.",
     routeBy: { kind: "need", label: "Care for the physical property" },
     footerGuestCareCredit: true,
   },
@@ -103,11 +94,29 @@ export const networkMembers: readonly NetworkMember[] = [
     role: "engine",
     url: "https://streamlinedstr.com",
     blurb:
-      "Nationwide STR systems, automation, and consulting — for owner-operators and portfolio managers who self-manage.",
+      "Nationwide STR systems, automation, and consulting for owner-operators and portfolio managers who self-manage.",
     routeBy: {
       kind: "need",
       label: "Run it myself, smarter (systems & automation)",
     },
+    footerGuestCareCredit: false,
+  },
+];
+
+/**
+ * Advisory clients: independent brands the network ADVISES rather than operates.
+ * They belong on the network directory (so owners can find them) but are NOT
+ * network members: they are excluded from the `memberOf` JSON-LD, the peer
+ * footers, and `brandListLabel()`, because Xenia does not run them.
+ */
+export const advisoryClients: readonly NetworkMember[] = [
+  {
+    id: "ikoi",
+    name: "Ikoi Homes",
+    role: "advisory",
+    url: "https://ikoihomes.com",
+    blurb: "Boutique short-term-rental management in Big Bear Lake, California, advised by Xenia.",
+    routeBy: { kind: "market", label: "Big Bear Lake, CA" },
     footerGuestCareCredit: false,
   },
 ];
@@ -135,7 +144,7 @@ export function engines(): NetworkMember[] {
   return networkMembers.filter((m) => m.role === "engine");
 }
 
-/** "Palisade Stays, Sun Mountain Stays & Ikoi Homes" */
+/** "Palisade Stays & Sun Mountain Stays" */
 export function brandListLabel(): string {
   const names = managementBrands().map((m) => m.name);
   if (names.length <= 1) return names.join("");
@@ -180,7 +189,7 @@ export const MEMBERSHIP_COPY = {
 /**
  * JSON-LD @graph for The Xenia Network: one parent Organization whose
  * `subOrganization` lists every member, with each member emitting `memberOf`
- * back to the parent. Uses parentOrganization/subOrganization/memberOf — never
+ * back to the parent. Uses parentOrganization/subOrganization/memberOf - never
  * `sameAs` (spec §5).
  */
 export function networkGraph(): { "@context": string; "@graph": JsonLd[] } {

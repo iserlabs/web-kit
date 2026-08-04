@@ -5,8 +5,8 @@
  * so any consumer (Next app, CLI, test) can import it.
  *
  * STRICT-CANONICAL: these exact figures publish identically on all member sites
- * (Palisade Stays, Sun Mountain Stays, Ikoi Homes, Streamlined Stays, Xenia
- * Operations, Steadfast). The whole point is to kill the per-site drift that
+ * (Palisade Stays, Sun Mountain Stays, Streamlined Stays, Xenia Operations,
+ * Steadfast). The whole point is to kill the per-site drift that
  * previously stated one record as 237/240 STRs, 16,100+/16,500+/16,000+/14,000+
  * reservations, 500+/600+ claims, etc. Consistency across the network IS the
  * proof of "held to one standard".
@@ -45,13 +45,13 @@ export const OPERATING_RECORD: OperatingRecord = {
   eyebrow: "The operating record behind the work",
   stamp: "Attested · as of 2026",
   stats: [
-    { value: "237", label: "STRs operated" },
-    { value: "116", label: "listings launched" },
-    { value: "16,100+", label: "reservations facilitated" },
-    { value: "$89.5M+", label: "real estate stewarded" },
-    { value: "73", label: "clients served" },
-    { value: "23", label: "markets · 7 states" },
-    { value: "7", label: "STR operating companies built" },
-    { value: "500+", label: "claims resolved" },
+    { value: "273+", label: "STRs operated" },
+    { value: "120", label: "listings launched" },
+    { value: "16,900+", label: "reservations facilitated" },
+    { value: "$94.5M+", label: "real estate stewarded" },
+    { value: "78", label: "clients served" },
+    { value: "28", label: "markets · 8 states" },
+    { value: "9", label: "hospitality companies built" },
+    { value: "670+", label: "claims filed" },
   ],
 } as const;
