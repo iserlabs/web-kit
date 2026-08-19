@@ -22,11 +22,18 @@ export interface NetworkMember {
   /** how the hub router lists this member */
   routeBy: RouteBy;
   /**
-   * Whether the member's footer shows the "Guest care by Xenia Hospitality
-   * Operations" credit. True for the management brands whose guest care Ops runs
-   * (Palisade) and Steadfast; false for Xenia Operations (it IS Ops, no
+   * Whether this member may claim, IN PROSE, that Xenia Hospitality Operations
+   * runs its guest care. True for the management brands whose guest care Ops
+   * runs (Palisade) and Steadfast; false for Xenia Operations (it IS Ops, no
    * self-credit), Streamlined (self-manage systems/advisory, provides no guest
    * care), and Sun Mountain Stays (runs guest care in-house by design).
+   *
+   * This no longer gates the FOOTER (changed 2026-08-19). Every member footer
+   * now carries the same two-line lockup: "Part of The Xenia Network" over
+   * `MEMBERSHIP_COPY.ops`, which reads "Powered by" and names the parent
+   * operation instead of claiming Ops delivers guest care. The guest-care claim
+   * is what this flag still guards, so keep honoring it in trust-band and body
+   * prose.
    */
   footerGuestCareCredit: boolean;
 }
@@ -180,10 +187,21 @@ export const MEMBERSHIP_COPY = {
   kicker: "Part of The Xenia Network",
   standard: "Held to one standard.",
   tagline: XENIA_NETWORK.tagline,
-  /** apex landing (footer badge) */
+  /** the Network itself (footer badge). NOT the apex xenia.host, which is the
+   *  Xenia Operations marketing site. */
   homeHref: XENIA_NETWORK_HOME,
   /** roster page ("Explore the network →") */
   exploreHref: XENIA_NETWORK.url,
+  /**
+   * The parent-company credit under the footer badge, identical on every member
+   * site. `href` is the Ops MARKETING site. It is never ops.xenia.host, which is
+   * the Clerk-gated internal Ops Hub and serves a 404 to the public.
+   */
+  ops: {
+    prefix: "Powered by",
+    label: "Xenia Hospitality Operations",
+    href: "https://xenia.host",
+  },
 } as const;
 
 /**
