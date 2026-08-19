@@ -5,6 +5,7 @@ import {
   engines,
   footerMembersFor,
   managementBrands,
+  MEMBERSHIP_COPY,
   memberById,
   NETWORK_ID,
   networkGraph,
@@ -62,6 +63,16 @@ describe("network registry", () => {
 
   it("formats the brand list label", () => {
     expect(brandListLabel()).toBe("Palisade Stays & Sun Mountain Stays");
+  });
+
+  it("carries the fleet-wide footer ops credit, never the gated Ops Hub", () => {
+    expect(MEMBERSHIP_COPY.ops.prefix).toBe("Powered by");
+    expect(MEMBERSHIP_COPY.ops.label).toBe("Xenia Hospitality Operations");
+    expect(new URL(MEMBERSHIP_COPY.ops.href).origin).toBe("https://xenia.host");
+    expect(new URL(MEMBERSHIP_COPY.homeHref).origin).toBe("https://network.xenia.host");
+    for (const href of [MEMBERSHIP_COPY.ops.href, MEMBERSHIP_COPY.homeHref, MEMBERSHIP_COPY.exploreHref]) {
+      expect(new URL(href).hostname).not.toBe("ops.xenia.host");
+    }
   });
 
   it("marks footerGuestCareCredit true only where guest care is run by Ops", () => {
