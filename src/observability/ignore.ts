@@ -7,7 +7,7 @@ export const IGNORE_ERRORS: string[] = [
   "The network connection was lost",
   "The Internet connection appears to be offline",
   "AbortError",
-  "cancelled",
+  "canceled",
   "ResizeObserver loop completed with undelivered notifications",
   "ResizeObserver loop limit exceeded",
 ];
