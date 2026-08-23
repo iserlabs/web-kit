@@ -11,7 +11,10 @@ describe("loadAuditConfig", () => {
   it("loads a site config and applies defaults", async () => {
     const cfg = await loadAuditConfig(fx("site-clean"));
     expect(cfg.baseUrl).toBe("http://localhost:4321");
-    expect(cfg.readyTimeoutMs).toBe(30000);
+    /* Was 30000, which is under the cold `next build` that previewCommand usually runs, so
+       the audit passed on a warm .next and failed on a cold one for reasons that had
+       nothing to do with the site. Measured at 20.2s to compile on a nine-module starter. */
+    expect(cfg.readyTimeoutMs).toBe(180000);
     expect(cfg.contrast.minRatio).toBe(4.5);
   });
 

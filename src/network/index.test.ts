@@ -4,8 +4,8 @@ import {
   brandListLabel,
   engines,
   footerMembersFor,
-  managementBrands,
   MEMBERSHIP_COPY,
+  managementBrands,
   memberById,
   NETWORK_ID,
   networkGraph,
@@ -70,7 +70,11 @@ describe("network registry", () => {
     expect(MEMBERSHIP_COPY.ops.label).toBe("Xenia Hospitality Operations");
     expect(new URL(MEMBERSHIP_COPY.ops.href).origin).toBe("https://xenia.host");
     expect(new URL(MEMBERSHIP_COPY.homeHref).origin).toBe("https://network.xenia.host");
-    for (const href of [MEMBERSHIP_COPY.ops.href, MEMBERSHIP_COPY.homeHref, MEMBERSHIP_COPY.exploreHref]) {
+    for (const href of [
+      MEMBERSHIP_COPY.ops.href,
+      MEMBERSHIP_COPY.homeHref,
+      MEMBERSHIP_COPY.exploreHref,
+    ]) {
       expect(new URL(href).hostname).not.toBe("ops.xenia.host");
     }
   });

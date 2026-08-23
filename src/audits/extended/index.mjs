@@ -1,5 +1,5 @@
 import { loadAuditConfig } from "../config.mjs";
-import { startPreview, waitForReady } from "../preview.mjs";
+import { assertPortFree, startPreview, waitForReady } from "../preview.mjs";
 import { parseSitemap } from "../sitemap.mjs";
 import { runAxe } from "./axe.mjs";
 import { runLighthouse } from "./lighthouse.mjs";
@@ -65,6 +65,9 @@ export async function runExtendedAudit(
   const ext = config.extended ?? {};
   const lighthouseThresholds = { ...DEFAULT_LH, ...(ext.lighthouse?.thresholds ?? {}) };
   const cwvThresholds = { ...DEFAULT_CWV, ...(ext.cwv?.thresholds ?? {}) };
+  /* Before anything is spawned. An audit that cannot bind its own port must stop, not
+     produce a confident answer about whatever else is listening there. */
+  await assertPortFree(config.baseUrl);
   const server = startPreview(config.previewCommand);
   try {
     await waitForReady(config.baseUrl, config.readyTimeoutMs);

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { checkContrast } from "./checks/contrast.mjs";
 import { loadAuditConfig } from "./config.mjs";
 import { crawlRoutes } from "./crawl.mjs";
-import { startPreview, waitForReady } from "./preview.mjs";
+import { assertPortFree, startPreview, waitForReady } from "./preview.mjs";
 import { parseSitemap } from "./sitemap.mjs";
 
 async function resolveRoutes(config) {
@@ -20,6 +20,9 @@ async function resolveRoutes(config) {
 
 export async function runRequiredAudit(siteDir) {
   const config = await loadAuditConfig(siteDir);
+  /* Before anything is spawned. An audit that cannot bind its own port must stop, not
+     produce a confident answer about whatever else is listening there. */
+  await assertPortFree(config.baseUrl);
   const server = startPreview(config.previewCommand);
   try {
     await waitForReady(config.baseUrl, config.readyTimeoutMs);

@@ -3,7 +3,16 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const DEFAULTS = {
-  readyTimeoutMs: 30000,
+  /**
+   * Long enough to BUILD the site, because that is what previewCommand usually does.
+   *
+   * 30s was the old default and it is under the cold `next build` of an ordinary marketing
+   * site, so the audit passed when .next happened to be warm and failed when it did not,
+   * which says nothing about whether the site is sound. Measured on a starter with nine
+   * modules installed: 20.2s to compile before `next start` even boots. A repo that wants
+   * to catch a genuinely hung server sooner can still set its own.
+   */
+  readyTimeoutMs: 180000,
   routes: null,
   pageTypes: {},
   expectedSchema: {},
