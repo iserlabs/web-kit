@@ -45,5 +45,12 @@ assert "test file change is skipped"         0 "$(make_repo src/foo.test.ts)" VE
 R="$(make_repo CLAUDE.md)"; git -C "$R" commit -q --amend -m "docs: tweak [build]"
 assert "[build] in message overrides inert skip" 1 "$R" VERCEL_ENV=production
 
+assert "SKIP_DEPLOY_REFS blocks matching ref"    0 "$(make_repo src/page.tsx)" VERCEL_ENV=production VERCEL_GIT_COMMIT_REF=fleet-data SKIP_DEPLOY_REFS=fleet-data
+assert "SKIP_DEPLOY_REFS beats KEEP_PREVIEWS"    0 "$(make_repo src/page.tsx)" VERCEL_ENV=preview KEEP_PREVIEWS=1 VERCEL_GIT_COMMIT_REF=fleet-data SKIP_DEPLOY_REFS=fleet-data
+assert "SKIP_DEPLOY_REFS beats FORCE_BUILD"      0 "$(make_repo src/page.tsx)" VERCEL_ENV=production FORCE_BUILD=1 VERCEL_GIT_COMMIT_REF=fleet-data SKIP_DEPLOY_REFS=fleet-data
+assert "SKIP_DEPLOY_REFS list matches middle"    0 "$(make_repo src/page.tsx)" VERCEL_ENV=production VERCEL_GIT_COMMIT_REF=data SKIP_DEPLOY_REFS=snapshots,data,artifacts
+assert "SKIP_DEPLOY_REFS ignores other refs"     1 "$(make_repo src/page.tsx)" VERCEL_ENV=production VERCEL_GIT_COMMIT_REF=main SKIP_DEPLOY_REFS=fleet-data
+assert "SKIP_DEPLOY_REFS no partial match"       1 "$(make_repo src/page.tsx)" VERCEL_ENV=production VERCEL_GIT_COMMIT_REF=fleet-data-2 SKIP_DEPLOY_REFS=fleet-data
+
 echo "----- $pass passed, $fail failed -----"
 [ "$fail" = 0 ]
