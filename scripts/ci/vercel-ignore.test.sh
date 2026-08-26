@@ -52,5 +52,8 @@ assert "SKIP_DEPLOY_REFS list matches middle"    0 "$(make_repo src/page.tsx)" V
 assert "SKIP_DEPLOY_REFS ignores other refs"     1 "$(make_repo src/page.tsx)" VERCEL_ENV=production VERCEL_GIT_COMMIT_REF=main SKIP_DEPLOY_REFS=fleet-data
 assert "SKIP_DEPLOY_REFS no partial match"       1 "$(make_repo src/page.tsx)" VERCEL_ENV=production VERCEL_GIT_COMMIT_REF=fleet-data-2 SKIP_DEPLOY_REFS=fleet-data
 
+assert "gate script sync is skipped"             0 "$(make_repo scripts/ci/vercel-ignore.sh)" VERCEL_ENV=production
+assert "non-ci scripts change builds"            1 "$(make_repo scripts/build-data.mjs)" VERCEL_ENV=production
+
 echo "----- $pass passed, $fail failed -----"
 [ "$fail" = 0 ]
