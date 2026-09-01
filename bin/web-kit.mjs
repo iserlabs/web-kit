@@ -49,5 +49,22 @@ if (cmd === "audit") {
   process.exit(errors ? 1 : 0);
 }
 
-console.log("Usage: web-kit <doctor|audit> [--tier required|extended] [siteDir]");
+if (cmd === "brand-pack") {
+  const sub = argv[1];
+  if (sub !== "init") {
+    console.log("Usage: web-kit brand-pack init [siteDir]");
+    process.exit(1);
+  }
+  const dir = argv[2] || process.cwd();
+  const { initBrandPack } = await import("../src/brand-pack/init.mjs");
+  const { written, skipped } = initBrandPack(dir);
+  for (const p of written) console.log(`wrote  ${p}`);
+  for (const p of skipped) console.log(`kept   ${p} (already exists)`);
+  console.log(
+    `web-kit brand-pack: ${written.length} written, ${skipped.length} kept. Fill in every __UNFILLED__ in brand-pack.config.mjs, then run \`web-kit audit --tier required\`.`,
+  );
+  process.exit(0);
+}
+
+console.log("Usage: web-kit <doctor|audit|brand-pack> [--tier required|extended] [siteDir]");
 process.exit(cmd ? 1 : 0);

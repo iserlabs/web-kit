@@ -56,7 +56,7 @@ describe("share card variants", () => {
       if (kids.length > 1)
         expect(n.style?.display, `${n.tag} with ${kids.length} children`).toBe("flex");
       // biome-ignore lint/suspicious/noExplicitAny: walking an untyped plain tree
-      kids.forEach((k: any) => walk(k));
+      for (const k of kids as any[]) walk(k);
     };
     for (const id of SHARE_CARD_IDS) walk(renderShareCard(id, config));
   });
