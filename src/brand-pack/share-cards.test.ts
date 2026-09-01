@@ -86,4 +86,39 @@ describe("share card variants", () => {
       expect(text(renderShareCard(id, config))).not.toContain("\u2014");
     }
   });
+
+  /**
+   * The state a client repo is in for the whole gap between `brand-pack init`
+   * and the client sending their mark over. It used to end the build: satori
+   * refuses a src that is not an absolute URL, so `next build` died on
+   * "Image source must be an absolute URL: __UNFILLED__".
+   */
+  it("renders every card with an unfilled mark, and emits no img for it", () => {
+    const bare = { ...config, markUrl: "__UNFILLED__", markAlt: "__UNFILLED__" };
+    for (const id of SHARE_CARD_IDS) {
+      const node = renderShareCard(id, bare);
+      const srcs: string[] = [];
+      // biome-ignore lint/suspicious/noExplicitAny: walking an untyped plain tree
+      const walk = (n: any) => {
+        if (!n || typeof n === "string") return;
+        if (typeof n.src === "string") srcs.push(n.src);
+        for (const child of n.children ?? []) walk(child);
+      };
+      walk(node);
+      expect(
+        srcs.some((src) => src.includes("__UNFILLED__")),
+        id,
+      ).toBe(false);
+    }
+  });
+
+  it("says the mark is missing rather than showing nothing", () => {
+    const node = renderShareCard("mark-rule", { ...config, markUrl: "__UNFILLED__" });
+    expect(text(node)).toContain("No mark supplied");
+  });
+
+  it("treats an unfilled photograph as no photograph", () => {
+    const node = renderShareCard("split", { ...config, photoUrl: "__UNFILLED__" });
+    expect(node.fallbackFrom).toBe("split");
+  });
 });

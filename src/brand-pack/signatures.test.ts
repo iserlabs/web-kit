@@ -136,4 +136,18 @@ describe("signature variants", () => {
     expect(html).toContain("&amp;");
     expect(html).toContain("&quot;");
   });
+
+  /**
+   * A signature goes out to strangers on every message. An unfilled mark must
+   * not ship as a broken-image icon on all of them.
+   */
+  it("emits no img for an unfilled mark, and says what is missing", () => {
+    for (const id of SIGNATURE_IDS) {
+      const html = renderSignature(id, { ...config, markUrl: "__UNFILLED__" }, person);
+      expect(html, id).not.toContain("__UNFILLED__");
+    }
+    expect(renderSignature("ruled", { ...config, markUrl: "__UNFILLED__" }, person)).toContain(
+      "No mark",
+    );
+  });
 });

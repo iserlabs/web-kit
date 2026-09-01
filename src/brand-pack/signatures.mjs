@@ -9,6 +9,8 @@
  * arrives broken in at least one of them.
  */
 
+import { isUnfilled } from "./unfilled.mjs";
+
 const MAX_WIDTH = 600;
 
 const esc = (s) =>
@@ -26,8 +28,18 @@ const tel = (phone) => `tel:${String(phone).replace(/[^\d+]/g, "")}`;
 const link = (href, text, color, font, size) =>
   `<a href="${esc(href)}" style="color:${color};text-decoration:none;font-family:${font};font-size:${size}px;">${esc(text)}</a>`;
 
+/**
+ * The mark, or a visible unfilled state where it will go.
+ *
+ * A signature is pasted into a mail client and then sent to strangers, so a
+ * mark that is still `__UNFILLED__` must not go out as a broken-image icon on
+ * every message. It says what is missing instead, in table-safe markup, and
+ * the audit keeps failing until somebody supplies the file.
+ */
 const mark = (c, size) =>
-  `<img src="${esc(c.markUrl)}" width="${size}" height="${size}" alt="${esc(c.markAlt)}" style="display:block;width:${size}px;height:${size}px;border:0;outline:none;text-decoration:none;">`;
+  isUnfilled(c.markUrl)
+    ? `<div style="display:inline-block;width:${size}px;height:${size}px;line-height:${size}px;text-align:center;border:2px dashed ${c.accent};color:${c.accent};font-family:${c.bodyFont};font-size:9px;">No mark</div>`
+    : `<img src="${esc(c.markUrl)}" width="${size}" height="${size}" alt="${esc(c.markAlt)}" style="display:block;width:${size}px;height:${size}px;border:0;outline:none;text-decoration:none;">`;
 
 const dot = (c) => `<span style="color:${c.brand};font-size:11px;padding:0 7px;">&#183;</span>`;
 

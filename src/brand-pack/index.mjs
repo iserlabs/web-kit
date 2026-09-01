@@ -1,6 +1,7 @@
 export {
   BRAND_PACK_FILENAME,
   defineBrandPack,
+  isUnfilled,
   loadBrandPackConfig,
   UNFILLED,
   validateBrandPackConfig,

@@ -1,12 +1,15 @@
 /**
  * Contents of the files `web-kit brand-pack init` writes into a client repo.
  *
- * The scaffolded code deliberately avoids template literals, so nothing here
- * needs escaping and the generated files stay easy to read and edit. The five
- * designs are imported from web-kit rather than copied, so a design change
- * still reaches every client through a pinned-ref bump. The board shells
- * belong to the client repo, which is what makes a per-client override an
- * ordinary edit instead of a fork.
+ * WHAT LANDS HERE HAS TO SURVIVE A STRICT REPO. The starter, and therefore every
+ * client cloned from it, runs TypeScript in strict mode and Biome over the whole
+ * tree, so a scaffold that ships untyped callbacks, string concatenation or an
+ * unexplained rule suppression makes a fresh clone red before anyone has written
+ * a line. Each block below is the file as that repo checks it, not an
+ * approximation of it. The two designs are imported from web-kit rather than
+ * copied, so a design change still reaches every client through a pinned-ref
+ * bump. The board shells belong to the client repo, which is what makes a
+ * per-client override an ordinary edit instead of a fork.
  */
 
 /** Relative specifier from a file `depth` directories below the repo root. */
@@ -49,7 +52,7 @@ export default {
 
 export const indexRoute = (depth) => `import Link from "next/link";
 import config from "${up(depth)}";
-import { page, h1, lede, card, cardTitle, cardNote } from "./styles";
+import { card, cardNote, cardTitle, h1, lede, page } from "./styles";
 
 export const metadata = {
   title: "Brand pack",
@@ -61,9 +64,7 @@ export default function BrandIndex() {
     <main style={page(config)}>
       <p style={lede(config)}>{config.wordmark}</p>
       <h1 style={h1(config)}>Two things to pick</h1>
-      <p style={lede(config)}>
-        Both take a minute. Tell us the letter you want and we wire it.
-      </p>
+      <p style={lede(config)}>Both take a minute. Tell us the letter you want and we wire it.</p>
       <div style={{ display: "grid", gap: 20, marginTop: 40 }}>
         <Link href="/brand/signature" style={card(config)}>
           <span style={cardTitle(config)}>Email signature</span>
@@ -84,13 +85,19 @@ export default function BrandIndex() {
 }
 `;
 
-export const stylesFile = () => `/**
+export const stylesFile =
+  () => `import type { BrandPackConfig } from "@iserlabs/web-kit/brand-pack";
+import type { CSSProperties } from "react";
+
+/**
  * Shared styling for the brand pack boards. These are the client's own tokens,
  * so the boards read as part of their site rather than as a contact sheet.
  * Edit freely: this file belongs to this repo, not to web-kit.
  */
 
-export const page = (c) => ({
+type Style = (c: BrandPackConfig) => CSSProperties;
+
+export const page: Style = (c) => ({
   backgroundColor: c.ground,
   color: c.ink,
   minHeight: "100vh",
@@ -98,9 +105,9 @@ export const page = (c) => ({
   fontFamily: c.bodyFont,
 });
 
-export const inner = { maxWidth: 1080, margin: "0 auto" };
+export const inner: CSSProperties = { maxWidth: 1080, margin: "0 auto" };
 
-export const h1 = (c) => ({
+export const h1: Style = (c) => ({
   fontFamily: c.displayFont,
   fontSize: "clamp(2.2rem, 5vw, 3.4rem)",
   lineHeight: 1.05,
@@ -108,7 +115,7 @@ export const h1 = (c) => ({
   margin: "0 0 20px",
 });
 
-export const lede = (c) => ({
+export const lede: Style = (c) => ({
   fontFamily: c.bodyFont,
   fontSize: "1rem",
   lineHeight: 1.6,
@@ -116,17 +123,17 @@ export const lede = (c) => ({
   opacity: 0.78,
 });
 
-export const premise = (c) => ({
+export const premise: Style = (c) => ({
   fontFamily: c.bodyFont,
   fontSize: "0.95rem",
   lineHeight: 1.6,
   padding: "16px 20px",
-  borderLeft: "3px solid " + c.brand,
+  borderLeft: \`3px solid \${c.brand}\`,
   margin: "28px 0 8px",
   maxWidth: 720,
 });
 
-export const roundNote = (c) => ({
+export const roundNote: Style = (c) => ({
   fontFamily: c.bodyFont,
   fontSize: "0.72rem",
   letterSpacing: "0.14em",
@@ -136,28 +143,28 @@ export const roundNote = (c) => ({
   color: c.accent,
 });
 
-export const optionHead = (c) => ({
+export const optionHead: Style = (c) => ({
   display: "flex",
   alignItems: "baseline",
   gap: 14,
   margin: "56px 0 6px",
   paddingTop: 28,
-  borderTop: "1px solid " + c.brand + "44",
+  borderTop: \`1px solid \${c.brand}44\`,
 });
 
-export const letter = (c) => ({
+export const letter: Style = (c) => ({
   fontFamily: c.displayFont,
   fontSize: "1.5rem",
   color: c.accent,
 });
 
-export const optionTitle = (c) => ({
+export const optionTitle: Style = (c) => ({
   fontFamily: c.displayFont,
   fontSize: "1.5rem",
   fontWeight: 500,
 });
 
-export const optionNote = (c) => ({
+export const optionNote: Style = (c) => ({
   fontFamily: c.bodyFont,
   fontSize: "0.92rem",
   lineHeight: 1.6,
@@ -166,24 +173,28 @@ export const optionNote = (c) => ({
   maxWidth: 640,
 });
 
-export const card = (c) => ({
+export const card: Style = (c) => ({
   display: "flex",
   flexDirection: "column",
   gap: 8,
   padding: "24px 26px",
-  border: "1px solid " + c.brand + "55",
+  border: \`1px solid \${c.brand}55\`,
   textDecoration: "none",
   color: c.ink,
 });
 
-export const cardTitle = (c) => ({ fontFamily: c.displayFont, fontSize: "1.4rem" });
-export const cardNote = (c) => ({ fontFamily: c.bodyFont, fontSize: "0.92rem", opacity: 0.75 });
+export const cardTitle: Style = (c) => ({ fontFamily: c.displayFont, fontSize: "1.4rem" });
+export const cardNote: Style = (c) => ({
+  fontFamily: c.bodyFont,
+  fontSize: "0.92rem",
+  opacity: 0.75,
+});
 
-export const unfilled = (c) => ({
+export const unfilled: Style = (c) => ({
   fontFamily: c.bodyFont,
   fontSize: "0.95rem",
   padding: "18px 20px",
-  border: "1px dashed " + c.accent,
+  border: \`1px dashed \${c.accent}\`,
   color: c.accent,
   maxWidth: 640,
 });
@@ -198,8 +209,18 @@ import { useState } from "react";
  * formatted rather than as source. Where the Clipboard API is missing, it falls
  * back to selecting the rendered block so a manual copy still works.
  */
-export default function CopyButton({ html, targetId, accent, font }) {
-  const [state, setState] = useState("idle");
+export default function CopyButton({
+  html,
+  targetId,
+  accent,
+  font,
+}: {
+  html: string;
+  targetId: string;
+  accent: string;
+  font: string;
+}) {
+  const [state, setState] = useState<"idle" | "copied" | "selected" | "failed">("idle");
 
   function selectBlock() {
     const el = document.getElementById(targetId);
@@ -207,13 +228,17 @@ export default function CopyButton({ html, targetId, accent, font }) {
     const range = document.createRange();
     range.selectNodeContents(el);
     const sel = window.getSelection();
+    if (!sel) return false;
     sel.removeAllRanges();
     sel.addRange(range);
     return true;
   }
 
   async function copy() {
-    const plain = html.replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim();
+    const plain = html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\\s+/g, " ")
+      .trim();
     try {
       await navigator.clipboard.write([
         new ClipboardItem({
@@ -249,7 +274,7 @@ export default function CopyButton({ html, targetId, accent, font }) {
         cursor: "pointer",
         color: accent,
         background: "transparent",
-        border: "1px solid " + accent,
+        border: \`1px solid \${accent}\`,
       }}
     >
       {label}
@@ -260,20 +285,20 @@ export default function CopyButton({ html, targetId, accent, font }) {
 
 export const signatureRoute = (
   depth,
-) => `import { SIGNATURE_VARIANTS, renderSignature } from "@iserlabs/web-kit/brand-pack";
+) => `import { renderSignature, SIGNATURE_VARIANTS } from "@iserlabs/web-kit/brand-pack";
 import config from "${up(depth)}";
 import CopyButton from "../CopyButton";
 import {
-  page,
-  inner,
   h1,
+  inner,
   lede,
+  letter,
+  optionHead,
+  optionNote,
+  optionTitle,
+  page,
   premise,
   roundNote,
-  optionHead,
-  letter,
-  optionTitle,
-  optionNote,
   unfilled,
 } from "../styles";
 
@@ -298,8 +323,8 @@ export default function SignatureBoard() {
 
         {config.people.length === 0 ? (
           <p style={unfilled(config)}>
-            No one has been added yet. Send us each person's name, job title, email and phone
-            and their block will appear here.
+            No one has been added yet. Send us each person's name, job title, email and phone and
+            their block will appear here.
           </p>
         ) : null}
 
@@ -312,14 +337,14 @@ export default function SignatureBoard() {
             <p style={optionNote(config)}>{variant.note}</p>
             {config.people.map((person) => {
               const html = renderSignature(variant.id, config, person);
-              const id = variant.id + "-" + person.name.replace(/\\W+/g, "-").toLowerCase();
+              const id = \`\${variant.id}-\${person.name.replace(/\\W+/g, "-").toLowerCase()}\`;
               return (
                 <div key={id} style={{ margin: "0 0 40px" }}>
                   <p style={optionNote(config)}>{person.name}</p>
                   <div
                     id={id}
                     style={{ background: "#ffffff", padding: 28, border: "1px solid #e7e2d8" }}
-                    // The block is generated from this repo's own config, never from user input.
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: generated from this repo's own brand-pack config, never from user input
                     dangerouslySetInnerHTML={{ __html: html }}
                   />
                   <CopyButton
@@ -344,16 +369,16 @@ export const shareRoute = (
 ) => `import { PLATFORMS, SHARE_CARD_VARIANTS } from "@iserlabs/web-kit/brand-pack";
 import config from "${up(depth)}";
 import {
-  page,
-  inner,
   h1,
+  inner,
   lede,
+  letter,
+  optionHead,
+  optionNote,
+  optionTitle,
+  page,
   premise,
   roundNote,
-  optionHead,
-  letter,
-  optionTitle,
-  optionNote,
 } from "../styles";
 
 export const metadata = {
@@ -397,9 +422,12 @@ export default function ShareBoard() {
             >
               {PLATFORMS.map((platform) => (
                 <figure key={platform.id} style={{ margin: 0, maxWidth: platform.cardWidth }}>
+                  {/* biome-ignore lint/performance/noImgElement: the point of this board is
+                      the exact crop each platform applies, so the card renders at the
+                      platform's own pixel size and must not be resized by the optimizer. */}
                   <img
-                    src={"/brand/share/card/" + variant.id}
-                    alt={variant.label + " as it appears on " + platform.label}
+                    src={\`/brand/share/card/\${variant.id}\`}
+                    alt={\`\${variant.label} as it appears on \${platform.label}\`}
                     width={platform.cardWidth}
                     height={platform.cardHeight}
                     style={{
@@ -408,7 +436,7 @@ export default function ShareBoard() {
                       height: platform.cardHeight,
                       objectFit: "cover",
                       borderRadius: platform.radius,
-                      border: "1px solid " + config.brand + "44",
+                      border: \`1px solid \${config.brand}44\`,
                     }}
                   />
                   <figcaption
@@ -434,9 +462,12 @@ export default function ShareBoard() {
 }
 `;
 
-export const cardRoute = (depth) => `import { ImageResponse } from "next/og";
-import { createElement } from "react";
-import { CARD_SIZE, SHARE_CARD_IDS, renderShareCard } from "@iserlabs/web-kit/brand-pack";
+export const cardRoute = (
+  depth,
+) => `import type { ShareCardNode } from "@iserlabs/web-kit/brand-pack";
+import { CARD_SIZE, renderShareCard, SHARE_CARD_IDS } from "@iserlabs/web-kit/brand-pack";
+import { ImageResponse } from "next/og";
+import { createElement, type ReactElement, type ReactNode } from "react";
 import config from "${up(depth)}";
 
 export const dynamic = "force-static";
@@ -446,40 +477,52 @@ export function generateStaticParams() {
 }
 
 /** Turn the serializable card tree into elements. web-kit stays React-free. */
-function toElement(node, key) {
-  if (typeof node === "string") return node;
+function toElement(node: ShareCardNode, key?: string): ReactElement {
   const { tag, style, children = [], src, alt } = node;
-  const props = { style, key };
+  const props: Record<string, unknown> = { style, key };
   if (src !== undefined) props.src = src;
   if (alt !== undefined) props.alt = alt;
-  return createElement(tag, props, ...children.map((child, i) => toElement(child, String(i))));
+  return createElement(tag, props, ...children.map(toChild));
 }
 
-export async function GET(_request, { params }) {
+function toChild(child: ShareCardNode | string, i: number): ReactNode {
+  return typeof child === "string" ? child : toElement(child, String(i));
+}
+
+export async function GET(_request: Request, { params }: { params: Promise<{ variant: string }> }) {
   const { variant } = await params;
-  return new ImageResponse(toElement(renderShareCard(variant, config), "root"), CARD_SIZE);
+  return new ImageResponse(toElement(renderShareCard(variant, config)), CARD_SIZE);
 }
 `;
 
-export const openGraphRoute = (depth) => `import { ImageResponse } from "next/og";
-import { createElement } from "react";
+export const openGraphRoute = (
+  depth,
+) => `import type { ShareCardNode } from "@iserlabs/web-kit/brand-pack";
 import { CARD_SIZE, renderShareCard } from "@iserlabs/web-kit/brand-pack";
+import { ImageResponse } from "next/og";
+import { createElement, type ReactElement, type ReactNode } from "react";
 import config from "${up(depth)}";
 
 export const alt = config.wordmark;
 export const size = CARD_SIZE;
 export const contentType = "image/png";
 
-function toElement(node, key) {
-  if (typeof node === "string") return node;
+function toElement(node: ShareCardNode, key?: string): ReactElement {
   const { tag, style, children = [], src, alt: altText } = node;
-  const props = { style, key };
+  const props: Record<string, unknown> = { style, key };
   if (src !== undefined) props.src = src;
   if (altText !== undefined) props.alt = altText;
-  return createElement(tag, props, ...children.map((child, i) => toElement(child, String(i))));
+  return createElement(tag, props, ...children.map(toChild));
+}
+
+function toChild(child: ShareCardNode | string, i: number): ReactNode {
+  return typeof child === "string" ? child : toElement(child, String(i));
 }
 
 export default async function Image() {
-  return new ImageResponse(toElement(renderShareCard(config.shareCard, config), "root"), CARD_SIZE);
+  return new ImageResponse(
+    toElement(renderShareCard(config.shareCard ?? "type-only", config)),
+    size,
+  );
 }
 `;

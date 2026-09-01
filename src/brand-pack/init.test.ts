@@ -105,4 +105,54 @@ describe("initBrandPack", () => {
     result();
     for (const [p, c] of files) expect(c, p).not.toContain("\u2014");
   });
+
+  /**
+   * The scaffold lands in a repo that runs TypeScript strict and Biome over the
+   * whole tree. It shipped once with untyped callbacks and string concatenation,
+   * which put 14 type errors and 9 lint errors into a client repo the moment
+   * anyone ran `init`, before they had written a line.
+   */
+  it("writes typed TSX, so a strict repo stays green on the first run", () => {
+    const { files, result } = harness(["src/app"]);
+    result();
+    const at = (p: string) => files.get(`/site/src/app/${p}`) ?? "";
+
+    // Every helper the boards call took an untyped `c`, which is 13 noImplicitAny
+    // errors the moment a strict repo typechecks.
+    expect(at("brand/styles.ts")).toContain("BrandPackConfig");
+    expect(at("brand/styles.ts")).toContain("CSSProperties");
+    expect(at("brand/styles.ts")).toMatch(/type Style = \(c: BrandPackConfig\)/);
+
+    // The copy button destructured four props with no types.
+    expect(at("brand/CopyButton.tsx")).toMatch(/html: string;/);
+    expect(at("brand/CopyButton.tsx")).toMatch(/targetId: string;/);
+
+    // The tree converter returned `string | ReactElement`, which ImageResponse rejects.
+    for (const route of ["brand/share/card/[variant]/route.tsx", "opengraph-image.tsx"]) {
+      expect(at(route), route).toContain("ShareCardNode");
+      expect(at(route), route).toMatch(/function toElement\(node: ShareCardNode/);
+    }
+  });
+
+  it("writes no string concatenation, which Biome rejects as useTemplate", () => {
+    const { files, result } = harness(["src/app"]);
+    result();
+    for (const [p, c] of files) {
+      if (!p.endsWith(".tsx") && !p.endsWith(".ts")) continue;
+      expect(c, `${p} concatenates strings instead of interpolating`).not.toMatch(/"[^"\n]*" \+ /);
+    }
+  });
+
+  it("explains every rule it suppresses, so no suppression is a shrug", () => {
+    const { files, result } = harness(["src/app"]);
+    result();
+    for (const [p, c] of files) {
+      for (const line of c.split("\n")) {
+        if (!line.includes("biome-ignore")) continue;
+        expect(line, `${p} suppresses a rule with no reason after the colon`).toMatch(
+          /biome-ignore lint\/[\w/]+: \S+/,
+        );
+      }
+    }
+  });
 });

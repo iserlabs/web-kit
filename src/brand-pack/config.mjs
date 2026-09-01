@@ -2,15 +2,11 @@ import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { SHARE_CARD_IDS } from "./share-cards.mjs";
+import { isUnfilled, UNFILLED } from "./unfilled.mjs";
 
 export const BRAND_PACK_FILENAME = "brand-pack.config.mjs";
 
-/**
- * Written by `brand-pack init` wherever it could not resolve a real value.
- * It is deliberately unmistakable: it must never look like real copy, and the
- * audit fails while any survive.
- */
-export const UNFILLED = "__UNFILLED__";
+export { isUnfilled, UNFILLED };
 
 const EM_DASH = "\u2014";
 
@@ -35,9 +31,6 @@ export function defineBrandPack(config) {
   return config;
 }
 
-const unfilled = (value) =>
-  typeof value !== "string" || value.trim() === "" || value.includes(UNFILLED);
-
 export function validateBrandPackConfig(config) {
   const findings = [];
   const err = (code, message) => findings.push({ severity: "error", code, message });
@@ -53,14 +46,14 @@ export function validateBrandPackConfig(config) {
     const who =
       typeof person?.name === "string" && person.name.trim() ? person.name : `person ${i + 1}`;
     for (const key of PERSON_KEYS) {
-      if (unfilled(person?.[key])) {
+      if (isUnfilled(person?.[key])) {
         err("brand-pack-placeholder", `${who}: "${key}" is unfilled`);
       }
     }
   }
 
   for (const key of TOKEN_KEYS) {
-    if (unfilled(config[key])) {
+    if (isUnfilled(config[key])) {
       err("brand-pack-placeholder", `Brand token "${key}" is unfilled`);
     }
   }

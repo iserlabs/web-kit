@@ -8,11 +8,42 @@
  * child, so every container sets it.
  */
 
+import { isUnfilled } from "./unfilled.mjs";
+
 export const CARD_SIZE = { width: 1200, height: 630 };
 
 const box = (style, children = []) => ({ tag: "div", style, children });
 const span = (style, value) => ({ tag: "div", style, children: [String(value)] });
 const img = (src, alt, style) => ({ tag: "img", src, alt, style, children: [] });
+
+/**
+ * The mark, or a visible unfilled state where it will go.
+ *
+ * An `<img>` whose src is still `__UNFILLED__` does not render as a broken
+ * image here. Satori refuses it outright and the whole build dies on "Image
+ * source must be an absolute URL", which is how a fresh `brand-pack init` took
+ * down the client's very next `next build` before anyone had filled anything
+ * in. A board exists to show what is missing, so a missing mark shows as
+ * missing and the page still renders.
+ */
+const mark = (c, size) =>
+  isUnfilled(c.markUrl)
+    ? span(
+        {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: size,
+          height: size,
+          border: `2px dashed ${c.accent}`,
+          color: c.accent,
+          fontFamily: c.bodyFont,
+          fontSize: Math.round(size / 10),
+          textAlign: "center",
+        },
+        "No mark supplied",
+      )
+    : img(c.markUrl, c.markAlt ?? "", { width: size, height: size });
 
 const base = (c) => ({
   width: CARD_SIZE.width,
@@ -73,7 +104,7 @@ function markRule(c) {
       boxSizing: "border-box",
     },
     [
-      img(c.markUrl, "", { width: 180, height: 180 }),
+      mark(c, 180),
       span({ fontFamily: c.displayFont, fontSize: 62, color: c.ink, paddingTop: 32 }, c.wordmark),
       span({ fontFamily: c.bodyFont, fontSize: 26, color: c.ink, paddingTop: 14 }, c.tagline),
     ],
@@ -111,7 +142,7 @@ function photoMark(c) {
       height: CARD_SIZE.height,
       objectFit: "cover",
     }),
-    img(c.markUrl, "", { width: 220, height: 220 }),
+    mark(c, 220),
   ]);
 }
 
@@ -164,7 +195,7 @@ export function renderShareCard(variantId, config) {
       `Unknown share card variant "${variantId}". Known: ${SHARE_CARD_IDS.join(", ")}`,
     );
   }
-  if (NEEDS_PHOTO.has(variantId) && !config.photoUrl) {
+  if (NEEDS_PHOTO.has(variantId) && isUnfilled(config.photoUrl)) {
     // A photo card with no photograph renders an empty frame, which reads as a
     // broken site rather than a design choice. Fall back, and say which variant
     // was asked for so the board can show why.
