@@ -78,15 +78,17 @@ ${T_CLOSE}`;
 
 function twoColumn(c, p) {
   const right = p.link
-    ? `<td style="padding:0 0 0 18px;vertical-align:middle;border-left:1px solid ${c.brand};">
-    <div style="padding-left:18px;">${link(p.link.href, p.link.label, c.accent, c.bodyFont, 12)}</div>
-  </td>`
+    ? `<td style="padding:0 0 0 20px;vertical-align:middle;border-left:1px solid ${c.brand};white-space:nowrap;">${link(p.link.href, p.link.label, c.accent, c.bodyFont, 12)}</td>`
     : "";
+  // The identity cell needs its own right padding whenever a link column
+  // follows, or the wordmark runs into the divider. Email clients give a
+  // border-left no gutter of its own.
+  const identityPad = p.link ? "0 22px 0 0" : "0";
   return `${T_OPEN}
 <tr><td style="padding:0;">${T_OPEN}
 <tr>
   <td style="padding:0 18px 0 0;vertical-align:middle;">${mark(c, 48)}</td>
-  <td style="padding:0;vertical-align:middle;">${nameBlock(c, p)}</td>
+  <td style="padding:${identityPad};vertical-align:middle;">${nameBlock(c, p)}</td>
   ${right}
 </tr>${T_CLOSE}</td></tr>
 <tr><td style="padding:12px 0 0 0;font-family:${c.bodyFont};font-size:12px;line-height:17px;color:${c.ink};">${contactLine(c, p)}</td></tr>
