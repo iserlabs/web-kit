@@ -1,7 +1,7 @@
 # Brand Pack: email signature and link preview boards
 
 **Date:** 2026-09-01
-**Status:** approved, ready for implementation planning
+**Status:** approved. Implementation plan at `../plans/2026-09-01-brand-pack.md`.
 **Package:** `@iserlabs/web-kit`, new `brand-pack` export plus a CLI subcommand and an audit check
 **Out-of-repo wiring:** `~/.claude/CLAUDE.md` section 7, `~/.claude/commands/perfect.md` step 7, `~/.claude/skills/ship/SKILL.md`, one auto-memory file
 
@@ -136,11 +136,22 @@ not an afterthought.
 ### 5. Module surface
 
 web-kit is consumed as source through a pinned git ref, with no build step and no `dist/`, so
-the file extension decides who can run the code. App-consumed code is `.ts` or `.tsx`, transpiled
-by the consuming Next app. CLI and audit code is `.mjs`, because it runs under bare Node with no
-`tsx` available to consumers. The brand pack splits along that line: the board components,
-variant renderers and config loader are `.tsx` and `.ts`; the `brand-pack init` scaffold and the
-audit check are `.mjs`.
+the file extension decides who can run the code. CLI and audit code is `.mjs`, because it runs
+under bare Node with no `tsx` available to consumers.
+
+Two consequences settled during planning, both of which move work out of this package:
+
+1) **The whole brand pack module is `.mjs`.** The audit check and the CLI have to read the
+   client's config, and bare Node cannot import TypeScript. So the consumer config is
+   `brand-pack.config.mjs`, not `.ts`, exactly as `web-kit.audits.config.mjs` already is. Types
+   reach the consumer through a JSDoc annotation against `types.d.ts`.
+2) **The board components are scaffolded into the client repo, not exported from here.** web-kit
+   carries no React, no `next`, and not one `.tsx` file today, and adding them would change what
+   the package is. So web-kit owns the five signature renderers, the five card renderers, the
+   seven platform frame specs, the config contract, the audit check and the CLI, and
+   `brand-pack init` writes the route shells into the client repo. The five designs still live
+   here, so a design change still reaches every client through a ref bump, and the per-client
+   override becomes editing generated code in your own repo rather than forking the package.
 
 Shipping this therefore means cutting a tag, and a client site picks it up by bumping its pinned
 ref and running `pnpm install`. Nothing reaches an existing site until someone bumps it.
@@ -150,12 +161,11 @@ New export `@iserlabs/web-kit/brand-pack`:
 1) `signatureVariants`: five renderers, each `(config, person) => string` returning email-safe
    HTML.
 2) `shareCardVariants`: five renderers, each `(config) => ReactElement` for `ImageResponse`.
-3) Board components: `<BrandPackIndex />`, `<SignatureBoard />`, `<ShareBoard />`.
-4) Platform chrome components for the seven frames.
-5) `loadBrandPackConfig()`, reading `brand-pack.config.ts` from the consumer repo.
+3) Platform frame specs and variant metadata the scaffolded boards render from.
+5) `loadBrandPackConfig()`, reading `brand-pack.config.mjs` from the consumer repo.
 6) The static TTF font loader for Satori.
 
-Consumer config, `brand-pack.config.ts`, holds every value explicitly: the brand tokens the
+Consumer config, `brand-pack.config.mjs`, holds every value explicitly: the brand tokens the
 boards render with (display face, body face, ink, ground, primary and secondary brand colors,
 hosted mark URL, wordmark, tagline, site URL), the people list, the picked share card variant,
 and an optional `overrides` map. Explicit rather than derived, because a signature has to hold
@@ -169,7 +179,7 @@ the audit check fails on. It guesses nothing.
 
 `web-kit brand-pack init [siteDir]` scaffolds the config file and the three routes, following
 the existing `bin/web-kit.mjs` dispatch pattern (a bare `if (cmd === ...)` block, positional dir,
-exit code 0 or 1). It refuses to overwrite an existing `brand-pack.config.ts`.
+exit code 0 or 1). It refuses to overwrite an existing `brand-pack.config.mjs`.
 
 ### 7. Audit check
 
@@ -181,7 +191,7 @@ and covered by a `brand-pack.test.ts` beside it.
 Codes:
 
 1) `brand-pack-missing`, error: the site has adopted web-kit and is a client site, and has no
-   `brand-pack.config.ts`.
+   `brand-pack.config.mjs`.
 2) `brand-pack-unpicked`, error: a config exists but no share card variant is picked.
 3) `brand-pack-placeholder`, error: a person in the config has an unfilled name, title, phone or
    email. Honest content only, so an unfilled field must fail rather than render an invented one.
@@ -196,7 +206,7 @@ gate crying wolf on day one, and a check that cries wolf gets switched off.
 
 So:
 
-1) Checks 2, 3 and 4 are blocking wherever a `brand-pack.config.ts` exists. A site that has one
+1) Checks 2, 3 and 4 are blocking wherever a `brand-pack.config.mjs` exists. A site that has one
    must have it right.
 2) Check 1 is blocking on every site that has adopted web-kit and is not the template. The code
    has no way to tell a client site from an internal one, and inventing a flag for that would be
@@ -224,7 +234,7 @@ client to look at something, so this rides along rather than adding a stop.
 The site ships with the recommended card already wired as the real `opengraph-image`, so it is
 never live with a bare default during the window when a launch is most likely to be shared. The
 wiring is a re-export: the site's `src/app/opengraph-image.tsx` renders whichever variant
-`brand-pack.config.ts` names in `shareCard`, and `twitter-image.tsx` re-exports that same module
+`brand-pack.config.mjs` names in `shareCard`, and `twitter-image.tsx` re-exports that same module
 so X gets the identical card. The client's pick then changes one word in the config, and the
 board the client approved and the card the world sees cannot drift apart.
 
