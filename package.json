@@ -21,6 +21,10 @@
     "./env": "./src/env/index.ts",
     "./utils": "./src/utils/index.ts",
     "./audits": "./src/audits/index.mjs",
+    "./brand-pack": {
+      "types": "./src/brand-pack/types.d.ts",
+      "default": "./src/brand-pack/index.mjs"
+    },
     "./observability": "./src/observability/index.ts",
     "./observability/env": "./src/observability/env.ts",
     "./observability/server": "./src/observability/server.ts"

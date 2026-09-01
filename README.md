@@ -71,3 +71,27 @@ Configure in `web-kit.audits.config.mjs`:
       // cwv: { thresholds: { lcp: 2500, cls: 0.1 } },
       // routes: ["/"],                // defaults to the required-tier route list
     }
+
+
+## Brand pack
+
+Every new client site and major redesign ships a signature board and a link
+preview board on the client's own domain:
+
+```bash
+pnpm exec web-kit brand-pack init
+```
+
+That writes `brand-pack.config.mjs` plus `/brand`, `/brand/signature` and
+`/brand/share`, and wires the site's `opengraph-image` from the picked card. It
+never overwrites a file that already exists, so re-running fills in only what is
+missing.
+
+Fill in every `__UNFILLED__` in `brand-pack.config.mjs` with the client's real
+tokens and the real details of each named person, then send the client the
+`/brand` link. They pick a letter on each board and you set `signature` and
+`shareCard` in the config.
+
+`web-kit audit --tier required` fails while any value is unfilled or either pick
+is missing. That is deliberate: a board must never render an invented name, job
+title or tagline.
