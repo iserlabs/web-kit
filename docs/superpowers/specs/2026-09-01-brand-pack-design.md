@@ -155,9 +155,15 @@ New export `@iserlabs/web-kit/brand-pack`:
 5) `loadBrandPackConfig()`, reading `brand-pack.config.ts` from the consumer repo.
 6) The static TTF font loader for Satori.
 
-Consumer config, `brand-pack.config.ts`, holds: brand tokens (or a reference to the site's
-existing content config), the people list, the picked share card variant, and an optional
-`overrides` map.
+Consumer config, `brand-pack.config.ts`, holds every value explicitly: the brand tokens the
+boards render with (display face, body face, ink, ground, primary and secondary brand colors,
+hosted mark URL, wordmark, tagline, site URL), the people list, the picked share card variant,
+and an optional `overrides` map. Explicit rather than derived, because a signature has to hold
+still while a site's theme moves.
+
+`brand-pack init` seeds those tokens by reading the site's Tailwind theme and content config
+where it can find them, and writes what it could not resolve as a visibly unfilled value that
+the audit check fails on. It guesses nothing.
 
 ### 6. CLI
 
@@ -192,9 +198,11 @@ So:
 
 1) Checks 2, 3 and 4 are blocking wherever a `brand-pack.config.ts` exists. A site that has one
    must have it right.
-2) Check 1 is blocking on client sites, with a per-repo opt-out that must carry a written reason
-   and a date, declared in `package.json` under the existing `web-kit` field the doctor already
-   reads:
+2) Check 1 is blocking on every site that has adopted web-kit and is not the template. The code
+   has no way to tell a client site from an internal one, and inventing a flag for that would be
+   a second thing to forget, so internal surfaces declare the same reasoned opt-out that a
+   not-yet-backfilled client site does. The opt-out must carry a written reason and a date, and
+   is declared in `package.json` under the existing `web-kit` field the doctor already reads:
 
    ```json
    "web-kit": { "brandPack": { "skip": true, "reason": "...", "date": "2026-09-01" } }
@@ -215,7 +223,10 @@ client to look at something, so this rides along rather than adding a stop.
 
 The site ships with the recommended card already wired as the real `opengraph-image`, so it is
 never live with a bare default during the window when a launch is most likely to be shared. The
-client's pick then changes one word in the config.
+wiring is a re-export: the site's `src/app/opengraph-image.tsx` renders whichever variant
+`brand-pack.config.ts` names in `shareCard`, and `twitter-image.tsx` re-exports that same module
+so X gets the identical card. The client's pick then changes one word in the config, and the
+board the client approved and the card the world sees cannot drift apart.
 
 ## Trigger scope
 
