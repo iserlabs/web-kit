@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { checkBrandPack } from "./checks/brand-pack.mjs";
 import { checkContrast } from "./checks/contrast.mjs";
 import { loadAuditConfig } from "./config.mjs";
 import { crawlRoutes } from "./crawl.mjs";
@@ -36,7 +37,12 @@ export async function runRequiredAudit(siteDir) {
         if (override !== "off") findings.push(override ? { ...f, severity: override } : f);
       }
     } catch {
-      // no css file configured/found — skip contrast, not fatal
+      // no css file configured/found, so skip contrast. Not fatal.
+    }
+
+    for (const f of await checkBrandPack(siteDir)) {
+      const override = config.severity[f.code];
+      if (override !== "off") findings.push(override ? { ...f, severity: override } : f);
     }
 
     return findings;

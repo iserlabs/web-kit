@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- **`@iserlabs/web-kit/brand-pack`** new export, plus `web-kit brand-pack init` and a blocking audit check. Every new client site and major redesign now ships two boards on the client's own domain at `/brand`: five email signature designs, each with a one-click copy that puts real rich HTML on the clipboard, and five link preview cards shown inside accurate iMessage, WhatsApp, Slack, LinkedIn, X, Facebook and Google frames. Codifies work previously hand-built per client (Sun Mountain, Streamlined, PLFA, jakejjlee). The five variant renderers and the seven platform frame specs live in the kit, so a design change reaches every client through a ref bump; `init` scaffolds the route shells into the client repo, so a per-client override is an ordinary edit rather than a fork. The kit stays React-free: cards are serializable trees the consumer converts with `createElement`.
+- **Audits (required tier):** new codes `brand-pack-missing`, `brand-pack-unpicked`, `brand-pack-placeholder`, `brand-pack-routes-missing`, `brand-pack-invalid`, `brand-pack-no-people`, `brand-pack-em-dash`, `brand-pack-skip-unreasoned`. **This is blocking for every adopted site that is not the template.** A site not ready to backfill declares a dated opt-out, which must carry both a reason and a date:
+  ```json
+  "web-kit": { "brandPack": { "skip": true, "reason": "...", "date": "2026-09-01" } }
+  ```
+  A bare `skip: true` is itself an error, because that is how a gate quietly stops meaning anything.
 - **`@iserlabs/web-kit/proof`** — new export: `OPERATING_RECORD`, the founder's owner-attested career totals as the single canonical proof dataset shared verbatim by every Xenia Network site's "Operating Record" proof strip (`OperatingRecord`/`OperatingRecordStat` types). Pure data; strict-canonical — kills the prior per-site drift (237/240 STRs, 16,100+/16,500+/16,000+/14,000+ reservations, 500+/600+ claims). Sites that can't yet bump the pinned ref keep a verbatim `src/content/operating-record.ts` port + invariant test as the drift guard.
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 

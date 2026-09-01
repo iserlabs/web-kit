@@ -23,7 +23,7 @@ or commit SHA in their `package.json` (`github:iserlabs/web-kit#<ref>`).
 ## Exports
 
 `@iserlabs/web-kit/{biome, tsconfig, tsconfig-next, tailwind, seo, schema, forms,
-env, utils, audits, observability, observability/env, observability/server}`. Notes:
+env, utils, audits, brand-pack, observability, observability/env, observability/server}`. Notes:
 - `tsconfig` is **lib-oriented** (ES2022 / `noUncheckedIndexedAccess` /
   `verbatimModuleSyntax`) and breaks Next apps — Next sites extend
   `tsconfig-next` instead (the Next-safe preset).
@@ -40,6 +40,10 @@ The `web-kit` bin (used by consumers as `pnpm wk:doctor` / `wk:audit`):
   present. Has a template-skip so the starter passes its own identity check.
 - `web-kit audit --tier required` — SEO, schema/JSON-LD, canonical, contrast,
   a11y, bundle. The merge-gate tier.
+- `web-kit brand-pack init` scaffolds the `/brand` signature and link preview
+  boards into a client site. Required on every new client build and major
+  redesign; `audit --tier required` fails an adopted site without one, unless
+  its `package.json` carries a dated `web-kit.brandPack.skip` with a reason.
 - `web-kit audit --tier extended` — Lighthouse (perf/SEO/BP/a11y + CWV) + axe
   (WCAG), advisory `warn` by default. Browser deps (`lighthouse`,
   `chrome-launcher`, `@axe-core/playwright`, `playwright`) install on demand so
@@ -54,6 +58,12 @@ The `web-kit` bin (used by consumers as `pnpm wk:doctor` / `wk:audit`):
 - Token-contract retrofits clobber a branded site's `@theme` overrides — new
   sites get the contract via the starter; already-branded clones keep their
   brand (adopt biome/audits/doctor only).
+- `brand-pack` is `.mjs`, not `.ts`: the audit check and the CLI read the
+  client's `brand-pack.config.mjs` under bare Node, which cannot import
+  TypeScript. The scaffolded config imports nothing at all (its type comes from
+  a JSDoc annotation) so the gate still works in a repo with a broken install.
+  The kit carries no React: cards are serializable trees the consumer turns into
+  elements with `createElement`.
 - Audits assume real canonical origins: `parseSitemap` uses `URL.pathname`;
   preview teardown SIGKILLs the process group.
 
