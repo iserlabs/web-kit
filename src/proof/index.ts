@@ -46,12 +46,12 @@ export const OPERATING_RECORD: OperatingRecord = {
   stamp: "Attested · as of 2026",
   stats: [
     { value: "273+", label: "STRs operated" },
-    { value: "120", label: "listings launched" },
+    { value: "120+", label: "listings launched" },
     { value: "16,900+", label: "reservations facilitated" },
     { value: "$94.5M+", label: "real estate stewarded" },
-    { value: "78", label: "clients served" },
-    { value: "28", label: "markets · 8 states" },
-    { value: "9", label: "hospitality companies built" },
+    { value: "78+", label: "clients served" },
+    { value: "28+", label: "markets · 8 states" },
+    { value: "9+", label: "hospitality companies built" },
     { value: "670+", label: "claims filed" },
   ],
 } as const;
