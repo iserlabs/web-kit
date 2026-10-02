@@ -35,6 +35,8 @@ assert "preview kept when KEEP_PREVIEWS=1"   1 "$(make_repo src/page.tsx)" VERCE
 assert "FORCE_BUILD overrides no-op skip"    1 "$(make_repo CLAUDE.md)"    VERCEL_ENV=production FORCE_BUILD=1
 assert "doc-only prod change is skipped"     0 "$(make_repo CLAUDE.md)"    VERCEL_ENV=production
 assert "docs/ change is skipped"             0 "$(make_repo docs/x.md)"    VERCEL_ENV=production
+assert "agent config (.claude/) is skipped"   0 "$(make_repo .claude/rules/x.md)" VERCEL_ENV=production
+assert "agent skills (.agents/) are skipped"  0 "$(make_repo .agents/skills/x/SKILL.md)" VERCEL_ENV=production
 assert "real source change builds"           1 "$(make_repo src/page.tsx)" VERCEL_ENV=production
 assert "content .md change builds"           1 "$(make_repo src/content/post.md)" VERCEL_ENV=production
 assert "no parent commit builds (failsafe)"  1 "$(make_repo x --no-parent)" VERCEL_ENV=production
