@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **`brand-pack` scaffold a11y/perf polish** (affects newly scaffolded boards only; existing client files are theirs). `CopyButton` mirrors its outcome into a visually hidden `role="status"` region so screen readers hear "Copied"; the share board lazy-loads every preview below the first variant (35 images on one page); the board page uses `100dvh` instead of `100vh`; board headings use `text-wrap: balance`.
 - **Token contract declares `color-scheme`.** `:root` now carries `color-scheme: light` and `.dark` carries `color-scheme: dark`, so scrollbars, form controls and the page canvas match whichever palette is active instead of staying light under a dark palette. Deliberately not `light dark`: the contract's tokens only flip via the `.dark` class, so following the OS preference at the root would put dark native controls on a light palette. No token values changed; a site that already sets `color-scheme` (e.g. next-themes' inline style) keeps winning.
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
