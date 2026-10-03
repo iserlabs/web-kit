@@ -1,6 +1,13 @@
 /* @iserlabs/web-kit token contract.
    Import AFTER `@import "tailwindcss";` and `@import "shadcn/tailwind.css";`.
-   Override the :root / .dark values in your own globals.css for brand. */
+   Override the :root / .dark values in your own globals.css for brand.
+
+   `color-scheme` tracks whichever palette is active (light on :root, dark under
+   `.dark`) so native UI (scrollbars, form controls, the canvas behind the page)
+   matches the tokens. It deliberately is NOT `light dark`: these tokens only flip
+   via the `.dark` class, so following the OS preference here would put dark
+   controls on a light palette. A site that wants to follow the system setting
+   should apply `.dark` from `prefers-color-scheme` (e.g. next-themes `enableSystem`). */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -49,6 +56,7 @@
 }
 
 :root {
+  color-scheme: light;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -84,6 +92,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **Token contract declares `color-scheme`.** `:root` now carries `color-scheme: light` and `.dark` carries `color-scheme: dark`, so scrollbars, form controls and the page canvas match whichever palette is active instead of staying light under a dark palette. Deliberately not `light dark`: the contract's tokens only flip via the `.dark` class, so following the OS preference at the root would put dark native controls on a light palette. No token values changed; a site that already sets `color-scheme` (e.g. next-themes' inline style) keeps winning.
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
 ## 0.9.1
