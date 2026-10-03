@@ -100,7 +100,8 @@ type Style = (c: BrandPackConfig) => CSSProperties;
 export const page: Style = (c) => ({
   backgroundColor: c.ground,
   color: c.ink,
-  minHeight: "100vh",
+  // dvh, not vh: tracks the mobile browser UI so the ground never falls short.
+  minHeight: "100dvh",
   padding: "72px 32px 120px",
   fontFamily: c.bodyFont,
 });
@@ -113,6 +114,7 @@ export const h1: Style = (c) => ({
   lineHeight: 1.05,
   fontWeight: 500,
   margin: "0 0 20px",
+  textWrap: "balance",
 });
 
 export const lede: Style = (c) => ({
@@ -162,6 +164,7 @@ export const optionTitle: Style = (c) => ({
   fontFamily: c.displayFont,
   fontSize: "1.5rem",
   fontWeight: 500,
+  textWrap: "balance",
 });
 
 export const optionNote: Style = (c) => ({
@@ -202,12 +205,26 @@ export const unfilled: Style = (c) => ({
 
 export const copyButton = () => `"use client";
 
-import { useState } from "react";
+import { type CSSProperties, useState } from "react";
+
+const visuallyHidden: CSSProperties = {
+  position: "absolute",
+  width: 1,
+  height: 1,
+  margin: -1,
+  padding: 0,
+  border: 0,
+  overflow: "hidden",
+  clip: "rect(0 0 0 0)",
+  whiteSpace: "nowrap",
+};
 
 /**
  * Puts real rich HTML on the clipboard, so a paste into Gmail or Outlook lands
  * formatted rather than as source. Where the Clipboard API is missing, it falls
- * back to selecting the rendered block so a manual copy still works.
+ * back to selecting the rendered block so a manual copy still works. The outcome
+ * is mirrored into a visually hidden status region, because a screen reader does
+ * not reliably announce a change to the label of the button it is focused on.
  */
 export default function CopyButton({
   html,
@@ -261,24 +278,29 @@ export default function CopyButton({
   }[state];
 
   return (
-    <button
-      type="button"
-      onClick={copy}
-      style={{
-        fontFamily: font,
-        fontSize: "0.85rem",
-        letterSpacing: "0.04em",
-        padding: "11px 18px",
-        minHeight: 44,
-        marginTop: 16,
-        cursor: "pointer",
-        color: accent,
-        background: "transparent",
-        border: \`1px solid \${accent}\`,
-      }}
-    >
-      {label}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={copy}
+        style={{
+          fontFamily: font,
+          fontSize: "0.85rem",
+          letterSpacing: "0.04em",
+          padding: "11px 18px",
+          minHeight: 44,
+          marginTop: 16,
+          cursor: "pointer",
+          color: accent,
+          background: "transparent",
+          border: \`1px solid \${accent}\`,
+        }}
+      >
+        {label}
+      </button>
+      <span role="status" style={visuallyHidden}>
+        {state === "idle" ? "" : label}
+      </span>
+    </>
   );
 }
 `;
@@ -427,6 +449,8 @@ export default function ShareBoard() {
                       platform's own pixel size and must not be resized by the optimizer. */}
                   <img
                     src={\`/brand/share/card/\${variant.id}\`}
+                    // Seven crops per variant: only the first row is near the fold.
+                    loading={i === 0 ? undefined : "lazy"}
                     alt={\`\${variant.label} as it appears on \${platform.label}\`}
                     width={platform.cardWidth}
                     height={platform.cardHeight}
