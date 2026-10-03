@@ -1,10 +1,13 @@
 # Changelog
 
 ## Unreleased
+- landstar donor-parity (replacing its general scripts with the kit): still pending.
+
+## 0.9.2
 - **Biome preset: `a11y/noRedundantRoles` is now off.** Safari/VoiceOver drops list semantics from a `<ul>`/`<ol>` outside `<nav>` once `list-style: none` or `display: flex|grid` removes its markers, and `role="list"` is the documented way to restore them (Modern Web Guidance, `accessibility` guide). The rule has no options and its fix is automatic, so it flagged that attribute as an error and `biome check --write` silently deleted it, leaving no way to ship the fix without a per-list suppression comment across roughly 380 styled lists. What the rule still caught (`<nav role="navigation">` and the like) is redundant but harmless; losing the list fix is not. Sites pick this up on their next web-kit ref bump; sites with their own standalone `biome.json` need the same one-line setting.
 - **`brand-pack` scaffold a11y/perf polish** (affects newly scaffolded boards only; existing client files are theirs). `CopyButton` mirrors its outcome into a visually hidden `role="status"` region so screen readers hear "Copied"; the share board lazy-loads every preview below the first variant (35 images on one page); the board page uses `100dvh` instead of `100vh`; board headings use `text-wrap: balance`.
 - **Token contract declares `color-scheme: dark` under `.dark`**, so scrollbars, form controls and the page canvas go dark with the dark palette instead of staying light. `:root` deliberately declares nothing: an author `color-scheme` on the root would override a site's `<meta name="color-scheme">` / Next `viewport.colorScheme` (xenia-network's dark :root palette relies on that), and `light dark` would put dark controls on the light palette since the tokens only flip via `.dark`. No token values changed; a site that already sets `color-scheme` later in the cascade or inline (next-themes) keeps winning.
-- landstar donor-parity (replacing its general scripts with the kit): still pending.
+- Dependency maintenance since 0.9.1: non-major group, node-html-parser 9 (runtime), TypeScript 7 (dev), and security overrides for esbuild/vite/qs.
 
 ## 0.9.1
 - **`brand-pack` scaffold now lands green in a strict repo.** Running `brand-pack init` in the starter put 14 TypeScript errors and 9 Biome errors into the tree before anyone had written a line: `types.d.ts` declared five of the module's fifteen exports, so `PLATFORMS`, `SHARE_CARD_VARIANTS`, `SIGNATURE_VARIANTS`, `renderSignature`, `renderShareCard`, `CARD_SIZE` and the id lists all resolved to nothing; the emitted `styles.ts`, `CopyButton.tsx` and card route shipped untyped parameters; and the emitted TSX concatenated strings and suppressed two rules in a form Biome ignores. The declarations are now complete (`BrandPackVariant`, `BrandPackPlatform`, `ShareCardNode` added), and every emitted file is the exact text a strict-mode, Biome-checked repo accepts.
