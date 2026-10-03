@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **Biome preset: `a11y/noRedundantRoles` is now off.** Safari/VoiceOver drops list semantics from a `<ul>`/`<ol>` outside `<nav>` once `list-style: none` or `display: flex|grid` removes its markers, and `role="list"` is the documented way to restore them (Modern Web Guidance, `accessibility` guide). The rule has no options and its fix is automatic, so it flagged that attribute as an error and `biome check --write` silently deleted it, leaving no way to ship the fix without a per-list suppression comment across roughly 380 styled lists. What the rule still caught (`<nav role="navigation">` and the like) is redundant but harmless; losing the list fix is not. Sites pick this up on their next web-kit ref bump; sites with their own standalone `biome.json` need the same one-line setting.
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
 ## 0.9.1

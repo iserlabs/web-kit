@@ -8,6 +8,7 @@
     "enabled": true,
     "rules": {
       "preset": "recommended",
+      "a11y": { "noRedundantRoles": "off" },
       "correctness": { "noUnusedVariables": "error", "noUnusedImports": "error" },
       "style": { "useConst": "error", "useTemplate": "error" }
     }
