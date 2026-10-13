@@ -112,7 +112,10 @@ fi
 # when the last good read was. Zeroing last_good to force a run (the first version) made any forced
 # run that then failed read as 30 hours stale, so the watchdog went red on a single hiccup.
 if [ "${SYNC_HARNESS_FORCE:-0}" != 1 ]; then
-[ $((now - last_good)) -lt "$DUE" ] && verdict
+# A failure retries on its own timer (next_try) even inside the daily window; only a clean slate
+# waits for the day to come round. (2026-10-13: a forced run failed at 1:52 PM and, with the due
+# check first, would not have retried until the evening slot.)
+[ "${fails:-0}" -eq 0 ] && [ $((now - last_good)) -lt "$DUE" ] && verdict
 [ "$now" -lt "${next_try:-0}" ] && verdict
 if [ -n "$fail_head" ]; then
   head=$(harness_code_head)
