@@ -1,0 +1,15 @@
+# exit: 1
+# the profile page held no works: Cloudflare check
+# from plfa-sync.log lines 38331-38387 (home path masked, runner lines and per-artist detail removed)
+2026-10-12 17:30:44  start
+2026-10-12 17:30:44  python: /opt/homebrew/bin/python3.12 (Python 3.12.13)
+2026-10-12 17:30:44  safari python: /opt/homebrew/bin/python3.12 (Python 3.12.13)
+2026-10-12 17:30:44  vercel: /Users/me/.nvm/versions/node/v24.17.0/bin/vercel
+2026-10-12 17:30:44  fetching
+2026-10-12 17:30:45  fetched
+2026-10-12 17:30:45  reading artist collections from the archive
+2026-10-12 17:31:35  artist collections refreshed
+2026-10-12 17:31:35  harvesting
+    raise RuntimeError(
+RuntimeError: the first page of https://www.artworkarchive.com/profile/perry-lawson-fine-art held no works after 120 seconds. That is the archive's browser check or its sign-in page, not an empty gallery, so nothing was read. Open the address in Safari and run again.
+2026-10-12 17:33:42  FAILED (exit 1). The site was not changed.

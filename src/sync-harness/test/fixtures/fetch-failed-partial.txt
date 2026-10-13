@@ -1,0 +1,20 @@
+# exit: 0
+# GitHub fetch failed, worked from disk, nothing to publish
+# from plfa-sync.log lines 38641-38704 (home path masked, runner lines and per-artist detail removed)
+2026-10-12 19:19:04  start
+2026-10-12 19:19:04  python: /opt/homebrew/bin/python3.12 (Python 3.12.13)
+2026-10-12 19:19:04  safari python: /usr/bin/python3 (Python 3.9.6)
+2026-10-12 19:19:04  vercel: /Users/me/.nvm/versions/node/v24.17.0/bin/vercel
+2026-10-12 19:19:04  fetching
+2026-10-12 19:19:35  note: fetch failed, working from what is on disk
+2026-10-12 19:19:35  fetched
+2026-10-12 19:19:35  reading artist collections from the archive
+2026-10-12 19:20:25  artist collections refreshed
+2026-10-12 19:20:25  harvesting
+151 works published, 7 sold, 118 with a public price, 57 artists
+2026-10-12 19:20:37  reading show membership from the archive
+2026-10-12 19:20:50  rebuilding the show checklists
+2026-10-12 19:20:50  no change across 151 works
+2026-10-12 19:20:52  nothing moved on the archive, so nothing to publish
+checked in: nothing moved, and the site is level with the archive.
+2026-10-12 19:20:52  checked in, so the health screen knows this run happened

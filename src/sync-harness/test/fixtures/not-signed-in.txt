@@ -1,0 +1,31 @@
+# exit: 0
+# NOT SIGNED IN partial: sales published, the lists did not refresh
+# from plfa-sync.log lines 37906-38330 (home path masked, runner lines and per-artist detail removed)
+2026-10-12 15:11:15  start
+2026-10-12 15:11:15  python: /opt/homebrew/bin/python3.12 (Python 3.12.13)
+2026-10-12 15:11:16  safari python: /usr/bin/python3 (Python 3.9.6)
+2026-10-12 15:11:16  vercel: /Users/me/.nvm/versions/node/v24.17.0/bin/vercel
+2026-10-12 15:11:16  fetching
+2026-10-12 15:11:17  fetched
+2026-10-12 15:11:17  reading artist collections from the archive
+    raise RuntimeError("Safari did not render %s" % url)
+RuntimeError: Safari did not render https://www.artworkarchive.com/pieces/collections
+2026-10-12 15:11:58  NOT SIGNED IN to the archive, or a collection did not render, so who has work
+2026-10-12 15:11:58          available was not refreshed. Using the collections on disk.
+2026-10-12 15:11:58  harvesting
+151 works published, 7 sold, 118 with a public price, 57 artists
+2026-10-12 15:12:11  reading show membership from the archive
+    raise RuntimeError("Safari did not render %s" % url)
+RuntimeError: Safari did not render https://www.artworkarchive.com/exhibitions
+2026-10-12 15:12:54  NOT SIGNED IN to the archive, so membership was not refreshed. Using the list on disk.
+2026-10-12 15:12:54  rebuilding the show checklists
+2026-10-12 15:12:55  1 change across 151 works
+2026-10-12 15:12:58  moved:  M plfa/_gen/aa-exhibitions.json  M plfa/_gen/aa.json
+2026-10-12 15:12:58  bringing over any new images
+2026-10-12 15:12:58  regenerating
+2026-10-12 15:13:03  proving it
+673 passed, 1 skipped, 1 warning in 31.97s
+2026-10-12 15:13:38  committing
+2026-10-12 15:13:41  deploying
+2026-10-12 15:14:20  checking the live site
+2026-10-12 15:14:21  done. 1 change across 151 works
