@@ -35,8 +35,9 @@ env, utils, audits, brand-pack, artist, observability, observability/env, observ
 - `artist` is the artist-site module (artwork record, availability, CV, studio
   auth, studio store, studio route handlers), first used by julianpotulicki.com.
   Framework-free `.ts`: handlers take a Web `Request` and return a `Response`, and
-  the visible pages stay in each site. A site switches it on with
-  `"web-kit": { "artist": { "enabled": true } }` in its `package.json`.
+  the visible pages stay in each site. The `"web-kit": { "artist": { "enabled": true } }`
+  flag is reserved for phase-2 tooling (`web-kit artist init`, an audit check); nothing
+  reads it yet and the export works without it.
 
 ## CLI
 

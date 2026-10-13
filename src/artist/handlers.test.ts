@@ -333,3 +333,79 @@ describe("workHandler", () => {
     expect(data["waterscape-01"]).toEqual({ title: "Saved" });
   });
 });
+
+describe("workHandler onError", () => {
+  const putReq = async () =>
+    request("PUT", "/api/studio/work", {
+      cookie: await cookieFor("artist"),
+      body: JSON.stringify({ slug: "waterscape-01", title: "Alcyone" }),
+    });
+  const getReq = async () =>
+    request("GET", "/api/studio/work", { cookie: await cookieFor("artist") });
+  const delReq = async () =>
+    request("DELETE", "/api/studio/work?slug=waterscape-01", {
+      cookie: await cookieFor("operator"),
+    });
+
+  it("is called once with the error and the method (and slug) on each store failure", async () => {
+    const boom = new Error("network down");
+    const calls: { error: unknown; context: unknown }[] = [];
+    const onError = (error: unknown, context: unknown) => calls.push({ error, context });
+    const { store } = memoryStore();
+    store.readOverlays = async () => {
+      throw boom;
+    };
+    store.writeOverlay = async () => {
+      throw boom;
+    };
+    store.clearOverlay = async () => {
+      throw boom;
+    };
+    const handler = workHandler({ auth, store, catalog, onError });
+    expect((await handler.GET(await getReq())).status).toBe(503);
+    expect((await handler.PUT(await putReq())).status).toBe(503);
+    expect((await handler.DELETE(await delReq())).status).toBe(503);
+    expect(calls).toEqual([
+      { error: boom, context: { method: "GET" } },
+      { error: boom, context: { method: "PUT", slug: "waterscape-01" } },
+      { error: boom, context: { method: "DELETE", slug: "waterscape-01" } },
+    ]);
+  });
+
+  it("is not called when the store answers", async () => {
+    const calls: unknown[] = [];
+    const { store } = memoryStore();
+    const handler = workHandler({ auth, store, catalog, onError: (e) => calls.push(e) });
+    expect((await handler.GET(await getReq())).status).toBe(200);
+    expect((await handler.PUT(await putReq())).status).toBe(200);
+    expect((await handler.DELETE(await delReq())).status).toBe(200);
+    expect(calls).toEqual([]);
+  });
+
+  it("does not change the 503 answer when onError itself throws", async () => {
+    const { store } = memoryStore();
+    store.readOverlays = async () => {
+      throw new Error("network down");
+    };
+    store.writeOverlay = async () => {
+      throw new Error("network down");
+    };
+    store.clearOverlay = async () => {
+      throw new Error("network down");
+    };
+    const handler = workHandler({
+      auth,
+      store,
+      catalog,
+      onError: () => {
+        throw new Error("reporter down");
+      },
+    });
+    for (const req of [await getReq(), await putReq(), await delReq()]) {
+      const method = req.method;
+      const res = await handler[method as "GET" | "PUT" | "DELETE"](req);
+      expect(res.status, method).toBe(503);
+      expect(await res.json()).toEqual({ error: "The store did not accept that." });
+    }
+  });
+});

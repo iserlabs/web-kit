@@ -32,17 +32,24 @@ export type ArtworkOverlay = Partial<
 
 /** The one list of allowed values. cleanOverlay (a submitted form) and
     sanitizeStoredOverlay (what was stored) both read these, so they cannot drift. */
-export const AVAILABILITY = new Set<Availability>([
+export const AVAILABILITY: ReadonlySet<Availability> = new Set<Availability>([
   "available",
   "sold",
   "reserved",
   "not-for-sale",
 ]);
-export const LIFECYCLE = new Set<Lifecycle>(["current", "earlier", "archived"]);
-export const PUBLISH = new Set<PublishState>(["published", "draft"]);
-export const UNITS = new Set<Unit>(["in", "cm"]);
+export const LIFECYCLE: ReadonlySet<Lifecycle> = new Set<Lifecycle>([
+  "current",
+  "earlier",
+  "archived",
+]);
+export const PUBLISH: ReadonlySet<PublishState> = new Set<PublishState>(["published", "draft"]);
+export const UNITS: ReadonlySet<Unit> = new Set<Unit>(["in", "cm"]);
 type PriceVisibility = NonNullable<Artwork["price"]>["visibility"];
-export const PRICE_VISIBILITY = new Set<PriceVisibility>(["public", "on-request"]);
+export const PRICE_VISIBILITY: ReadonlySet<PriceVisibility> = new Set<PriceVisibility>([
+  "public",
+  "on-request",
+]);
 export const PRICE_CURRENCY = "USD";
 
 function num(v: unknown): number | undefined {
@@ -130,7 +137,7 @@ const posNum = (v: unknown): v is number => typeof v === "number" && Number.isFi
 const isStr = (v: unknown): v is string => typeof v === "string";
 const isObj = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
-const isIn = <T>(set: Set<T>, v: unknown): v is T => set.has(v as T);
+const isIn = <T>(set: ReadonlySet<T>, v: unknown): v is T => set.has(v as T);
 
 /**
  * Whatever is stored may be wrongly shaped (hand-edited, an older version, another

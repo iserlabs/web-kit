@@ -34,6 +34,14 @@ export interface WorkHandlerOptions<R extends string = string> {
   catalog: StudioCatalog;
   /** The longest request body accepted, in characters. Default 8000. */
   maxBodyLength?: number;
+  /** Called with the error whenever the store fails, just before the 503 answer, so a
+      site can report it (Sentry, a log). A throwing onError never changes the answer. */
+  onError?: (error: unknown, context: WorkErrorContext) => void;
+}
+
+export interface WorkErrorContext {
+  method: "GET" | "PUT" | "DELETE";
+  slug?: string;
 }
 
 export interface WorkHandler {
@@ -106,13 +114,23 @@ export function workHandler<R extends string>({
   store,
   catalog,
   maxBodyLength = 8000,
+  onError,
 }: WorkHandlerOptions<R>): WorkHandler {
+  function report(error: unknown, context: WorkErrorContext): void {
+    try {
+      onError?.(error, context);
+    } catch {
+      // A broken reporter must not turn a clean 503 into an unhandled error.
+    }
+  }
+
   async function GET(request: Request): Promise<Response> {
     if (!(await auth.roleFrom(request))) return locked();
     if (!store.configured()) return json({ configured: false, overlays: {} });
     try {
       return json({ configured: true, overlays: (await store.readOverlays(true)) ?? {} });
-    } catch {
+    } catch (error) {
+      report(error, { method: "GET" });
       return refused();
     }
   }
@@ -146,7 +164,8 @@ export function workHandler<R extends string>({
     try {
       const ok = await store.writeOverlay(slug, cleanOverlay(body), who);
       return ok ? json({ ok: true }) : refused();
-    } catch {
+    } catch (error) {
+      report(error, { method: "PUT", slug });
       return refused();
     }
   }
@@ -165,7 +184,8 @@ export function workHandler<R extends string>({
     try {
       const ok = await store.clearOverlay(slug);
       return ok ? json({ ok: true }) : refused();
-    } catch {
+    } catch (error) {
+      report(error, { method: "DELETE", slug });
       return refused();
     }
   }

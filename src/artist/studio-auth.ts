@@ -141,6 +141,12 @@ export function createStudioAuth<const R extends string>(
     }
   }
 
+  const ids = new Set<string>();
+  for (const r of roles) {
+    if (ids.has(r.id)) throw new Error(`createStudioAuth: duplicate role id "${r.id}"`);
+    ids.add(r.id);
+  }
+
   const env = (name: string): string | undefined => process.env[name];
   const isRole = (value: string): value is R => roles.some((r) => r.id === value);
 

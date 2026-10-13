@@ -122,5 +122,10 @@ lines:
     export const PUT = work.PUT;
     export const DELETE = work.DELETE;
 
-Switch it on in the site's `package.json` with
-`"web-kit": { "artist": { "enabled": true } }`.
+The `"web-kit": { "artist": { "enabled": true } }` flag in `package.json` is
+reserved for phase-2 tooling (`web-kit artist init` and an audit check). Nothing
+reads it yet, and the export works without it.
+
+`workHandler` also takes an optional `onError(error, { method, slug })`, called
+whenever the store fails, just before the 503 answer, so a site can report it
+(for example to Sentry). A throwing `onError` never changes the answer.

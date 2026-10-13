@@ -127,6 +127,16 @@ describe("configuration", () => {
         roles: [{ id: "a.b", passphraseEnv: PASS_ARTIST }],
       }),
     ).toThrow(/role id/);
+    expect(() =>
+      createStudioAuth({
+        cookieName: "ok",
+        secretEnv: SECRET,
+        roles: [
+          { id: "a", passphraseEnv: PASS_ARTIST },
+          { id: "a", passphraseEnv: PASS_ARTIST },
+        ],
+      }),
+    ).toThrow(/duplicate role/);
     expect(() => createStudioAuth({ cookieName: "ok", secretEnv: SECRET, roles: [] })).toThrow(
       /at least one role/,
     );
