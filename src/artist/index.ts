@@ -3,4 +3,6 @@
  * same on every artist's site. Framework-free `.ts`: no React, no Next imports, and
  * every server handler takes a Web Request and returns a Response.
  */
+export * from "./availability";
+export * from "./cv";
 export * from "./record";
