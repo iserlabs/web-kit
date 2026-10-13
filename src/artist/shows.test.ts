@@ -466,6 +466,7 @@ describe("showJsonLd: the exhibition, for search engines", () => {
       url: "https://artist.example.test/shows/test-show",
       startDate: "2026-11-07",
       endDate: "2026-12-05",
+      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
       location: {
         "@type": "Place",
         name: "Test Gallery",
@@ -517,5 +518,37 @@ describe("showJsonLd: the exhibition, for search engines", () => {
         url: "https://artist.example.test/works/waterscape-01",
       },
     ]);
+  });
+});
+
+describe("showJsonLd: what else a show can state honestly", () => {
+  const site = { url: "https://artist.example.test/" };
+
+  it("names the artist as performer and carries each work's image when the site gives them", () => {
+    const ld = showJsonLd(show({ workSlugs: ["waterscape-01", "floral-01"] }), {
+      ...site,
+      artist: { name: "Test Artist", id: "https://artist.example.test/#person" },
+      workImage: (slug) => `/board/${slug}-1280.jpg`,
+    });
+    expect(ld.performer).toEqual({
+      "@type": "Person",
+      "@id": "https://artist.example.test/#person",
+      name: "Test Artist",
+    });
+    expect(ld.image).toEqual([
+      "https://artist.example.test/board/waterscape-01-1280.jpg",
+      "https://artist.example.test/board/floral-01-1280.jpg",
+    ]);
+  });
+
+  it("claims no performer, image or event status it was not given", () => {
+    const ld = showJsonLd(show({ workSlugs: [] }), {
+      ...site,
+      workImage: (slug) => `/board/${slug}.jpg`,
+    });
+    expect(ld).not.toHaveProperty("performer");
+    expect(ld).not.toHaveProperty("image");
+    expect(ld).not.toHaveProperty("eventStatus");
+    expect(ld.eventAttendanceMode).toBe("https://schema.org/OfflineEventAttendanceMode");
   });
 });

@@ -408,6 +408,12 @@ export interface ShowSite {
   workPath?: (slug: string) => string;
   /** Path of a show's page. Default `/shows/<slug>`. */
   showPath?: (slug: string) => string;
+  /** The artist the show presents, printed as the event's performer. `id` is the @id
+      the site's own Person carries, so search engines join the two. */
+  artist?: { name: string; id?: string };
+  /** Path of an image of each work, e.g. `/board/<slug>-1280.jpg`, so the show carries
+      the pictures of what hangs in it. */
+  workImage?: (slug: string) => string;
 }
 
 /**
@@ -415,12 +421,20 @@ export interface ShowSite {
  * dates and the works hanging in it. Each work is referenced by the same @id its own
  * page gives its VisualArtwork, so search engines join the two. An absent fact
  * prints nothing.
+ *
+ * A show always hangs in a room (venue and city are required facts), so it is always
+ * in person. No eventStatus is stated: the site cannot know a show went ahead as
+ * planned, and a canceled show is deleted rather than marked.
+ *
+ * Pass only a published show, with only the works its page actually shows.
  */
 export function showJsonLd(show: Show, site: ShowSite): Record<string, unknown> {
   const origin = site.url.replace(/\/+$/, "");
   const workPath = site.workPath ?? ((slug: string) => `/work/${slug}`);
   const showPath = site.showPath ?? ((slug: string) => `/shows/${slug}`);
+  const workImage = site.workImage;
   const page = `${origin}${showPath(show.slug)}`;
+  const images = workImage ? show.workSlugs.map((slug) => `${origin}${workImage(slug)}`) : [];
   return {
     "@context": "https://schema.org",
     "@type": "ExhibitionEvent",
@@ -429,6 +443,7 @@ export function showJsonLd(show: Show, site: ShowSite): Record<string, unknown> 
     url: page,
     startDate: show.startsOn,
     endDate: show.endsOn,
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     location: {
       "@type": "Place",
       name: show.venue,
@@ -438,6 +453,16 @@ export function showJsonLd(show: Show, site: ShowSite): Record<string, unknown> 
         addressLocality: show.city,
       },
     },
+    ...(images.length > 0 ? { image: images } : {}),
+    ...(site.artist
+      ? {
+          performer: {
+            "@type": "Person",
+            ...(site.artist.id ? { "@id": site.artist.id } : {}),
+            name: site.artist.name,
+          },
+        }
+      : {}),
     ...(show.note ? { description: show.note } : {}),
     ...(show.href ? { sameAs: show.href } : {}),
     workFeatured: show.workSlugs.map((slug) => ({
