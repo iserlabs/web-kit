@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loginHandler, workHandler } from "./handlers";
+import { loginHandler, showsHandler, workHandler } from "./handlers";
 import type { ArtworkOverlay } from "./overlay";
+import type { ShowRecord } from "./shows";
 import { createStudioAuth } from "./studio-auth";
-import type { StudioStore } from "./studio-store";
+import type { ShowsStore, StudioStore } from "./studio-store";
 
 const SECRET = "KIT_TEST_H_SECRET";
 const PASS_ARTIST = "KIT_TEST_H_ARTIST";
@@ -350,7 +351,9 @@ describe("workHandler onError", () => {
   it("is called once with the error and the method (and slug) on each store failure", async () => {
     const boom = new Error("network down");
     const calls: { error: unknown; context: unknown }[] = [];
-    const onError = (error: unknown, context: unknown) => calls.push({ error, context });
+    const onError = (error: unknown, context: unknown) => {
+      calls.push({ error, context });
+    };
     const { store } = memoryStore();
     store.readOverlays = async () => {
       throw boom;
@@ -375,7 +378,14 @@ describe("workHandler onError", () => {
   it("is not called when the store answers", async () => {
     const calls: unknown[] = [];
     const { store } = memoryStore();
-    const handler = workHandler({ auth, store, catalog, onError: (e) => calls.push(e) });
+    const handler = workHandler({
+      auth,
+      store,
+      catalog,
+      onError: (e) => {
+        calls.push(e);
+      },
+    });
     expect((await handler.GET(await getReq())).status).toBe(200);
     expect((await handler.PUT(await putReq())).status).toBe(200);
     expect((await handler.DELETE(await delReq())).status).toBe(200);
@@ -407,5 +417,328 @@ describe("workHandler onError", () => {
       expect(res.status, method).toBe(503);
       expect(await res.json()).toEqual({ error: "The store did not accept that." });
     }
+  });
+
+  it("waits for an async reporter, and one that rejects never changes the 503", async () => {
+    const { store } = memoryStore();
+    store.readOverlays = async () => {
+      throw new Error("network down");
+    };
+    let finished = 0;
+    const waits = workHandler({
+      auth,
+      store,
+      catalog,
+      onError: async () => {
+        await Promise.resolve();
+        finished += 1;
+      },
+    });
+    expect((await waits.GET(await getReq())).status).toBe(503);
+    expect(finished).toBe(1);
+    const rejects = workHandler({
+      auth,
+      store,
+      catalog,
+      onError: async () => {
+        throw new Error("reporter down");
+      },
+    });
+    const res = await rejects.GET(await getReq());
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "The store did not accept that." });
+  });
+});
+
+/** Obviously fake facts: nothing here describes a real show. */
+const fakeShow = (over: Partial<ShowRecord> = {}): ShowRecord => ({
+  slug: "test-show",
+  title: "Test Show",
+  kind: "solo",
+  venue: "Test Gallery",
+  city: "Test City",
+  startsOn: "2026-11-07",
+  endsOn: "2026-12-05",
+  workSlugs: ["waterscape-01"],
+  publish: "draft",
+  ...over,
+});
+
+function memoryShows({ connected = true, accepts = true } = {}) {
+  const data: Record<string, ShowRecord> = { "test-show": fakeShow() };
+  const writes: { show: ShowRecord; by: string }[] = [];
+  const store: ShowsStore = {
+    key: "test:shows",
+    configured: () => connected,
+    readShows: async () => (connected ? Object.values(data) : null),
+    writeShow: async (show, by) => {
+      if (!connected || !accepts) return false;
+      writes.push({ show, by });
+      data[show.slug] = show;
+      return true;
+    },
+    deleteShow: async (slug) => {
+      if (!connected || !accepts) return false;
+      delete data[slug];
+      return true;
+    },
+  };
+  return { store, data, writes };
+}
+
+const showBody = (over: Record<string, unknown> = {}) =>
+  JSON.stringify({
+    slug: "new-show",
+    title: "New Show",
+    kind: "group",
+    venue: "Test Gallery",
+    city: "Test City",
+    startsOn: "2026-11-07",
+    endsOn: "2026-12-05",
+    workSlugs: ["waterscape-01"],
+    publish: "published",
+    ...over,
+  });
+
+const savedNewShow = {
+  slug: "new-show",
+  title: "New Show",
+  kind: "group",
+  venue: "Test Gallery",
+  city: "Test City",
+  startsOn: "2026-11-07",
+  endsOn: "2026-12-05",
+  workSlugs: ["waterscape-01"],
+  publish: "published",
+};
+
+const NO_STORE = { error: "No store is connected, so nothing would be saved." };
+const REFUSED = { error: "The store did not accept that." };
+
+describe("showsHandler", () => {
+  it("locks every method to no cookie and to a forged cookie, and changes nothing", async () => {
+    const { store, data, writes } = memoryShows();
+    const handler = showsHandler({ auth, store, catalog });
+    for (const cookie of [undefined, "kit_studio=operator.9999999999.forged"]) {
+      const answers = [
+        await handler.GET(request("GET", "/api/studio/shows", { cookie })),
+        await handler.PUT(request("PUT", "/api/studio/shows", { cookie, body: showBody() })),
+        await handler.DELETE(request("DELETE", "/api/studio/shows?slug=test-show", { cookie })),
+      ];
+      for (const res of answers) {
+        expect(res.status, String(cookie)).toBe(401);
+        expect(await res.json()).toEqual({ error: "locked" });
+      }
+    }
+    expect(writes).toEqual([]);
+    expect(Object.keys(data)).toEqual(["test-show"]);
+  });
+
+  it("GET says plainly when no store is connected", async () => {
+    const { store } = memoryShows({ connected: false });
+    const res = await showsHandler({ auth, store, catalog }).GET(
+      request("GET", "/api/studio/shows", { cookie: await cookieFor("artist") }),
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ configured: false, shows: [] });
+  });
+
+  it("GET lists the saved shows", async () => {
+    const { store } = memoryShows();
+    const res = await showsHandler({ auth, store, catalog }).GET(
+      request("GET", "/api/studio/shows", { cookie: await cookieFor("artist") }),
+    );
+    expect(await res.json()).toEqual({ configured: true, shows: [fakeShow()] });
+  });
+
+  it("PUT saves a valid show, signed by whoever is in, and answers with what was saved", async () => {
+    const { store, writes } = memoryShows();
+    const res = await showsHandler({ auth, store, catalog }).PUT(
+      request("PUT", "/api/studio/shows", {
+        cookie: await cookieFor("artist"),
+        body: showBody({ title: "  New Show  ", extra: "dropped" }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, show: savedNewShow });
+    expect(writes).toEqual([{ show: savedNewShow, by: "artist" }]);
+  });
+
+  it("PUT refuses a show with problems, naming each one, and saves nothing", async () => {
+    const { store, writes } = memoryShows();
+    const res = await showsHandler({ auth, store, catalog }).PUT(
+      request("PUT", "/api/studio/shows", {
+        cookie: await cookieFor("artist"),
+        body: showBody({ endsOn: "2026-11-01", workSlugs: ["not-a-work"] }),
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      error: "That show is not ready to save.",
+      problems: [
+        "The last day cannot come before the first.",
+        '"not-a-work" is not a work on this site.',
+      ],
+    });
+    expect(writes).toEqual([]);
+  });
+
+  it("PUT answers 503 in plain words when no store is connected", async () => {
+    const { store } = memoryShows({ connected: false });
+    const res = await showsHandler({ auth, store, catalog }).PUT(
+      request("PUT", "/api/studio/shows", { cookie: await cookieFor("artist"), body: showBody() }),
+    );
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual(NO_STORE);
+  });
+
+  it("PUT refuses a body over the cap with 413", async () => {
+    const { store, writes } = memoryShows();
+    const res = await showsHandler({ auth, store, catalog, maxBodyLength: 50 }).PUT(
+      request("PUT", "/api/studio/shows", { cookie: await cookieFor("artist"), body: showBody() }),
+    );
+    expect(res.status).toBe(413);
+    expect(await res.json()).toEqual({ error: "That is too long." });
+    expect(writes).toEqual([]);
+  });
+
+  it("PUT answers 400 to a body it cannot read, or JSON that is not an object", async () => {
+    const { store } = memoryShows();
+    const handler = showsHandler({ auth, store, catalog });
+    for (const body of ["not json", "[1]", "null"]) {
+      const res = await handler.PUT(
+        request("PUT", "/api/studio/shows", { cookie: await cookieFor("artist"), body }),
+      );
+      expect(res.status, body).toBe(400);
+      expect(await res.json()).toEqual({ error: "Could not read that." });
+    }
+  });
+
+  it("PUT answers 503 when the store does not accept the show", async () => {
+    const { store } = memoryShows({ accepts: false });
+    const res = await showsHandler({ auth, store, catalog }).PUT(
+      request("PUT", "/api/studio/shows", { cookie: await cookieFor("artist"), body: showBody() }),
+    );
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual(REFUSED);
+  });
+
+  it("DELETE is open to any signed-in role, since a show is the artist's own fact", async () => {
+    const { store, data } = memoryShows();
+    const res = await showsHandler({ auth, store, catalog }).DELETE(
+      request("DELETE", "/api/studio/shows?slug=test-show", { cookie: await cookieFor("artist") }),
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(data["test-show"]).toBeUndefined();
+  });
+
+  it("DELETE answers 404 for a show that is not saved, or no slug at all", async () => {
+    const { store, data } = memoryShows();
+    const handler = showsHandler({ auth, store, catalog });
+    for (const path of ["/api/studio/shows?slug=not-a-show", "/api/studio/shows"]) {
+      const res = await handler.DELETE(
+        request("DELETE", path, { cookie: await cookieFor("operator") }),
+      );
+      expect(res.status, path).toBe(404);
+      expect(await res.json()).toEqual({ error: "That is not a show on this site." });
+    }
+    expect(Object.keys(data)).toEqual(["test-show"]);
+  });
+
+  it("DELETE answers 503 in plain words when no store is connected", async () => {
+    const { store } = memoryShows({ connected: false });
+    const res = await showsHandler({ auth, store, catalog }).DELETE(
+      request("DELETE", "/api/studio/shows?slug=test-show", { cookie: await cookieFor("artist") }),
+    );
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual(NO_STORE);
+  });
+});
+
+describe("showsHandler onError", () => {
+  function failingShows() {
+    const { store } = memoryShows();
+    const boom = new Error("network down");
+    store.readShows = async () => {
+      throw boom;
+    };
+    store.writeShow = async () => {
+      throw boom;
+    };
+    return { store, boom };
+  }
+
+  const getReq = async () =>
+    request("GET", "/api/studio/shows", { cookie: await cookieFor("artist") });
+  const putReq = async () =>
+    request("PUT", "/api/studio/shows", { cookie: await cookieFor("artist"), body: showBody() });
+  const delReq = async () =>
+    request("DELETE", "/api/studio/shows?slug=test-show", { cookie: await cookieFor("artist") });
+
+  it("is called once with the error and the method (and slug) on each store failure", async () => {
+    const { store, boom } = failingShows();
+    const calls: { error: unknown; context: unknown }[] = [];
+    const handler = showsHandler({
+      auth,
+      store,
+      catalog,
+      onError: (error, context) => {
+        calls.push({ error, context });
+      },
+    });
+    expect((await handler.GET(await getReq())).status).toBe(503);
+    expect((await handler.PUT(await putReq())).status).toBe(503);
+    expect((await handler.DELETE(await delReq())).status).toBe(503);
+    expect(calls).toEqual([
+      { error: boom, context: { method: "GET" } },
+      { error: boom, context: { method: "PUT", slug: "new-show" } },
+      { error: boom, context: { method: "DELETE", slug: "test-show" } },
+    ]);
+  });
+
+  it("waits for an async reporter, and one that rejects never changes the 503", async () => {
+    const { store } = failingShows();
+    let finished = 0;
+    const waits = showsHandler({
+      auth,
+      store,
+      catalog,
+      onError: async () => {
+        await Promise.resolve();
+        finished += 1;
+      },
+    });
+    expect((await waits.PUT(await putReq())).status).toBe(503);
+    expect(finished).toBe(1);
+    const rejects = showsHandler({
+      auth,
+      store,
+      catalog,
+      onError: async () => {
+        throw new Error("reporter down");
+      },
+    });
+    for (const req of [await getReq(), await putReq(), await delReq()]) {
+      const method = req.method as "GET" | "PUT" | "DELETE";
+      const res = await rejects[method](req);
+      expect(res.status, method).toBe(503);
+      expect(await res.json()).toEqual(REFUSED);
+    }
+  });
+
+  it("does not change the 503 answer when onError itself throws", async () => {
+    const { store } = failingShows();
+    const handler = showsHandler({
+      auth,
+      store,
+      catalog,
+      onError: () => {
+        throw new Error("reporter down");
+      },
+    });
+    const res = await handler.GET(await getReq());
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual(REFUSED);
   });
 });

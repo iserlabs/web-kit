@@ -1,6 +1,7 @@
 import { cleanOverlay, cleanText } from "./overlay";
+import { cleanShow } from "./shows";
 import type { StudioAuth } from "./studio-auth";
-import type { StudioStore } from "./studio-store";
+import type { ShowsStore, StudioStore } from "./studio-store";
 
 /**
  * The studio's routes, framework-free: each handler takes a Web Request and
@@ -11,8 +12,9 @@ import type { StudioStore } from "./studio-store";
  */
 
 /** What the handlers need to know about the site's catalog: whether a slug is a work
-    on this site. An overlay can only describe a work that exists, so a studio route
-    cannot be used to conjure a painting or to point one at someone else's image. */
+    on this site. An overlay can only describe a work that exists, and a show can only
+    list works that exist, so a studio route cannot be used to conjure a painting or
+    to point one at someone else's image. */
 export interface StudioCatalog {
   has(slug: string): boolean;
 }
@@ -28,23 +30,51 @@ export interface LoginHandler {
   DELETE(request?: Request): Promise<Response>;
 }
 
+/** Where a store failure happened, for whoever reports it. */
+export interface StudioErrorContext {
+  method: "GET" | "PUT" | "DELETE";
+  slug?: string;
+}
+
+/** The work handler's earlier name for the same context. */
+export type WorkErrorContext = StudioErrorContext;
+
+/** Called with the error whenever the store fails, just before the 503 answer, so a
+    site can report it (Sentry, a log). It may be async: the handler waits for it, so
+    a serverless runtime does not freeze a report half sent, and a reporter that throws
+    or rejects never changes the answer. */
+export type StudioErrorReporter = (
+  error: unknown,
+  context: StudioErrorContext,
+) => void | Promise<void>;
+
 export interface WorkHandlerOptions<R extends string = string> {
   auth: StudioAuth<R>;
   store: StudioStore;
   catalog: StudioCatalog;
   /** The longest request body accepted, in characters. Default 8000. */
   maxBodyLength?: number;
-  /** Called with the error whenever the store fails, just before the 503 answer, so a
-      site can report it (Sentry, a log). A throwing onError never changes the answer. */
-  onError?: (error: unknown, context: WorkErrorContext) => void;
-}
-
-export interface WorkErrorContext {
-  method: "GET" | "PUT" | "DELETE";
-  slug?: string;
+  onError?: StudioErrorReporter;
 }
 
 export interface WorkHandler {
+  GET(request: Request): Promise<Response>;
+  PUT(request: Request): Promise<Response>;
+  DELETE(request: Request): Promise<Response>;
+}
+
+export interface ShowsHandlerOptions<R extends string = string> {
+  auth: StudioAuth<R>;
+  /** The store's `shows`, for example `studioStore.shows`. */
+  store: ShowsStore;
+  /** Every work a show lists must be one of these. */
+  catalog: StudioCatalog;
+  /** The longest request body accepted, in characters. Default 8000. */
+  maxBodyLength?: number;
+  onError?: StudioErrorReporter;
+}
+
+export interface ShowsHandler {
   GET(request: Request): Promise<Response>;
   PUT(request: Request): Promise<Response>;
   DELETE(request: Request): Promise<Response>;
@@ -56,7 +86,44 @@ function json(data: unknown, status = 200, headers?: Record<string, string>): Re
 
 const locked = () => json({ error: "locked" }, 401);
 const notAWork = () => json({ error: "That is not a work on this site." }, 404);
+const notAShow = () => json({ error: "That is not a show on this site." }, 404);
 const refused = () => json({ error: "The store did not accept that." }, 503);
+const noStore = () => json({ error: "No store is connected, so nothing would be saved." }, 503);
+const unreadable = () => json({ error: "Could not read that." }, 400);
+
+/** Hands a store failure to the site's reporter, if it has one, and waits for it. A
+    reporter that throws or rejects must not turn a clean 503 into an unhandled error. */
+async function report(
+  onError: StudioErrorReporter | undefined,
+  error: unknown,
+  context: StudioErrorContext,
+): Promise<void> {
+  if (!onError) return;
+  try {
+    await onError(error, context);
+  } catch {
+    // Swallowed on purpose: the answer is already decided.
+  }
+}
+
+/** A request body that is a JSON object no longer than `max` characters, or the
+    answer refusing it. */
+async function readObject(
+  request: Request,
+  max: number,
+): Promise<Record<string, unknown> | Response> {
+  const raw = await request.text();
+  if (raw.length > max) return json({ error: "That is too long." }, 413);
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return unreadable();
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    return unreadable();
+  }
+}
 
 /**
  * The door. One passphrase in, one signed role cookie out.
@@ -80,7 +147,7 @@ export function loginHandler<R extends string>({
       const body = (await request.json()) as { passphrase?: unknown };
       passphrase = typeof body.passphrase === "string" ? body.passphrase : "";
     } catch {
-      return json({ error: "Could not read that." }, 400);
+      return unreadable();
     }
 
     const role = auth.roleFor(passphrase);
@@ -116,21 +183,13 @@ export function workHandler<R extends string>({
   maxBodyLength = 8000,
   onError,
 }: WorkHandlerOptions<R>): WorkHandler {
-  function report(error: unknown, context: WorkErrorContext): void {
-    try {
-      onError?.(error, context);
-    } catch {
-      // A broken reporter must not turn a clean 503 into an unhandled error.
-    }
-  }
-
   async function GET(request: Request): Promise<Response> {
     if (!(await auth.roleFrom(request))) return locked();
     if (!store.configured()) return json({ configured: false, overlays: {} });
     try {
       return json({ configured: true, overlays: (await store.readOverlays(true)) ?? {} });
     } catch (error) {
-      report(error, { method: "GET" });
+      await report(onError, error, { method: "GET" });
       return refused();
     }
   }
@@ -138,25 +197,10 @@ export function workHandler<R extends string>({
   async function PUT(request: Request): Promise<Response> {
     const who = await auth.roleFrom(request);
     if (!who) return locked();
-    if (!store.configured()) {
-      return json({ error: "No store is connected, so nothing would be saved." }, 503);
-    }
+    if (!store.configured()) return noStore();
 
-    const raw = await request.text();
-    if (raw.length > maxBodyLength) {
-      return json({ error: "That is too long." }, 413);
-    }
-
-    let body: Record<string, unknown>;
-    try {
-      const parsed: unknown = JSON.parse(raw);
-      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-        return json({ error: "Could not read that." }, 400);
-      }
-      body = parsed as Record<string, unknown>;
-    } catch {
-      return json({ error: "Could not read that." }, 400);
-    }
+    const body = await readObject(request, maxBodyLength);
+    if (body instanceof Response) return body;
 
     const slug = cleanText(body.slug, 120);
     if (!slug || !catalog.has(slug)) return notAWork();
@@ -165,7 +209,7 @@ export function workHandler<R extends string>({
       const ok = await store.writeOverlay(slug, cleanOverlay(body), who);
       return ok ? json({ ok: true }) : refused();
     } catch (error) {
-      report(error, { method: "PUT", slug });
+      await report(onError, error, { method: "PUT", slug });
       return refused();
     }
   }
@@ -185,7 +229,75 @@ export function workHandler<R extends string>({
       const ok = await store.clearOverlay(slug);
       return ok ? json({ ok: true }) : refused();
     } catch (error) {
-      report(error, { method: "DELETE", slug });
+      await report(onError, error, { method: "DELETE", slug });
+      return refused();
+    }
+  }
+
+  return { GET, PUT, DELETE };
+}
+
+/**
+ * Reading and writing the artist's shows.
+ *
+ * Every write passes `cleanShow`, which refuses an incomplete or impossible show and
+ * names each problem, and checks every listed work against the site's catalog. Any
+ * signed-in role may delete a show: a show is the artist's own fact, and removing a
+ * cancelled one touches no work's record.
+ */
+export function showsHandler<R extends string>({
+  auth,
+  store,
+  catalog,
+  maxBodyLength = 8000,
+  onError,
+}: ShowsHandlerOptions<R>): ShowsHandler {
+  async function GET(request: Request): Promise<Response> {
+    if (!(await auth.roleFrom(request))) return locked();
+    if (!store.configured()) return json({ configured: false, shows: [] });
+    try {
+      return json({ configured: true, shows: (await store.readShows(true)) ?? [] });
+    } catch (error) {
+      await report(onError, error, { method: "GET" });
+      return refused();
+    }
+  }
+
+  async function PUT(request: Request): Promise<Response> {
+    const who = await auth.roleFrom(request);
+    if (!who) return locked();
+    if (!store.configured()) return noStore();
+
+    const body = await readObject(request, maxBodyLength);
+    if (body instanceof Response) return body;
+
+    const result = cleanShow(body, catalog);
+    if (!result.ok) {
+      return json({ error: "That show is not ready to save.", problems: result.problems }, 400);
+    }
+
+    try {
+      const ok = await store.writeShow(result.show, who);
+      return ok ? json({ ok: true, show: result.show }) : refused();
+    } catch (error) {
+      await report(onError, error, { method: "PUT", slug: result.show.slug });
+      return refused();
+    }
+  }
+
+  async function DELETE(request: Request): Promise<Response> {
+    if (!(await auth.roleFrom(request))) return locked();
+    if (!store.configured()) return noStore();
+    const slug = cleanText(new URL(request.url).searchParams.get("slug"), 120);
+    if (!slug) return notAShow();
+    try {
+      const saved = await store.readShows(true);
+      if (saved === null) return noStore();
+      if (!saved.some((s) => s.slug === slug)) return notAShow();
+      const ok = await store.deleteShow(slug);
+      return ok ? json({ ok: true }) : refused();
+    } catch (error) {
+      await report(onError, error, { method: "DELETE", slug });
       return refused();
     }
   }

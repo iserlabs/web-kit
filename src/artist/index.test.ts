@@ -34,6 +34,7 @@ const FUNCTIONS = [
   "newestFirst",
   "readCookie",
   "sanitizeStoredOverlay",
+  "showsHandler",
   "workHandler",
 ];
 
