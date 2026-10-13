@@ -21,6 +21,8 @@ const FUNCTIONS = [
   "formatEdition",
   "formatLabel",
   "formatMediumLine",
+  "formatOpening",
+  "formatShowDates",
   "formatTitleLine",
   "generatePressToken",
   "groupByAvailability",
