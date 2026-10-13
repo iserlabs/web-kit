@@ -1,0 +1,23 @@
+# exit: 1
+# Safari did not answer in 25s, with another beat standing down mid-run
+# from plfa-sync.log lines 36618-36693 (home path masked, runner lines and per-artist detail removed)
+2026-10-11 14:16:17  start
+2026-10-11 14:16:18  python: /opt/homebrew/bin/python3.12 (Python 3.12.13)
+2026-10-11 14:16:34  safari python: /usr/bin/python3 (Python 3.9.6)
+2026-10-11 14:16:35  vercel: /Users/me/.nvm/versions/node/v24.17.0/bin/vercel
+2026-10-11 14:16:35  fetching
+2026-10-11 14:16:54  fetched
+2026-10-11 14:16:55  reading artist collections from the archive
+2026-10-11 14:18:09  start
+2026-10-11 14:18:09  stood down: another run (process 92055) is still going
+subprocess.TimeoutExpired: Command '['osascript', '-e', 'tell application "Safari"\nrepeat with w in windows\n repeat with t in tabs of w\n  if URL of t contains "artworkarchive" then return source of t\n end repeat\nend repeat\nreturn "none"\nend tell']' timed out after 25 seconds
+    membership, failed = harvest()
+    raise SafariUnreachable(
+harvest_aa.SafariUnreachable: Safari did not answer in 25s. This is almost always the Automation permission: macOS asks once before a new program may control Safari, and a scheduled job has no window to be asked in. Grant it in System Settings, Privacy and Security, Automation, then run this again.
+2026-10-11 14:18:53  NOT SIGNED IN to the archive, or a collection did not render, so who has work
+2026-10-11 14:18:53          available was not refreshed. Using the collections on disk.
+2026-10-11 14:18:53  harvesting
+subprocess.TimeoutExpired: Command '['osascript', '-e', 'tell application "Safari"\nrepeat with w in windows\n repeat with t in tabs of w\n  if URL of t contains "artworkarchive" then return source of t\n end repeat\nend repeat\nreturn "none"\nend tell']' timed out after 25 seconds
+    raise SafariUnreachable(
+__main__.SafariUnreachable: Safari did not answer in 25s. This is almost always the Automation permission: macOS asks once before a new program may control Safari, and a scheduled job has no window to be asked in. Grant it in System Settings, Privacy and Security, Automation, then run this again.
+2026-10-11 14:20:17  FAILED (exit 1). The site was not changed.

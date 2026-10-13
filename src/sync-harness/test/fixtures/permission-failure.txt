@@ -1,0 +1,9 @@
+# exit: 1
+# macOS refused Safari automation
+# from plfa-sync.log lines 38634-38640 (home path masked, runner lines and per-artist detail removed)
+2026-10-12 19:18:35  start
+2026-10-12 19:18:35  python: /opt/homebrew/bin/python3.12 (Python 3.12.13)
+2026-10-12 19:18:36  FAILED: macOS will not let any python here control Safari, so the archive cannot be
+2026-10-12 19:18:36          read at all. Grant it in System Settings, Privacy and Security, Automation.
+2026-10-12 19:18:36          Nothing was changed.
+2026-10-12 19:18:36  FAILED (exit 1). The site was not changed.
