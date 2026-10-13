@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loginHandler, showsHandler, workHandler } from "./handlers";
+import { loginHandler, pressHandler, showsHandler, workHandler } from "./handlers";
 import type { ArtworkOverlay } from "./overlay";
+import { isPressToken, pressTokenMatches } from "./press-kit";
 import type { ShowRecord } from "./shows";
 import { createStudioAuth } from "./studio-auth";
-import type { ShowsStore, StudioStore } from "./studio-store";
+import type { PressStore, ShowsStore, StudioStore } from "./studio-store";
 
 const SECRET = "KIT_TEST_H_SECRET";
 const PASS_ARTIST = "KIT_TEST_H_ARTIST";
@@ -856,5 +857,122 @@ describe("showsHandler onError", () => {
     const res = await handler.GET(await getReq());
     expect(res.status).toBe(503);
     expect(await res.json()).toEqual(REFUSED);
+  });
+});
+
+describe("pressHandler", () => {
+  function memoryPress({ connected = true, accepts = true } = {}) {
+    let token: string | undefined;
+    const writes: { token: string; by: string }[] = [];
+    const store: PressStore = {
+      key: "test:press",
+      configured: () => connected,
+      readToken: async () => (connected ? token : null),
+      writeToken: async (next, by) => {
+        if (!connected || !accepts) return false;
+        writes.push({ token: next, by });
+        token = next;
+        return true;
+      },
+    };
+    return { store, writes, current: () => token };
+  }
+
+  const get = (cookie?: string) => request("GET", "/api/studio/press", { cookie });
+  const post = (cookie?: string) => request("POST", "/api/studio/press", { cookie });
+
+  it("locks both methods to no cookie and to a forged cookie, and makes no link", async () => {
+    const { store, writes } = memoryPress();
+    const handler = pressHandler({ auth, store });
+    for (const cookie of [undefined, "kit_studio=operator.9999999999.forged"]) {
+      for (const res of [await handler.GET(get(cookie)), await handler.POST(post(cookie))]) {
+        expect(res.status, String(cookie)).toBe(401);
+        expect(await res.json()).toEqual({ error: "locked" });
+      }
+    }
+    expect(writes).toEqual([]);
+  });
+
+  it("GET says plainly when no store is connected", async () => {
+    const { store } = memoryPress({ connected: false });
+    const res = await pressHandler({ auth, store }).GET(get(await cookieFor("artist")));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ configured: false, token: null });
+  });
+
+  it("GET answers null until a link is made, and is never cached", async () => {
+    const { store } = memoryPress();
+    const res = await pressHandler({ auth, store }).GET(get(await cookieFor("artist")));
+    expect(await res.json()).toEqual({ configured: true, token: null });
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("POST makes a press token, saves it signed by whoever is in, and answers with it", async () => {
+    const { store, writes, current } = memoryPress();
+    const handler = pressHandler({ auth, store });
+    const res = await handler.POST(post(await cookieFor("artist")));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+    const body = (await res.json()) as { ok: boolean; token: string };
+    expect(body.ok).toBe(true);
+    expect(isPressToken(body.token)).toBe(true);
+    expect(writes).toEqual([{ token: body.token, by: "artist" }]);
+    expect(current()).toBe(body.token);
+    const read = await handler.GET(get(await cookieFor("operator")));
+    expect(await read.json()).toEqual({ configured: true, token: body.token });
+  });
+
+  it("POST again retires the old link: the old token no longer opens anything", async () => {
+    const { store, current } = memoryPress();
+    const handler = pressHandler({ auth, store });
+    const make = async () =>
+      ((await (await handler.POST(post(await cookieFor("artist")))).json()) as { token: string })
+        .token;
+    const first = await make();
+    const second = await make();
+    expect(second).not.toBe(first);
+    expect(pressTokenMatches(first, current())).toBe(false);
+    expect(pressTokenMatches(second, current())).toBe(true);
+  });
+
+  it("POST with no store answers 503 and makes nothing", async () => {
+    const { store, writes } = memoryPress({ connected: false });
+    const res = await pressHandler({ auth, store }).POST(post(await cookieFor("artist")));
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual(NO_STORE);
+    expect(writes).toEqual([]);
+  });
+
+  it("POST the store refuses answers 503", async () => {
+    const { store } = memoryPress({ accepts: false });
+    const res = await pressHandler({ auth, store }).POST(post(await cookieFor("artist")));
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual(REFUSED);
+  });
+
+  it("reports a store failure on either method with its method, and still answers 503", async () => {
+    const { store } = memoryPress();
+    const boom = new Error("network down");
+    store.readToken = async () => {
+      throw boom;
+    };
+    store.writeToken = async () => {
+      throw boom;
+    };
+    const calls: { error: unknown; context: unknown }[] = [];
+    const handler = pressHandler({
+      auth,
+      store,
+      onError: (error, context) => {
+        calls.push({ error, context });
+      },
+    });
+    const cookie = await cookieFor("artist");
+    expect((await handler.GET(get(cookie))).status).toBe(503);
+    expect((await handler.POST(post(cookie))).status).toBe(503);
+    expect(calls).toEqual([
+      { error: boom, context: { method: "GET" } },
+      { error: boom, context: { method: "POST" } },
+    ]);
   });
 });

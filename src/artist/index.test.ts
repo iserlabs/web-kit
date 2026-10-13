@@ -40,6 +40,7 @@ const FUNCTIONS = [
   "newestFirst",
   "noticeShow",
   "onView",
+  "pressHandler",
   "pressKit",
   "pressTokenMatches",
   "readCookie",

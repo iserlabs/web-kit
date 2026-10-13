@@ -1,7 +1,8 @@
 import { cleanOverlay, cleanText } from "./overlay";
+import { generatePressToken } from "./press-kit";
 import { cleanShow } from "./shows";
 import type { StudioAuth } from "./studio-auth";
-import type { ShowsStore, StudioStore } from "./studio-store";
+import type { PressStore, ShowsStore, StudioStore } from "./studio-store";
 
 /**
  * The studio's routes, framework-free: each handler takes a Web Request and
@@ -32,7 +33,7 @@ export interface LoginHandler {
 
 /** Where a store failure happened, for whoever reports it. */
 export interface StudioErrorContext {
-  method: "GET" | "PUT" | "DELETE";
+  method: "GET" | "PUT" | "POST" | "DELETE";
   slug?: string;
 }
 
@@ -84,6 +85,21 @@ export interface ShowsHandler {
   GET(request: Request): Promise<Response>;
   PUT(request: Request): Promise<Response>;
   DELETE(request: Request): Promise<Response>;
+}
+
+export interface PressHandlerOptions<R extends string = string> {
+  auth: StudioAuth<R>;
+  /** The store's `press`, for example `studioStore.press`. */
+  store: PressStore;
+  onError?: StudioErrorReporter;
+  /** The longest the handler waits for `onError`, in milliseconds. Default 2000. A
+      reporter still running after that no longer holds the response. */
+  reportTimeoutMs?: number;
+}
+
+export interface PressHandler {
+  GET(request: Request): Promise<Response>;
+  POST(request: Request): Promise<Response>;
 }
 
 function json(data: unknown, status = 200, headers?: Record<string, string>): Response {
@@ -329,4 +345,52 @@ export function showsHandler<R extends string>({
   }
 
   return { GET, PUT, DELETE };
+}
+
+/** A token is a key to an unlisted page: no answer that carries one may be cached. */
+const NO_STORE_HEADERS = { "cache-control": "no-store" };
+
+/**
+ * The press link: reading the current token, and making a new one.
+ *
+ * A new token replaces the old one in the store, so the old address stops opening
+ * the press page at once, for everyone who has it. Any signed-in role may make one:
+ * the link is the artist's own address for galleries, and replacing it changes no
+ * work's record.
+ */
+export function pressHandler<R extends string>({
+  auth,
+  store,
+  onError,
+  reportTimeoutMs = REPORT_TIMEOUT_MS,
+}: PressHandlerOptions<R>): PressHandler {
+  async function GET(request: Request): Promise<Response> {
+    if (!(await auth.roleFrom(request))) return locked();
+    if (!store.configured()) {
+      return json({ configured: false, token: null }, 200, NO_STORE_HEADERS);
+    }
+    try {
+      const token = (await store.readToken(true)) ?? null;
+      return json({ configured: true, token }, 200, NO_STORE_HEADERS);
+    } catch (error) {
+      await report(onError, error, { method: "GET" }, reportTimeoutMs);
+      return refused();
+    }
+  }
+
+  async function POST(request: Request): Promise<Response> {
+    const who = await auth.roleFrom(request);
+    if (!who) return locked();
+    if (!store.configured()) return noStore();
+    const token = generatePressToken();
+    try {
+      const ok = await store.writeToken(token, who);
+      return ok ? json({ ok: true, token }, 200, NO_STORE_HEADERS) : refused();
+    } catch (error) {
+      await report(onError, error, { method: "POST" }, reportTimeoutMs);
+      return refused();
+    }
+  }
+
+  return { GET, POST };
 }
