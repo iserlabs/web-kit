@@ -182,6 +182,7 @@ describe("workHandler", () => {
     for (const body of ["not json", "null", "[]", "42"]) {
       const res = await handler.PUT(request("PUT", "/api/studio/work", { cookie, body }));
       expect(res.status, body).toBe(400);
+      expect(await res.json(), body).toEqual({ error: "Could not read that." });
     }
   });
 
@@ -264,5 +265,71 @@ describe("workHandler", () => {
     );
     expect(res.status).toBe(503);
     expect(await res.json()).toEqual({ error: "The store did not accept that." });
+  });
+
+  it("answers 503 in plain words when reading the store fails", async () => {
+    const { store } = memoryStore();
+    store.readOverlays = async () => {
+      throw new Error("network down");
+    };
+    const res = await workHandler({ auth, store, catalog }).GET(
+      request("GET", "/api/studio/work", { cookie: await cookieFor("artist") }),
+    );
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "The store did not accept that." });
+  });
+
+  it("answers 503 in plain words when saving to the store fails", async () => {
+    const { store } = memoryStore();
+    store.writeOverlay = async () => {
+      throw new Error("network down");
+    };
+    const res = await workHandler({ auth, store, catalog }).PUT(
+      request("PUT", "/api/studio/work", {
+        cookie: await cookieFor("artist"),
+        body: JSON.stringify({ slug: "waterscape-01", title: "Alcyone" }),
+      }),
+    );
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "The store did not accept that." });
+  });
+
+  it("answers 503 in plain words when resetting in the store fails", async () => {
+    const { store } = memoryStore();
+    store.clearOverlay = async () => {
+      throw new Error("network down");
+    };
+    const res = await workHandler({ auth, store, catalog }).DELETE(
+      request("DELETE", "/api/studio/work?slug=waterscape-01", {
+        cookie: await cookieFor("operator"),
+      }),
+    );
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "The store did not accept that." });
+  });
+
+  it("locks PUT to no cookie and to a forged cookie, and writes nothing", async () => {
+    const { store, writes } = memoryStore();
+    const handler = workHandler({ auth, store, catalog });
+    const body = JSON.stringify({ slug: "waterscape-01", title: "Alcyone" });
+    for (const cookie of [undefined, "kit_studio=operator.9999999999.forged"]) {
+      const res = await handler.PUT(request("PUT", "/api/studio/work", { cookie, body }));
+      expect(res.status, String(cookie)).toBe(401);
+      expect(await res.json()).toEqual({ error: "locked" });
+    }
+    expect(writes).toEqual([]);
+  });
+
+  it("locks DELETE to no cookie and to a forged cookie, and clears nothing", async () => {
+    const { store, data } = memoryStore();
+    const handler = workHandler({ auth, store, catalog });
+    for (const cookie of [undefined, "kit_studio=operator.9999999999.forged"]) {
+      const res = await handler.DELETE(
+        request("DELETE", "/api/studio/work?slug=waterscape-01", { cookie }),
+      );
+      expect(res.status, String(cookie)).toBe(401);
+      expect(await res.json()).toEqual({ error: "locked" });
+    }
+    expect(data["waterscape-01"]).toEqual({ title: "Saved" });
   });
 });

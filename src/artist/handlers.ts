@@ -46,6 +46,10 @@ function json(data: unknown, status = 200, headers?: Record<string, string>): Re
   return Response.json(data, { status, headers });
 }
 
+const locked = () => json({ error: "locked" }, 401);
+const notAWork = () => json({ error: "That is not a work on this site." }, 404);
+const refused = () => json({ error: "The store did not accept that." }, 503);
+
 /**
  * The door. One passphrase in, one signed role cookie out.
  *
@@ -103,14 +107,14 @@ export function workHandler<R extends string>({
   catalog,
   maxBodyLength = 8000,
 }: WorkHandlerOptions<R>): WorkHandler {
-  const locked = () => json({ error: "locked" }, 401);
-  const notAWork = () => json({ error: "That is not a work on this site." }, 404);
-  const refused = () => json({ error: "The store did not accept that." }, 503);
-
   async function GET(request: Request): Promise<Response> {
     if (!(await auth.roleFrom(request))) return locked();
     if (!store.configured()) return json({ configured: false, overlays: {} });
-    return json({ configured: true, overlays: (await store.readOverlays(true)) ?? {} });
+    try {
+      return json({ configured: true, overlays: (await store.readOverlays(true)) ?? {} });
+    } catch {
+      return refused();
+    }
   }
 
   async function PUT(request: Request): Promise<Response> {
@@ -139,8 +143,12 @@ export function workHandler<R extends string>({
     const slug = cleanText(body.slug, 120);
     if (!slug || !catalog.has(slug)) return notAWork();
 
-    const ok = await store.writeOverlay(slug, cleanOverlay(body), who);
-    return ok ? json({ ok: true }) : refused();
+    try {
+      const ok = await store.writeOverlay(slug, cleanOverlay(body), who);
+      return ok ? json({ ok: true }) : refused();
+    } catch {
+      return refused();
+    }
   }
 
   async function DELETE(request: Request): Promise<Response> {
@@ -154,8 +162,12 @@ export function workHandler<R extends string>({
     }
     const slug = new URL(request.url).searchParams.get("slug");
     if (!slug || !catalog.has(slug)) return notAWork();
-    const ok = await store.clearOverlay(slug);
-    return ok ? json({ ok: true }) : refused();
+    try {
+      const ok = await store.clearOverlay(slug);
+      return ok ? json({ ok: true }) : refused();
+    } catch {
+      return refused();
+    }
   }
 
   return { GET, PUT, DELETE };
