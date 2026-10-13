@@ -1,5 +1,7 @@
 import { type ArtworkOverlay, sanitizeStoredOverlay } from "./overlay";
+import { isPressToken } from "./press-kit";
 import type { Artwork } from "./record";
+import { type Show, type ShowRecord, sanitizeStoredShows } from "./shows";
 
 /**
  * The studio store: what the artist and the operator edit, kept apart from what
@@ -17,8 +19,12 @@ import type { Artwork } from "./record";
  *   3. When a catalog eventually moves wholesale into the store, the merge below is
  *      the only thing that has to change.
  *
+ * Shows and the press token live beside the overlays, each under its own key, as
+ * two sibling stores (`shows`, `press`). The overlay store's own shape never grows,
+ * so everything written against `StudioStore` keeps compiling.
+ *
  * Talks to Upstash over its REST API with plain fetch. No client library, so no
- * dependency for what is four HTTP calls.
+ * dependency for what is a handful of HTTP calls.
  *
  * Unconfigured returns null everywhere, never an empty object. A caller must be able
  * to tell "no store" from "nothing saved", or the studio will cheerfully show an
@@ -28,6 +34,11 @@ import type { Artwork } from "./record";
 export interface StudioStoreOptions {
   /** The Upstash key holding every overlay, e.g. "studio:julian:overlays". */
   key: string;
+  /** The Upstash key holding the site's shows, e.g. "studio:julian:shows". Unset means
+      the site keeps no shows: `shows` reads null and writes nothing. */
+  showsKey?: string;
+  /** The Upstash key holding the press kit's current token. Unset means no press kit. */
+  pressKey?: string;
   /** Env var holding the Upstash REST URL. Default "KV_REST_API_URL". */
   urlEnv?: string;
   /** Env var holding the Upstash REST token. Default "KV_REST_API_TOKEN". */
@@ -57,12 +68,42 @@ export interface StudioStore {
   clearOverlay(slug: string): Promise<boolean>;
 }
 
+export interface ShowsStore {
+  /** The key the shows live under, or undefined when the site keeps none. */
+  readonly key: string | undefined;
+  /** True when a store is connected and the site names a shows key. */
+  configured(): boolean;
+  /** Every valid show, in stored order. null means no store, which is not the same as
+      no shows. `fresh` skips every cache. */
+  readShows(fresh?: boolean): Promise<ShowRecord[] | null>;
+  /** Saves one show whole, replacing any earlier version with the same slug in its
+      place and keeping the rest. Returns false when unconfigured. */
+  writeShow(show: Show, by: string): Promise<boolean>;
+  /** Removes one show. Returns false when unconfigured. */
+  deleteShow(slug: string): Promise<boolean>;
+}
+
+export interface PressStore {
+  /** The key the press token lives under, or undefined when the site has no press kit. */
+  readonly key: string | undefined;
+  configured(): boolean;
+  /** The current press token. null: no store. undefined: none has been set. */
+  readToken(fresh?: boolean): Promise<string | null | undefined>;
+  /** Replaces the token, which retires the old press address at once. Throws on a
+      token generatePressToken would not make. Returns false when unconfigured. */
+  writeToken(token: string, by: string): Promise<boolean>;
+}
+
+/** What createStudioStore returns: the overlay store, with shows and the press token
+    beside it. */
+export type StudioStores = StudioStore & { shows: ShowsStore; press: PressStore };
+
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-export function createStudioStore(options: StudioStoreOptions): StudioStore {
-  const { key } = options;
+export function createStudioStore(options: StudioStoreOptions): StudioStores {
+  const { key, showsKey, pressKey } = options;
   const urlEnv = options.urlEnv ?? "KV_REST_API_URL";
   const tokenEnv = options.tokenEnv ?? "KV_REST_API_TOKEN";
 
@@ -95,23 +136,33 @@ export function createStudioStore(options: StudioStoreOptions): StudioStore {
     return body.result ?? null;
   }
 
+  /** A stored JSON blob, parsed. undefined when nothing is stored or it is corrupted:
+      a broken blob must not take a public page down with it. */
+  async function readJson(k: string, fresh: boolean): Promise<unknown> {
+    const raw = await call(`get/${k}`, undefined, fresh);
+    if (raw === null || raw === undefined) return undefined;
+    try {
+      return typeof raw === "string" ? JSON.parse(raw) : raw;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async function writeJson(k: string, value: unknown): Promise<void> {
+    await call(`set/${k}`, { method: "POST", body: JSON.stringify(value) }, true);
+  }
+
+  /* -------------------------------------------------------------- overlays */
+
   async function readOverlays(fresh = false): Promise<Record<string, ArtworkOverlay> | null> {
     if (!configured()) return null;
-    const raw = await call(`get/${key}`, undefined, fresh);
-    if (raw === null || raw === undefined) return {};
-    try {
-      const parsed: unknown = typeof raw === "string" ? JSON.parse(raw) : raw;
-      if (!isPlainObject(parsed)) return {};
-      const out: Record<string, ArtworkOverlay> = {};
-      for (const [slug, entry] of Object.entries(parsed)) {
-        if (isPlainObject(entry)) out[slug] = sanitizeStoredOverlay(entry);
-      }
-      return out;
-    } catch {
-      // A corrupted blob must not take the public site down with it. Report empty and
-      // let the base catalog render; the studio will overwrite on the next save.
-      return {};
+    const parsed = await readJson(key, fresh);
+    if (!isPlainObject(parsed)) return {};
+    const out: Record<string, ArtworkOverlay> = {};
+    for (const [slug, entry] of Object.entries(parsed)) {
+      if (isPlainObject(entry)) out[slug] = sanitizeStoredOverlay(entry);
     }
+    return out;
   }
 
   async function writeOverlay(slug: string, overlay: ArtworkOverlay, by: string): Promise<boolean> {
@@ -121,7 +172,7 @@ export function createStudioStore(options: StudioStoreOptions): StudioStore {
       ...current,
       [slug]: { ...current[slug], ...overlay, updatedAt: new Date().toISOString(), updatedBy: by },
     };
-    await call(`set/${key}`, { method: "POST", body: JSON.stringify(next) }, true);
+    await writeJson(key, next);
     return true;
   }
 
@@ -130,11 +181,66 @@ export function createStudioStore(options: StudioStoreOptions): StudioStore {
     if (current === null) return false;
     const next = { ...current };
     delete next[slug];
-    await call(`set/${key}`, { method: "POST", body: JSON.stringify(next) }, true);
+    await writeJson(key, next);
     return true;
   }
 
-  return { key, configured, readOverlays, writeOverlay, clearOverlay };
+  /* -------------------------------------------------------------- shows */
+
+  const showsConfigured = (): boolean => Boolean(showsKey) && configured();
+
+  async function readShowMap(fresh: boolean): Promise<Record<string, ShowRecord> | null> {
+    if (!showsKey || !configured()) return null;
+    return sanitizeStoredShows(await readJson(showsKey, fresh));
+  }
+
+  const shows: ShowsStore = {
+    key: showsKey,
+    configured: showsConfigured,
+    async readShows(fresh = false) {
+      const map = await readShowMap(fresh);
+      return map === null ? null : Object.values(map);
+    },
+    async writeShow(show, by) {
+      const current = await readShowMap(true);
+      if (current === null || !showsKey) return false;
+      // Whole, never merged: a field the artist cleared must stay cleared.
+      const next = {
+        ...current,
+        [show.slug]: { ...show, updatedAt: new Date().toISOString(), updatedBy: by },
+      };
+      await writeJson(showsKey, next);
+      return true;
+    },
+    async deleteShow(slug) {
+      const current = await readShowMap(true);
+      if (current === null || !showsKey) return false;
+      const next = { ...current };
+      delete next[slug];
+      await writeJson(showsKey, next);
+      return true;
+    },
+  };
+
+  /* -------------------------------------------------------------- press token */
+
+  const press: PressStore = {
+    key: pressKey,
+    configured: () => Boolean(pressKey) && configured(),
+    async readToken(fresh = false) {
+      if (!pressKey || !configured()) return null;
+      const parsed = await readJson(pressKey, fresh);
+      return isPlainObject(parsed) && isPressToken(parsed.token) ? parsed.token : undefined;
+    },
+    async writeToken(token, by) {
+      if (!isPressToken(token)) throw new Error("not a press token");
+      if (!pressKey || !configured()) return false;
+      await writeJson(pressKey, { token, updatedAt: new Date().toISOString(), updatedBy: by });
+      return true;
+    },
+  };
+
+  return { key, configured, readOverlays, writeOverlay, clearOverlay, shows, press };
 }
 
 /**

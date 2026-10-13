@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ArtworkOverlay } from "./overlay";
+import { generatePressToken, pressTokenMatches } from "./press-kit";
 import type { Artwork } from "./record";
 import { formatAvailability } from "./record";
+import type { ShowRecord } from "./shows";
 import { createStudioStore, merge, mergeAll } from "./studio-store";
 
 const base = (over: Partial<Artwork> = {}): Artwork => ({
@@ -323,5 +325,222 @@ describe("the store", () => {
     };
     const back = await storeWith(fakeUpstash(JSON.stringify(stored))).readOverlays();
     expect(JSON.stringify(back)).toBe(JSON.stringify(stored));
+  });
+});
+
+/** Upstash's REST shape over several keys: GET answers { result }, SET stores the body.
+    `failSet` makes every SET answer 503. */
+function fakeKv(initial: Record<string, string> = {}, failSet = false) {
+  const values = new Map<string, string>(Object.entries(initial));
+  const calls: FakeCall[] = [];
+  const fetchFn = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input);
+    calls.push({ url, init: init ?? {} });
+    const match = /\/(get|set)\/(.+)$/.exec(url);
+    const key = match?.[2] ?? "";
+    if (match?.[1] === "set") {
+      if (failSet) return new Response("down", { status: 503 });
+      values.set(key, String(init?.body));
+      return Response.json({ result: "OK" });
+    }
+    return Response.json({ result: values.get(key) ?? null });
+  }) as typeof fetch;
+  return { fetchFn, calls, values };
+}
+
+const OVERLAYS_KEY = "studio:test:overlays";
+const SHOWS_KEY = "studio:test:shows";
+const PRESS_KEY = "studio:test:press";
+
+function storesWith(
+  kv: ReturnType<typeof fakeKv>,
+  keys: { showsKey?: string; pressKey?: string } = { showsKey: SHOWS_KEY, pressKey: PRESS_KEY },
+) {
+  return createStudioStore({
+    key: OVERLAYS_KEY,
+    ...keys,
+    urlEnv: URL_ENV,
+    tokenEnv: TOKEN_ENV,
+    cachedRead: { next: { revalidate: 60 } },
+    fetch: kv.fetchFn,
+  });
+}
+
+/** Obviously fake facts: nothing here describes a real show. */
+const testShow = (slug: string, over: Partial<ShowRecord> = {}): ShowRecord => ({
+  slug,
+  title: `Test Show ${slug}`,
+  kind: "group",
+  venue: "Test Gallery",
+  city: "Test City",
+  startsOn: "2026-11-07",
+  endsOn: "2026-12-05",
+  workSlugs: ["waterscape-01"],
+  publish: "published",
+  ...over,
+});
+
+describe("the shows store", () => {
+  beforeEach(() => {
+    process.env[URL_ENV] = "https://kv.example.test/";
+    process.env[TOKEN_ENV] = "kv-token";
+  });
+
+  afterEach(() => {
+    process.env = { ...original };
+  });
+
+  it("reads null and writes nothing when the site names no shows key", async () => {
+    const kv = fakeKv();
+    const { shows } = storesWith(kv, {});
+    expect(shows.key).toBeUndefined();
+    expect(shows.configured()).toBe(false);
+    expect(await shows.readShows()).toBeNull();
+    expect(await shows.writeShow(testShow("a"), "artist")).toBe(false);
+    expect(await shows.deleteShow("a")).toBe(false);
+    expect(kv.calls).toEqual([]);
+  });
+
+  it("reads null, never an empty list, when no store is connected", async () => {
+    delete process.env[URL_ENV];
+    const kv = fakeKv();
+    const { shows } = storesWith(kv);
+    expect(shows.key).toBe(SHOWS_KEY);
+    expect(shows.configured()).toBe(false);
+    expect(await shows.readShows()).toBeNull();
+    expect(await shows.writeShow(testShow("a"), "artist")).toBe(false);
+    expect(kv.calls).toEqual([]);
+  });
+
+  it("reads every valid show from its own key, in stored order", async () => {
+    const kv = fakeKv({
+      [SHOWS_KEY]: JSON.stringify({ b: testShow("b"), a: testShow("a"), junk: { slug: "junk" } }),
+    });
+    const back = await storesWith(kv).shows.readShows();
+    expect(back?.map((s) => s.slug)).toEqual(["b", "a"]);
+    expect(kv.calls[0]?.url).toBe(`https://kv.example.test/get/${SHOWS_KEY}`);
+  });
+
+  it("reports nothing saved, or a corrupted blob, as no shows", async () => {
+    expect(await storesWith(fakeKv()).shows.readShows()).toEqual([]);
+    expect(await storesWith(fakeKv({ [SHOWS_KEY]: "{not json" })).shows.readShows()).toEqual([]);
+  });
+
+  it("keeps public reads cacheable and studio reads fresh", async () => {
+    const kv = fakeKv();
+    const { shows } = storesWith(kv);
+    await shows.readShows();
+    await shows.readShows(true);
+    const [publicRead, studioRead] = kv.calls;
+    expect(publicRead?.init.next).toEqual({ revalidate: 60 });
+    expect(publicRead?.init.cache).toBeUndefined();
+    expect(studioRead?.init.cache).toBe("no-store");
+    expect(studioRead?.init.next).toBeUndefined();
+  });
+
+  it("saves a show whole, so a field cleared in the studio stays cleared", async () => {
+    const kv = fakeKv({
+      [SHOWS_KEY]: JSON.stringify({ a: testShow("a", { note: "Old line." }), b: testShow("b") }),
+    });
+    expect(await storesWith(kv).shows.writeShow(testShow("a"), "artist")).toBe(true);
+    const saved = JSON.parse(kv.values.get(SHOWS_KEY) ?? "{}") as Record<string, ShowRecord>;
+    expect(Object.keys(saved)).toEqual(["a", "b"]);
+    expect(saved.a?.note).toBeUndefined();
+    expect(saved.a?.updatedBy).toBe("artist");
+    expect(Number.isNaN(Date.parse(saved.a?.updatedAt ?? ""))).toBe(false);
+    expect(saved.b).toEqual(testShow("b"));
+    const write = kv.calls.at(-1);
+    expect(write?.url).toBe(`https://kv.example.test/set/${SHOWS_KEY}`);
+    expect(write?.init.method).toBe("POST");
+    expect(kv.values.has(OVERLAYS_KEY)).toBe(false);
+  });
+
+  it("adds a new show after the ones already saved", async () => {
+    const kv = fakeKv({ [SHOWS_KEY]: JSON.stringify({ a: testShow("a") }) });
+    await storesWith(kv).shows.writeShow(testShow("c"), "operator");
+    expect(Object.keys(JSON.parse(kv.values.get(SHOWS_KEY) ?? "{}"))).toEqual(["a", "c"]);
+  });
+
+  it("deletes one show and keeps the rest", async () => {
+    const kv = fakeKv({ [SHOWS_KEY]: JSON.stringify({ a: testShow("a"), b: testShow("b") }) });
+    expect(await storesWith(kv).shows.deleteShow("a")).toBe(true);
+    expect(JSON.parse(kv.values.get(SHOWS_KEY) ?? "{}")).toEqual({ b: testShow("b") });
+  });
+
+  it("throws when the store refuses the write, so a save never looks done", async () => {
+    const kv = fakeKv({ [SHOWS_KEY]: JSON.stringify({ a: testShow("a") }) }, true);
+    await expect(storesWith(kv).shows.writeShow(testShow("b"), "artist")).rejects.toThrow(
+      "store 503",
+    );
+    await expect(storesWith(kv).shows.deleteShow("a")).rejects.toThrow("store 503");
+  });
+});
+
+describe("the press token store", () => {
+  beforeEach(() => {
+    process.env[URL_ENV] = "https://kv.example.test/";
+    process.env[TOKEN_ENV] = "kv-token";
+  });
+
+  afterEach(() => {
+    process.env = { ...original };
+  });
+
+  it("reads null and writes nothing when the site names no press key", async () => {
+    const kv = fakeKv();
+    const { press } = storesWith(kv, { showsKey: SHOWS_KEY });
+    expect(press.key).toBeUndefined();
+    expect(press.configured()).toBe(false);
+    expect(await press.readToken()).toBeNull();
+    expect(await press.writeToken(generatePressToken(), "operator")).toBe(false);
+    expect(kv.calls).toEqual([]);
+  });
+
+  it("reads null when no store is connected", async () => {
+    delete process.env[TOKEN_ENV];
+    expect(await storesWith(fakeKv()).press.readToken()).toBeNull();
+  });
+
+  it("reads undefined until a token is set, then that token", async () => {
+    const kv = fakeKv();
+    const { press } = storesWith(kv);
+    expect(await press.readToken()).toBeUndefined();
+    const token = generatePressToken();
+    expect(await press.writeToken(token, "operator")).toBe(true);
+    expect(await press.readToken(true)).toBe(token);
+    const saved = JSON.parse(kv.values.get(PRESS_KEY) ?? "{}") as Record<string, unknown>;
+    expect(saved.token).toBe(token);
+    expect(saved.updatedBy).toBe("operator");
+  });
+
+  it("replaces the stored token in place, so the old link stops matching", async () => {
+    const kv = fakeKv();
+    const { press } = storesWith(kv);
+    const first = generatePressToken();
+    const second = generatePressToken();
+    await press.writeToken(first, "operator");
+    expect(pressTokenMatches(first, await press.readToken(true))).toBe(true);
+    await press.writeToken(second, "operator");
+    const current = await press.readToken(true);
+    expect(current).toBe(second);
+    expect(pressTokenMatches(first, current)).toBe(false);
+    expect(pressTokenMatches(second, current)).toBe(true);
+    expect([...kv.values.keys()]).toEqual([PRESS_KEY]);
+    expect(JSON.parse(kv.values.get(PRESS_KEY) ?? "{}").token).toBe(second);
+  });
+
+  it("refuses a token it did not make, and writes nothing", async () => {
+    const kv = fakeKv();
+    await expect(storesWith(kv).press.writeToken("short", "operator")).rejects.toThrow(
+      "not a press token",
+    );
+    expect(kv.calls).toEqual([]);
+  });
+
+  it("treats a stored token of the wrong shape, or a corrupted blob, as none", async () => {
+    const wrong = fakeKv({ [PRESS_KEY]: JSON.stringify({ token: "short" }) });
+    expect(await storesWith(wrong).press.readToken()).toBeUndefined();
+    const corrupted = fakeKv({ [PRESS_KEY]: "{not json" });
+    expect(await storesWith(corrupted).press.readToken()).toBeUndefined();
   });
 });
