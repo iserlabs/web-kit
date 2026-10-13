@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ArtworkOverlay } from "./overlay";
 import type { Artwork } from "./record";
-import { createStudioStore, merge, mergeAll } from "./studio-store";
+import { formatAvailability } from "./record";
+import { createStudioStore, merge, mergeAll, sanitizeStoredOverlay } from "./studio-store";
 
 const base = (over: Partial<Artwork> = {}): Artwork => ({
   slug: "waterscape-01",
@@ -211,5 +212,95 @@ describe("the store", () => {
 
   it("throws when the store answers with an error, so a save never looks done", async () => {
     await expect(storeWith(fakeUpstash(null, 500)).readOverlays()).rejects.toThrow("store 500");
+  });
+  it.each([["null"], ["[1,2]"], ['"str"'], ["42"]])(
+    "treats stored %s as configured with nothing usable, never as no store",
+    async (stored) => {
+      expect(await storeWith(fakeUpstash(stored)).readOverlays()).toEqual({});
+    },
+  );
+
+  it("drops entries that are not plain objects", async () => {
+    expect(
+      await storeWith(
+        fakeUpstash(JSON.stringify({ a: "garbage", b: null, c: [1], d: { title: "D" } })),
+      ).readOverlays(),
+    ).toEqual({ d: { title: "D" } });
+  });
+
+  it("does not let a price without an amount reach the merged artwork", async () => {
+    const overlays = await storeWith(
+      fakeUpstash(JSON.stringify({ "waterscape-01": { price: { visibility: "public" } } })),
+    ).readOverlays();
+    const merged = mergeAll([base()], overlays)[0] as Artwork;
+    expect(merged.price).toBeUndefined();
+    expect(() => formatAvailability(merged)).not.toThrow();
+  });
+
+  it("never writes junk-shaped stored data back on the next save", async () => {
+    const fake = fakeUpstash(
+      JSON.stringify({ a: { title: 7, price: { visibility: "public" }, extra: "x" }, b: "junk" }),
+    );
+    await storeWith(fake).writeOverlay("c", { title: "C" }, "artist");
+    const saved = JSON.parse(String(fake.stored())) as Record<string, ArtworkOverlay>;
+    expect(saved.a).toEqual({});
+    expect(saved.b).toBeUndefined();
+    expect(saved.c?.title).toBe("C");
+  });
+
+  it("reads a valid realistic overlay back unchanged", async () => {
+    const valid: ArtworkOverlay = {
+      title: "Alcyone",
+      year: 2025,
+      medium: ["Oil", "graphite"],
+      substrate: "linen",
+      dimensions: { height: 36, width: 24, depth: 1.5, unit: "in" },
+      edition: { number: 2, of: 10 },
+      availability: "available",
+      lifecycle: "current",
+      publish: "published",
+      price: { amount: 4200, currency: "USD", visibility: "public" },
+      certificateRef: "CERT-1",
+      blurb: "A quiet one.",
+      updatedAt: "2026-08-09T00:00:00.000Z",
+      updatedBy: "julian",
+    };
+    expect(sanitizeStoredOverlay(valid)).toEqual(valid);
+    expect(await storeWith(fakeUpstash(JSON.stringify({ a: valid }))).readOverlays()).toEqual({
+      a: valid,
+    });
+  });
+
+  it("does not let cachedRead override Authorization or the request", async () => {
+    const fake = fakeUpstash(null);
+    const store = createStudioStore({
+      key: "k",
+      urlEnv: URL_ENV,
+      tokenEnv: TOKEN_ENV,
+      cachedRead: { headers: { Authorization: "Bearer evil" }, method: "DELETE" },
+      fetch: fake.fetchFn,
+    });
+    await store.readOverlays();
+    const init = fake.calls[0]?.init;
+    expect(new Headers(init?.headers).get("authorization")).toBe("Bearer kv-token");
+    expect(init?.method).not.toBe("DELETE");
+  });
+
+  it("throws when the SET fails after a good GET, so a save never looks done", async () => {
+    const calls: string[] = [];
+    const fetchFn = (async (input: string | URL | Request) => {
+      const url = String(input);
+      calls.push(url);
+      if (url.includes("/set/")) return new Response("down", { status: 503 });
+      return Response.json({ result: JSON.stringify({ a: { title: "A" } }) });
+    }) as typeof fetch;
+    const store = createStudioStore({
+      key: "k",
+      urlEnv: URL_ENV,
+      tokenEnv: TOKEN_ENV,
+      fetch: fetchFn,
+    });
+    await expect(store.writeOverlay("a", { year: 2025 }, "artist")).rejects.toThrow("store 503");
+    expect(calls).toHaveLength(2);
   });
 });

@@ -57,6 +57,61 @@ export interface StudioStore {
   clearOverlay(slug: string): Promise<boolean>;
 }
 
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+const posNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v > 0;
+const isStr = (v: unknown): v is string => typeof v === "string";
+
+/**
+ * Whatever is stored may be wrongly shaped (hand-edited, an older version, another
+ * writer). Keeps only the ArtworkOverlay keys, each only when its type is right, so a
+ * junk value can neither reach the page nor be written back on the next save. Valid
+ * data passes through unchanged.
+ */
+export function sanitizeStoredOverlay(raw: unknown): ArtworkOverlay {
+  const out: Record<string, unknown> = {};
+  if (!isPlainObject(raw)) return out as ArtworkOverlay;
+  for (const k of ["title", "substrate", "certificateRef", "blurb", "updatedAt", "updatedBy"]) {
+    if (isStr(raw[k])) out[k] = raw[k];
+  }
+  if (typeof raw.year === "number" && Number.isFinite(raw.year)) out.year = raw.year;
+  if (Array.isArray(raw.medium) && raw.medium.every(isStr)) out.medium = raw.medium;
+  const d = raw.dimensions;
+  if (
+    isPlainObject(d) &&
+    posNum(d.height) &&
+    posNum(d.width) &&
+    (d.unit === "in" || d.unit === "cm")
+  ) {
+    out.dimensions = {
+      height: d.height,
+      width: d.width,
+      ...(posNum(d.depth) ? { depth: d.depth } : {}),
+      unit: d.unit,
+    };
+  }
+  const e = raw.edition;
+  if (isPlainObject(e) && posNum(e.number) && posNum(e.of))
+    out.edition = { number: e.number, of: e.of };
+  const p = raw.price;
+  if (
+    isPlainObject(p) &&
+    posNum(p.amount) &&
+    p.currency === "USD" &&
+    (p.visibility === "public" || p.visibility === "on-request")
+  ) {
+    out.price = { amount: p.amount, currency: "USD", visibility: p.visibility };
+  }
+  if (["available", "sold", "reserved", "not-for-sale"].includes(raw.availability as string))
+    out.availability = raw.availability;
+  if (["current", "earlier", "archived"].includes(raw.lifecycle as string))
+    out.lifecycle = raw.lifecycle;
+  if (["published", "draft"].includes(raw.publish as string)) out.publish = raw.publish;
+  return out as ArtworkOverlay;
+}
+
 export function createStudioStore(options: StudioStoreOptions): StudioStore {
   const { key } = options;
   const urlEnv = options.urlEnv ?? "KV_REST_API_URL";
@@ -81,9 +136,10 @@ export function createStudioStore(options: StudioStoreOptions): StudioStore {
     if (!c) return null;
     const doFetch = options.fetch ?? globalThis.fetch;
     const res = await doFetch(`${c.url}/${path}`, {
-      ...init,
-      headers: { Authorization: `Bearer ${c.token}`, ...(init?.headers ?? {}) },
       ...(fresh ? { cache: "no-store" as const } : (options.cachedRead ?? {})),
+      method: init?.method ?? "GET",
+      body: init?.body,
+      headers: { Authorization: `Bearer ${c.token}`, ...(init?.headers ?? {}) },
     } as RequestInit);
     if (!res.ok) throw new Error(`store ${res.status}`);
     const body = (await res.json()) as { result?: unknown };
@@ -95,9 +151,13 @@ export function createStudioStore(options: StudioStoreOptions): StudioStore {
     const raw = await call(`get/${key}`, undefined, fresh);
     if (raw === null || raw === undefined) return {};
     try {
-      return typeof raw === "string"
-        ? (JSON.parse(raw) as Record<string, ArtworkOverlay>)
-        : (raw as Record<string, ArtworkOverlay>);
+      const parsed: unknown = typeof raw === "string" ? JSON.parse(raw) : raw;
+      if (!isPlainObject(parsed)) return {};
+      const out: Record<string, ArtworkOverlay> = {};
+      for (const [slug, entry] of Object.entries(parsed)) {
+        if (isPlainObject(entry)) out[slug] = sanitizeStoredOverlay(entry);
+      }
+      return out;
     } catch {
       // A corrupted blob must not take the public site down with it. Report empty and
       // let the base catalog render; the studio will overwrite on the next save.
