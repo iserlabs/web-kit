@@ -108,11 +108,16 @@ if [ -f "$LOG" ] && [ "$(wc -c < "$LOG")" -gt "$LOG_MAX_BYTES" ]; then
   tail -n "$LOG_KEEP_LINES" "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"
 fi
 
+# SYNC_HARNESS_FORCE=1 (from `sync-harness now`) skips the waiting rules below WITHOUT forgetting
+# when the last good read was. Zeroing last_good to force a run (the first version) made any forced
+# run that then failed read as 30 hours stale, so the watchdog went red on a single hiccup.
+if [ "${SYNC_HARNESS_FORCE:-0}" != 1 ]; then
 [ $((now - last_good)) -lt "$DUE" ] && verdict
 [ "$now" -lt "${next_try:-0}" ] && verdict
 if [ -n "$fail_head" ]; then
   head=$(harness_code_head)
   if [ -n "$head" ] && [ "$head" = "$fail_head" ] && [ "$now" -lt $((next_try + CODE_WAIT)) ]; then verdict; fi
+fi
 fi
 
 # A run already going owns the log and whatever it drives; this beat says nothing.
