@@ -6,3 +6,4 @@
 export * from "./availability";
 export * from "./cv";
 export * from "./record";
+export * from "./studio-auth";
