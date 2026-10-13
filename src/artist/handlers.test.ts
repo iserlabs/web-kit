@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loginHandler, showsHandler, workHandler } from "./handlers";
 import type { ArtworkOverlay } from "./overlay";
 import type { ShowRecord } from "./shows";
@@ -430,7 +430,7 @@ describe("workHandler onError", () => {
       store,
       catalog,
       onError: async () => {
-        await Promise.resolve();
+        await new Promise((resolve) => setTimeout(resolve, 5));
         finished += 1;
       },
     });
@@ -705,7 +705,7 @@ describe("showsHandler onError", () => {
       store,
       catalog,
       onError: async () => {
-        await Promise.resolve();
+        await new Promise((resolve) => setTimeout(resolve, 5));
         finished += 1;
       },
     });
@@ -725,6 +725,84 @@ describe("showsHandler onError", () => {
       expect(res.status, method).toBe(503);
       expect(await res.json()).toEqual(REFUSED);
     }
+  });
+
+  it("answers 503 promptly when the reporter never settles, and clears its timer", async () => {
+    const { store } = failingShows();
+    const handler = showsHandler({
+      auth,
+      store,
+      catalog,
+      reportTimeoutMs: 20,
+      onError: () => new Promise<void>(() => {}),
+    });
+    const started = Date.now();
+    const res = await handler.GET(await getReq());
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual(REFUSED);
+    expect(Date.now() - started).toBeLessThan(1000);
+  });
+
+  it("caps a hung reporter at two seconds by default, and leaves no timer behind", async () => {
+    const { store } = failingShows();
+    const req = await getReq();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      const hung = showsHandler({
+        auth,
+        store,
+        catalog,
+        onError: () => new Promise<void>(() => {}),
+      });
+      let status = 0;
+      const pending = hung.GET(req).then((r) => {
+        status = r.status;
+      });
+      // The cookie check runs on real async crypto, so wait until the ceiling timer is set.
+      while (vi.getTimerCount() === 0) await new Promise((r) => setImmediate(r));
+      await vi.advanceTimersByTimeAsync(1999);
+      expect(status).toBe(0);
+      await vi.advanceTimersByTimeAsync(1);
+      await pending;
+      expect(status).toBe(503);
+      expect(vi.getTimerCount()).toBe(0);
+
+      const quick = showsHandler({ auth, store, catalog, onError: async () => {} });
+      expect((await quick.GET(await getReq())).status).toBe(503);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("answers DELETE with the refused body when deleteShow returns false", async () => {
+    const { store, data } = memoryShows({ accepts: false });
+    const calls: unknown[] = [];
+    const handler = showsHandler({ auth, store, catalog, onError: (e) => void calls.push(e) });
+    const res = await handler.DELETE(await delReq());
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual(REFUSED);
+    expect(data["test-show"]).toBeDefined();
+    expect(calls).toEqual([]);
+  });
+
+  it("answers DELETE with the refused body when deleteShow throws, reporting once", async () => {
+    const { store } = memoryShows();
+    const boom = new Error("delete failed");
+    store.deleteShow = async () => {
+      throw boom;
+    };
+    const calls: { error: unknown; context: unknown }[] = [];
+    const handler = showsHandler({
+      auth,
+      store,
+      catalog,
+      onError: (error, context) => void calls.push({ error, context }),
+    });
+    const res = await handler.DELETE(await delReq());
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual(REFUSED);
+    expect(calls).toEqual([{ error: boom, context: { method: "DELETE", slug: "test-show" } }]);
   });
 
   it("does not change the 503 answer when onError itself throws", async () => {

@@ -2353,7 +2353,7 @@ cd /Users/macbook/Claude/.claude-worktrees/web-kit-payments-rail && git add src/
   - `showsHandler(options): { GET(request): Promise<Response>; PUT(request): Promise<Response>; DELETE(request): Promise<Response> }`
   - Answers: GET `{ configured: false, shows: [] }` or `{ configured: true, shows: ShowRecord[] }`; PUT `{ ok: true, show }`, or 400 `{ error: "That show is not ready to save.", problems: string[] }`; DELETE `{ ok: true }`, or 404 `{ error: "That is not a show on this site." }`; 401 `{ error: "locked" }`; 413 `{ error: "That is too long." }`; 503 `{ error: "No store is connected, so nothing would be saved." }` or `{ error: "The store did not accept that." }`.
 
-Decision recorded here: **any signed-in role may delete a show**, because a show is a fact the artist typed himself and removing a cancelled or mistaken one is routine editing that touches no work's record, unlike resetting a work, which discards history only the operator may discard.
+Decision recorded here: **any signed-in role may delete a show**, because a show is a fact the artist typed himself and removing a canceled or mistaken one is routine editing that touches no work's record, unlike resetting a work, which discards history only the operator may discard.
 
 Decision recorded here: the handler **awaits** `onError`, inside a try/catch. Awaiting means a serverless runtime cannot freeze an async report half sent after the answer goes out; the try/catch means a reporter that throws or rejects never changes the 503 and never surfaces as an unhandled rejection.
 
@@ -2999,7 +2999,7 @@ export function workHandler<R extends string>({
  * Every write passes `cleanShow`, which refuses an incomplete or impossible show and
  * names each problem, and checks every listed work against the site's catalog. Any
  * signed-in role may delete a show: a show is the artist's own fact, and removing a
- * cancelled one touches no work's record.
+ * canceled one touches no work's record.
  */
 export function showsHandler<R extends string>({
   auth,

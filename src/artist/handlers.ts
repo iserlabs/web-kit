@@ -55,6 +55,9 @@ export interface WorkHandlerOptions<R extends string = string> {
   /** The longest request body accepted, in characters. Default 8000. */
   maxBodyLength?: number;
   onError?: StudioErrorReporter;
+  /** The longest the handler waits for `onError`, in milliseconds. Default 2000. A
+      reporter still running after that no longer holds the response. */
+  reportTimeoutMs?: number;
 }
 
 export interface WorkHandler {
@@ -72,6 +75,9 @@ export interface ShowsHandlerOptions<R extends string = string> {
   /** The longest request body accepted, in characters. Default 8000. */
   maxBodyLength?: number;
   onError?: StudioErrorReporter;
+  /** The longest the handler waits for `onError`, in milliseconds. Default 2000. A
+      reporter still running after that no longer holds the response. */
+  reportTimeoutMs?: number;
 }
 
 export interface ShowsHandler {
@@ -91,18 +97,30 @@ const refused = () => json({ error: "The store did not accept that." }, 503);
 const noStore = () => json({ error: "No store is connected, so nothing would be saved." }, 503);
 const unreadable = () => json({ error: "Could not read that." }, 400);
 
-/** Hands a store failure to the site's reporter, if it has one, and waits for it. A
+const REPORT_TIMEOUT_MS = 2000;
+
+/** Hands a store failure to the site's reporter, if it has one, and waits for it, but
+    never longer than `timeoutMs`, so a hung reporter cannot hold the response. A
     reporter that throws or rejects must not turn a clean 503 into an unhandled error. */
 async function report(
   onError: StudioErrorReporter | undefined,
   error: unknown,
   context: StudioErrorContext,
+  timeoutMs: number,
 ): Promise<void> {
   if (!onError) return;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const ceiling = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, timeoutMs);
+    // Never keep a Node process alive for the sake of a report.
+    (timer as { unref?: () => void }).unref?.();
+  });
   try {
-    await onError(error, context);
+    await Promise.race([Promise.resolve().then(() => onError(error, context)), ceiling]);
   } catch {
     // Swallowed on purpose: the answer is already decided.
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -182,6 +200,7 @@ export function workHandler<R extends string>({
   catalog,
   maxBodyLength = 8000,
   onError,
+  reportTimeoutMs = REPORT_TIMEOUT_MS,
 }: WorkHandlerOptions<R>): WorkHandler {
   async function GET(request: Request): Promise<Response> {
     if (!(await auth.roleFrom(request))) return locked();
@@ -189,7 +208,7 @@ export function workHandler<R extends string>({
     try {
       return json({ configured: true, overlays: (await store.readOverlays(true)) ?? {} });
     } catch (error) {
-      await report(onError, error, { method: "GET" });
+      await report(onError, error, { method: "GET" }, reportTimeoutMs);
       return refused();
     }
   }
@@ -209,7 +228,7 @@ export function workHandler<R extends string>({
       const ok = await store.writeOverlay(slug, cleanOverlay(body), who);
       return ok ? json({ ok: true }) : refused();
     } catch (error) {
-      await report(onError, error, { method: "PUT", slug });
+      await report(onError, error, { method: "PUT", slug }, reportTimeoutMs);
       return refused();
     }
   }
@@ -229,7 +248,7 @@ export function workHandler<R extends string>({
       const ok = await store.clearOverlay(slug);
       return ok ? json({ ok: true }) : refused();
     } catch (error) {
-      await report(onError, error, { method: "DELETE", slug });
+      await report(onError, error, { method: "DELETE", slug }, reportTimeoutMs);
       return refused();
     }
   }
@@ -243,7 +262,7 @@ export function workHandler<R extends string>({
  * Every write passes `cleanShow`, which refuses an incomplete or impossible show and
  * names each problem, and checks every listed work against the site's catalog. Any
  * signed-in role may delete a show: a show is the artist's own fact, and removing a
- * cancelled one touches no work's record.
+ * canceled one touches no work's record.
  */
 export function showsHandler<R extends string>({
   auth,
@@ -251,6 +270,7 @@ export function showsHandler<R extends string>({
   catalog,
   maxBodyLength = 8000,
   onError,
+  reportTimeoutMs = REPORT_TIMEOUT_MS,
 }: ShowsHandlerOptions<R>): ShowsHandler {
   async function GET(request: Request): Promise<Response> {
     if (!(await auth.roleFrom(request))) return locked();
@@ -258,7 +278,7 @@ export function showsHandler<R extends string>({
     try {
       return json({ configured: true, shows: (await store.readShows(true)) ?? [] });
     } catch (error) {
-      await report(onError, error, { method: "GET" });
+      await report(onError, error, { method: "GET" }, reportTimeoutMs);
       return refused();
     }
   }
@@ -280,7 +300,7 @@ export function showsHandler<R extends string>({
       const ok = await store.writeShow(result.show, who);
       return ok ? json({ ok: true, show: result.show }) : refused();
     } catch (error) {
-      await report(onError, error, { method: "PUT", slug: result.show.slug });
+      await report(onError, error, { method: "PUT", slug: result.show.slug }, reportTimeoutMs);
       return refused();
     }
   }
@@ -297,7 +317,7 @@ export function showsHandler<R extends string>({
       const ok = await store.deleteShow(slug);
       return ok ? json({ ok: true }) : refused();
     } catch (error) {
-      await report(onError, error, { method: "DELETE", slug });
+      await report(onError, error, { method: "DELETE", slug }, reportTimeoutMs);
       return refused();
     }
   }
