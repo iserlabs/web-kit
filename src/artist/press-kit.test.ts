@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Cv } from "./cv";
-import { generatePressToken, isPressToken, pressKit, pressTokenMatches } from "./press-kit";
+import {
+  formatPriceLine,
+  generatePressToken,
+  isPressToken,
+  type PriceListEntry,
+  pressKit,
+  pressTokenMatches,
+} from "./press-kit";
 import type { Artwork, Price } from "./record";
 import type { Show } from "./shows";
 
@@ -88,6 +95,12 @@ describe("pressKit: what a gallerist is sent", () => {
         title: "Title no-price, 2025",
         status: "available",
       },
+      {
+        slug: "unrecorded",
+        catalogId: "TT-unrecorded",
+        title: "Title unrecorded, 2025",
+        status: "unstated",
+      },
       { slug: "sold", catalogId: "TT-sold", title: "Title sold, 2025", status: "sold" },
       {
         slug: "reserved",
@@ -96,12 +109,6 @@ describe("pressKit: what a gallerist is sent", () => {
         status: "reserved",
       },
       { slug: "kept", catalogId: "TT-kept", title: "Title kept, 2025", status: "not-for-sale" },
-      {
-        slug: "unrecorded",
-        catalogId: "TT-unrecorded",
-        title: "Title unrecorded, 2025",
-        status: "unstated",
-      },
     ]);
   });
 
@@ -131,7 +138,7 @@ describe("pressKit: what a gallerist is sent", () => {
   });
 
   it("prints the statement verbatim, and nothing when there is none", () => {
-    expect(kit.statement).toBe("A statement.");
+    expect(kit.statement).toEqual(["A statement."]);
     const without = pressKit({ works, cv, shows: [], statement: "  ", now });
     expect(without).not.toHaveProperty("statement");
   });
@@ -214,5 +221,64 @@ describe("pressKit: the full record carries no hidden price or master file", () 
 
   it("never carries masterSrc", () => {
     for (const w of hidden.works) expect(w.work, w.work.slug).not.toHaveProperty("masterSrc");
+  });
+});
+
+describe("pressKit: the statement as the artist wrote it", () => {
+  it("keeps each paragraph verbatim and in order, dropping blank ones", () => {
+    const k = pressKit({
+      works: [],
+      cv,
+      shows: [],
+      statement: ["First  paragraph.", "  ", "Second."],
+      now,
+    });
+    expect(k.statement).toEqual(["First  paragraph.", "Second."]);
+  });
+});
+
+describe("pressKit: the order a gallerist meets the work in", () => {
+  it("leads with current work, then earlier, then archived, available first within each, and the price list follows entry for entry", () => {
+    const k = pressKit({
+      works: [
+        work("old-sold", { lifecycle: "archived", availability: "sold" }),
+        work("old-open", {
+          lifecycle: "archived",
+          availability: "available",
+          price: usd(1500, "public"),
+        }),
+        work("mid", {
+          lifecycle: "earlier",
+          availability: "available",
+          price: usd(1600, "public"),
+        }),
+        work("new-sold", { lifecycle: "current", availability: "sold" }),
+        work("new-open", {
+          lifecycle: "current",
+          availability: "available",
+          price: usd(1700, "on-request"),
+        }),
+      ],
+      cv,
+      shows: [],
+      now,
+    });
+    const order = ["new-open", "new-sold", "mid", "old-open", "old-sold"];
+    expect(k.works.map((w) => w.work.slug)).toEqual(order);
+    expect(k.priceList.map((p) => p.slug)).toEqual(order);
+  });
+});
+
+describe("formatPriceLine: the price list in plain words", () => {
+  it("prints a public price and an on-request price, and says so when either is missing", () => {
+    const line = (over: Partial<PriceListEntry>): string =>
+      formatPriceLine({ slug: "t", catalogId: "TT-t", title: "T", status: "available", ...over });
+    expect(line({ price: usd(4200, "public") })).toBe("$4,200");
+    expect(line({ price: usd(12000, "on-request") })).toBe("$12,000 · on request");
+    expect(line({})).toBe("Available, not priced yet");
+    expect(line({ status: "sold" })).toBe("Sold");
+    expect(line({ status: "reserved" })).toBe("Reserved");
+    expect(line({ status: "not-for-sale" })).toBe("Not for sale");
+    expect(line({ status: "unstated" })).toBe("Availability not recorded yet");
   });
 });

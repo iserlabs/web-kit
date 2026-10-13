@@ -1,3 +1,4 @@
+import { forDisplay } from "./availability";
 import { b64url, safeEqual } from "./bytes";
 import { type Cv, cvFromShows, mergeCv } from "./cv";
 import { type Artwork, formatTitleLine, type Price } from "./record";
@@ -14,6 +15,12 @@ import { DEFAULT_TIME_ZONE, type Show } from "./shows";
  * who sees it differs. A work that cannot be had (sold, reserved, not for sale, or
  * never recorded) is listed without a price.
  *
+ * Works come in the order a visitor meets them (`forDisplay`): current work first,
+ * then earlier, then archived, and within each the available pieces first. Ordering,
+ * not exclusion, so a gallerist sees the whole published record, archive included,
+ * with the current practice leading. The price list follows the same order, entry
+ * for entry.
+ *
  * Pure: the page that prints it, and that checks the token, belongs to the site.
  */
 
@@ -23,8 +30,8 @@ export interface PressKitInput<A extends Artwork> {
   /** The CV typed by hand; the shows' lines are added here. */
   cv: Cv;
   shows: readonly Show[];
-  /** The artist's statement, printed verbatim. */
-  statement?: string;
+  /** The artist's statement, printed verbatim: one string, or its paragraphs in order. */
+  statement?: string | readonly string[];
   now: Date;
   timeZone?: string;
 }
@@ -52,7 +59,8 @@ export interface PressKitWork<A extends Artwork> {
 }
 
 export interface PressKit<A extends Artwork> {
-  statement?: string;
+  /** The statement's paragraphs, verbatim, blank ones dropped. Absent when there is none. */
+  statement?: string[];
   cv: Cv;
   works: PressKitWork<A>[];
   priceList: PriceListEntry[];
@@ -85,13 +93,36 @@ export function pressKit<A extends Artwork>({
   now,
   timeZone = DEFAULT_TIME_ZONE,
 }: PressKitInput<A>): PressKit<A> {
-  const published = works.filter((w) => w.publish === "published");
+  const published = forDisplay(works.filter((w) => w.publish === "published"));
+  const given: readonly string[] = typeof statement === "string" ? [statement] : (statement ?? []);
+  const paragraphs = given.filter((p) => p.trim() !== "");
   return {
-    ...(statement?.trim() ? { statement } : {}),
+    ...(paragraphs.length > 0 ? { statement: paragraphs } : {}),
     cv: mergeCv(cv, cvFromShows(shows, now, timeZone)),
     works: published.map((work) => ({ work: publicRecord(work), image: work.hi ?? work.src })),
     priceList: published.map(priceLine),
   };
+}
+
+/** One price list line in plain words. An available work prints its price, public or
+    on request; one with no recorded price says so, rather than leave a blank that
+    reads like a mistake. */
+export function formatPriceLine(entry: PriceListEntry): string {
+  switch (entry.status) {
+    case "available": {
+      if (!entry.price) return "Available, not priced yet";
+      const amount = `$${entry.price.amount.toLocaleString("en-US")}`;
+      return entry.price.visibility === "on-request" ? `${amount} · on request` : amount;
+    }
+    case "sold":
+      return "Sold";
+    case "reserved":
+      return "Reserved";
+    case "not-for-sale":
+      return "Not for sale";
+    default:
+      return "Availability not recorded yet";
+  }
 }
 
 /* ------------------------------------------------------------------ the token */

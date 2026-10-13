@@ -22,6 +22,7 @@ const FUNCTIONS = [
   "formatLabel",
   "formatMediumLine",
   "formatOpening",
+  "formatPriceLine",
   "formatShowDates",
   "formatTitleLine",
   "generatePressToken",
