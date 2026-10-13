@@ -474,6 +474,48 @@ describe("the shows store", () => {
     );
     await expect(storesWith(kv).shows.deleteShow("a")).rejects.toThrow("store 503");
   });
+
+  it("throws when the read inside a write fails, and never issues a set", async () => {
+    const kv = fakeKv({ [SHOWS_KEY]: JSON.stringify({ a: testShow("a") }) });
+    const failingGet = (async (input: string | URL | Request, init?: RequestInit) => {
+      kv.calls.push({ url: String(input), init: init ?? {} });
+      return new Response("down", { status: 503 });
+    }) as typeof fetch;
+    const { shows } = createStudioStore({
+      key: OVERLAYS_KEY,
+      showsKey: SHOWS_KEY,
+      urlEnv: URL_ENV,
+      tokenEnv: TOKEN_ENV,
+      fetch: failingGet,
+    });
+    await expect(shows.writeShow(testShow("b"), "artist")).rejects.toThrow("store 503");
+    await expect(shows.deleteShow("a")).rejects.toThrow("store 503");
+    expect(kv.calls.length).toBe(2);
+    expect(kv.calls.every((c) => c.url.includes("/get/"))).toBe(true);
+  });
+});
+
+describe("keys that must stay apart", () => {
+  const make = (keys: { key: string; showsKey?: string; pressKey?: string }) =>
+    createStudioStore({ ...keys, fetch: fakeKv().fetchFn });
+
+  it("refuses a shows key equal to the overlay key", () => {
+    expect(() => make({ key: "k", showsKey: "k" })).toThrow(/same key/);
+  });
+
+  it("refuses a press key equal to the overlay key", () => {
+    expect(() => make({ key: "k", pressKey: "k" })).toThrow(/same key/);
+  });
+
+  it("refuses a press key equal to the shows key", () => {
+    expect(() => make({ key: "k", showsKey: "s", pressKey: "s" })).toThrow(/same key/);
+  });
+
+  it("constructs with distinct keys, and with the optional keys unset", () => {
+    expect(() => make({ key: "k", showsKey: "s", pressKey: "p" })).not.toThrow();
+    expect(() => make({ key: "k" })).not.toThrow();
+    expect(() => make({ key: "k", showsKey: "s" })).not.toThrow();
+  });
 });
 
 describe("the press token store", () => {
@@ -499,6 +541,13 @@ describe("the press token store", () => {
   it("reads null when no store is connected", async () => {
     delete process.env[TOKEN_ENV];
     expect(await storesWith(fakeKv()).press.readToken()).toBeNull();
+  });
+
+  it("throws when the store refuses the token write", async () => {
+    const kv = fakeKv({}, true);
+    await expect(storesWith(kv).press.writeToken(generatePressToken(), "operator")).rejects.toThrow(
+      "store 503",
+    );
   });
 
   it("reads undefined until a token is set, then that token", async () => {

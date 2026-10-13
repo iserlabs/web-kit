@@ -77,7 +77,8 @@ export interface ShowsStore {
       no shows. `fresh` skips every cache. */
   readShows(fresh?: boolean): Promise<ShowRecord[] | null>;
   /** Saves one show whole, replacing any earlier version with the same slug in its
-      place and keeping the rest. Returns false when unconfigured. */
+      place and keeping the rest. Returns false when unconfigured. Trusts its caller to
+      have validated the show with cleanShow (the shows handler does). */
   writeShow(show: Show, by: string): Promise<boolean>;
   /** Removes one show. Returns false when unconfigured. */
   deleteShow(slug: string): Promise<boolean>;
@@ -104,6 +105,20 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 
 export function createStudioStore(options: StudioStoreOptions): StudioStores {
   const { key, showsKey, pressKey } = options;
+  // Two collections under one key would overwrite each other: a shows key equal to the
+  // overlay key would make the first show save sanitize away every artwork edit.
+  const named = [
+    ["key", key],
+    ["showsKey", showsKey],
+    ["pressKey", pressKey],
+  ] as const;
+  for (const [i, [nameA, a]] of named.entries()) {
+    for (const [nameB, b] of named.slice(i + 1)) {
+      if (a !== undefined && b !== undefined && a === b) {
+        throw new Error(`createStudioStore: ${nameA} and ${nameB} are the same key "${a}"`);
+      }
+    }
+  }
   const urlEnv = options.urlEnv ?? "KV_REST_API_URL";
   const tokenEnv = options.tokenEnv ?? "KV_REST_API_TOKEN";
 
