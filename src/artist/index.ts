@@ -6,6 +6,7 @@
 export * from "./availability";
 export * from "./config";
 export * from "./cv";
+export * from "./handlers";
 export * from "./overlay";
 export * from "./record";
 export * from "./studio-auth";
