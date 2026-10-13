@@ -398,3 +398,52 @@ function storedShow(key: string, v: unknown): ShowRecord | undefined {
   }
   return out as unknown as ShowRecord;
 }
+
+/* ------------------------------------------------------------------ schema */
+
+export interface ShowSite {
+  /** The site's origin, e.g. "https://julianpotulicki.com". A trailing slash is ignored. */
+  url: string;
+  /** Path of a work's page. Default `/work/<slug>`. */
+  workPath?: (slug: string) => string;
+  /** Path of a show's page. Default `/shows/<slug>`. */
+  showPath?: (slug: string) => string;
+}
+
+/**
+ * The show as schema.org's ExhibitionEvent, for the show's own page: its place, its
+ * dates and the works hanging in it. Each work is referenced by the same @id its own
+ * page gives its VisualArtwork, so search engines join the two. An absent fact
+ * prints nothing.
+ */
+export function showJsonLd(show: Show, site: ShowSite): Record<string, unknown> {
+  const origin = site.url.replace(/\/+$/, "");
+  const workPath = site.workPath ?? ((slug: string) => `/work/${slug}`);
+  const showPath = site.showPath ?? ((slug: string) => `/shows/${slug}`);
+  const page = `${origin}${showPath(show.slug)}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "ExhibitionEvent",
+    "@id": `${page}#exhibition`,
+    name: show.title,
+    url: page,
+    startDate: show.startsOn,
+    endDate: show.endsOn,
+    location: {
+      "@type": "Place",
+      name: show.venue,
+      address: {
+        "@type": "PostalAddress",
+        ...(show.address ? { streetAddress: show.address } : {}),
+        addressLocality: show.city,
+      },
+    },
+    ...(show.note ? { description: show.note } : {}),
+    ...(show.href ? { sameAs: show.href } : {}),
+    workFeatured: show.workSlugs.map((slug) => ({
+      "@type": "VisualArtwork",
+      "@id": `${origin}${workPath(slug)}#artwork`,
+      url: `${origin}${workPath(slug)}`,
+    })),
+  };
+}

@@ -7,6 +7,7 @@ import {
   type Show,
   type ShowRecord,
   sanitizeStoredShows,
+  showJsonLd,
   showStatus,
 } from "./shows";
 
@@ -444,5 +445,77 @@ describe("sanitizeStoredShows: what is read back from the store", () => {
 
   it.each([[null], ["junk"], [[1, 2]], [42]])("treats stored %j as no shows", (raw) => {
     expect(sanitizeStoredShows(raw)).toEqual({});
+  });
+});
+
+describe("showJsonLd: the exhibition, for search engines", () => {
+  const site = { url: "https://artist.example.test/" };
+
+  it("describes the show as an ExhibitionEvent with its place, dates and works", () => {
+    const full = show({
+      address: "1 Test Street",
+      note: "A line.",
+      href: "https://gallery.example.test/test-show",
+      workSlugs: ["waterscape-01", "floral-01"],
+    });
+    expect(showJsonLd(full, site)).toEqual({
+      "@context": "https://schema.org",
+      "@type": "ExhibitionEvent",
+      "@id": "https://artist.example.test/shows/test-show#exhibition",
+      name: "Test Show",
+      url: "https://artist.example.test/shows/test-show",
+      startDate: "2026-11-07",
+      endDate: "2026-12-05",
+      location: {
+        "@type": "Place",
+        name: "Test Gallery",
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: "1 Test Street",
+          addressLocality: "Test City",
+        },
+      },
+      description: "A line.",
+      sameAs: "https://gallery.example.test/test-show",
+      workFeatured: [
+        {
+          "@type": "VisualArtwork",
+          "@id": "https://artist.example.test/work/waterscape-01#artwork",
+          url: "https://artist.example.test/work/waterscape-01",
+        },
+        {
+          "@type": "VisualArtwork",
+          "@id": "https://artist.example.test/work/floral-01#artwork",
+          url: "https://artist.example.test/work/floral-01",
+        },
+      ],
+    });
+  });
+
+  it("prints nothing for a fact the show does not have", () => {
+    const ld = showJsonLd(show({ workSlugs: [] }), site);
+    expect(ld).not.toHaveProperty("description");
+    expect(ld).not.toHaveProperty("sameAs");
+    expect((ld.location as { address: object }).address).toEqual({
+      "@type": "PostalAddress",
+      addressLocality: "Test City",
+    });
+    expect(ld.workFeatured).toEqual([]);
+  });
+
+  it("follows a site's own page addresses", () => {
+    const ld = showJsonLd(show(), {
+      url: "https://artist.example.test",
+      workPath: (slug) => `/works/${slug}`,
+      showPath: (slug) => `/exhibitions/${slug}`,
+    });
+    expect(ld.url).toBe("https://artist.example.test/exhibitions/test-show");
+    expect(ld.workFeatured).toEqual([
+      {
+        "@type": "VisualArtwork",
+        "@id": "https://artist.example.test/works/waterscape-01#artwork",
+        url: "https://artist.example.test/works/waterscape-01",
+      },
+    ]);
   });
 });
