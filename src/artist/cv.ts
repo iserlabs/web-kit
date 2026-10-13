@@ -1,3 +1,5 @@
+import { DEFAULT_TIME_ZONE, type Show, showStatus } from "./shows";
+
 /**
  * The CV.
  *
@@ -74,4 +76,56 @@ export function cvGaps(source: Cv): string[] {
 /** Carole 13: do not ship a destination with nothing on it. */
 export function hasCvContent(source: Cv): boolean {
   return cvSections(source).length > 0 || source.education.length > 0;
+}
+
+/** The CV lines a site's shows produce, in the Cv's own two exhibition lists. */
+export type ShowCvEntries = Pick<Cv, "soloExhibitions" | "groupExhibitions">;
+
+/**
+ * One fact, typed once: every published show that has opened becomes a CV line,
+ * newest first. Solo shows and evenings (`event`) go under solo exhibitions;
+ * two-person and group shows go under group exhibitions. An upcoming show is not on
+ * the CV until its first day, read in the site's time zone.
+ */
+export function cvFromShows(
+  shows: readonly Show[],
+  now: Date,
+  timeZone: string = DEFAULT_TIME_ZONE,
+): ShowCvEntries {
+  const started = shows
+    .filter((s) => s.publish === "published" && showStatus(s, now, timeZone) !== "upcoming")
+    .sort((a, b) => b.startsOn.localeCompare(a.startsOn) || a.slug.localeCompare(b.slug));
+  const out: ShowCvEntries = { soloExhibitions: [], groupExhibitions: [] };
+  for (const s of started) {
+    const entry: CvEntry = {
+      year: s.startsOn.slice(0, 4),
+      title: s.title,
+      venue: s.venue,
+      location: s.city,
+      ...(s.href ? { href: s.href } : {}),
+      ...(s.note ? { note: s.note } : {}),
+    };
+    if (s.kind === "solo" || s.kind === "event") out.soloExhibitions.push(entry);
+    else out.groupExhibitions.push(entry);
+  }
+  return out;
+}
+
+const sameLine = (a: CvEntry, b: CvEntry): boolean =>
+  a.year === b.year && a.title.trim().toLowerCase() === b.title.trim().toLowerCase();
+
+/**
+ * The site's hand-entered CV with its shows' lines added, in the same Cv shape every
+ * CV page already reads. A line typed by hand wins over a show with the same year and
+ * title, so a show entered in both places prints once, as the artist wrote it. Both
+ * exhibition lists come back newest first; everything else is untouched.
+ */
+export function mergeCv(cv: Cv, fromShows: ShowCvEntries): Cv {
+  const add = (hand: readonly CvEntry[], shows: readonly CvEntry[]): CvEntry[] =>
+    newestFirst([...shows.filter((s) => !hand.some((h) => sameLine(h, s))), ...hand]);
+  return {
+    ...cv,
+    soloExhibitions: add(cv.soloExhibitions, fromShows.soloExhibitions),
+    groupExhibitions: add(cv.groupExhibitions, fromShows.groupExhibitions),
+  };
 }
