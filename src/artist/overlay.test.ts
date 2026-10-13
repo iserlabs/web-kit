@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { cleanOverlay, cleanText } from "./overlay";
+import {
+  AVAILABILITY,
+  cleanOverlay,
+  cleanText,
+  LIFECYCLE,
+  PUBLISH,
+  sanitizeStoredOverlay,
+  UNITS,
+} from "./overlay";
 
 describe("cleanOverlay: only what the studio owns survives", () => {
   it("keeps a trimmed title and drops a blank one", () => {
@@ -113,5 +121,52 @@ describe("cleanText", () => {
     expect(cleanText(undefined)).toBeUndefined();
     expect(cleanText("  hi  ")).toBe("hi");
     expect(cleanText("abcdef", 3)).toBe("abc");
+  });
+});
+
+describe("sanitizeStoredOverlay: stored data gets the same rules as a form", () => {
+  it("keeps only valid keys and drops junk", () => {
+    expect(
+      sanitizeStoredOverlay({
+        title: 7,
+        year: "2025",
+        price: { visibility: "public" },
+        availability: "gone",
+        extra: "x",
+      }),
+    ).toEqual({});
+    expect(sanitizeStoredOverlay("junk")).toEqual({});
+  });
+
+  it("returns a valid overlay with its key order unchanged", () => {
+    const valid = {
+      updatedBy: "julian",
+      title: "Alcyone",
+      dimensions: { height: 36, depth: 1.5, width: 24, unit: "in" },
+      price: { visibility: "public", amount: 4200, currency: "USD" },
+      edition: { of: 10, number: 2 },
+      availability: "sold",
+    };
+    expect(JSON.stringify(sanitizeStoredOverlay(valid))).toBe(JSON.stringify(valid));
+  });
+
+  it("accepts every value cleanOverlay accepts, from one shared list", () => {
+    for (const availability of AVAILABILITY) {
+      expect(cleanOverlay({ availability }).availability).toBe(availability);
+      expect(sanitizeStoredOverlay({ availability }).availability).toBe(availability);
+    }
+    for (const lifecycle of LIFECYCLE) {
+      expect(cleanOverlay({ lifecycle }).lifecycle).toBe(lifecycle);
+      expect(sanitizeStoredOverlay({ lifecycle }).lifecycle).toBe(lifecycle);
+    }
+    for (const publish of PUBLISH) {
+      expect(cleanOverlay({ publish }).publish).toBe(publish);
+      expect(sanitizeStoredOverlay({ publish }).publish).toBe(publish);
+    }
+    for (const unit of UNITS) {
+      const dims = { height: 3, width: 4, unit };
+      expect(cleanOverlay({ height: 3, width: 4, unit }).dimensions).toEqual(dims);
+      expect(sanitizeStoredOverlay({ dimensions: dims }).dimensions).toEqual(dims);
+    }
   });
 });

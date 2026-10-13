@@ -1,4 +1,4 @@
-import type { ArtworkOverlay } from "./overlay";
+import { type ArtworkOverlay, sanitizeStoredOverlay } from "./overlay";
 import type { Artwork } from "./record";
 
 /**
@@ -59,57 +59,6 @@ export interface StudioStore {
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
-}
-
-const posNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v > 0;
-const isStr = (v: unknown): v is string => typeof v === "string";
-
-/**
- * Whatever is stored may be wrongly shaped (hand-edited, an older version, another
- * writer). Keeps only the ArtworkOverlay keys, each only when its type is right, so a
- * junk value can neither reach the page nor be written back on the next save. Valid
- * data passes through unchanged.
- */
-export function sanitizeStoredOverlay(raw: unknown): ArtworkOverlay {
-  const out: Record<string, unknown> = {};
-  if (!isPlainObject(raw)) return out as ArtworkOverlay;
-  for (const k of ["title", "substrate", "certificateRef", "blurb", "updatedAt", "updatedBy"]) {
-    if (isStr(raw[k])) out[k] = raw[k];
-  }
-  if (typeof raw.year === "number" && Number.isFinite(raw.year)) out.year = raw.year;
-  if (Array.isArray(raw.medium) && raw.medium.every(isStr)) out.medium = raw.medium;
-  const d = raw.dimensions;
-  if (
-    isPlainObject(d) &&
-    posNum(d.height) &&
-    posNum(d.width) &&
-    (d.unit === "in" || d.unit === "cm")
-  ) {
-    out.dimensions = {
-      height: d.height,
-      width: d.width,
-      ...(posNum(d.depth) ? { depth: d.depth } : {}),
-      unit: d.unit,
-    };
-  }
-  const e = raw.edition;
-  if (isPlainObject(e) && posNum(e.number) && posNum(e.of))
-    out.edition = { number: e.number, of: e.of };
-  const p = raw.price;
-  if (
-    isPlainObject(p) &&
-    posNum(p.amount) &&
-    p.currency === "USD" &&
-    (p.visibility === "public" || p.visibility === "on-request")
-  ) {
-    out.price = { amount: p.amount, currency: "USD", visibility: p.visibility };
-  }
-  if (["available", "sold", "reserved", "not-for-sale"].includes(raw.availability as string))
-    out.availability = raw.availability;
-  if (["current", "earlier", "archived"].includes(raw.lifecycle as string))
-    out.lifecycle = raw.lifecycle;
-  if (["published", "draft"].includes(raw.publish as string)) out.publish = raw.publish;
-  return out as ArtworkOverlay;
 }
 
 export function createStudioStore(options: StudioStoreOptions): StudioStore {

@@ -30,10 +30,20 @@ export type ArtworkOverlay = Partial<
   >
 > & { updatedAt?: string; updatedBy?: string };
 
-const AVAILABILITY = new Set<Availability>(["available", "sold", "reserved", "not-for-sale"]);
-const LIFECYCLE = new Set<Lifecycle>(["current", "earlier", "archived"]);
-const PUBLISH = new Set<PublishState>(["published", "draft"]);
-const UNITS = new Set<Unit>(["in", "cm"]);
+/** The one list of allowed values. cleanOverlay (a submitted form) and
+    sanitizeStoredOverlay (what was stored) both read these, so they cannot drift. */
+export const AVAILABILITY = new Set<Availability>([
+  "available",
+  "sold",
+  "reserved",
+  "not-for-sale",
+]);
+export const LIFECYCLE = new Set<Lifecycle>(["current", "earlier", "archived"]);
+export const PUBLISH = new Set<PublishState>(["published", "draft"]);
+export const UNITS = new Set<Unit>(["in", "cm"]);
+type PriceVisibility = NonNullable<Artwork["price"]>["visibility"];
+export const PRICE_VISIBILITY = new Set<PriceVisibility>(["public", "on-request"]);
+export const PRICE_CURRENCY = "USD";
 
 function num(v: unknown): number | undefined {
   const n = typeof v === "string" ? Number(v) : typeof v === "number" ? v : Number.NaN;
@@ -103,8 +113,10 @@ export function cleanOverlay(body: Record<string, unknown>): ArtworkOverlay {
   if (amount !== undefined) {
     out.price = {
       amount,
-      currency: "USD",
-      visibility: body.priceVisibility === "public" ? "public" : "on-request",
+      currency: PRICE_CURRENCY,
+      visibility: PRICE_VISIBILITY.has(body.priceVisibility as PriceVisibility)
+        ? (body.priceVisibility as PriceVisibility)
+        : "on-request",
     };
   }
 
@@ -112,4 +124,80 @@ export function cleanOverlay(body: Record<string, unknown>): ArtworkOverlay {
   if (blurb !== undefined) out.blurb = blurb;
 
   return out;
+}
+
+const posNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v > 0;
+const isStr = (v: unknown): v is string => typeof v === "string";
+const isObj = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
+const isIn = <T>(set: Set<T>, v: unknown): v is T => set.has(v as T);
+
+/**
+ * Whatever is stored may be wrongly shaped (hand-edited, an older version, another
+ * writer). Keeps only the ArtworkOverlay keys, each only when its value is valid, so
+ * junk can neither reach the page nor be written back on the next save. Valid data
+ * passes through unchanged, in the stored key order, so re-saving never reshuffles it.
+ */
+export function sanitizeStoredOverlay(raw: unknown): ArtworkOverlay {
+  const out: Record<string, unknown> = {};
+  if (!isObj(raw)) return out as ArtworkOverlay;
+  for (const k of Object.keys(raw)) {
+    const v = raw[k];
+    switch (k) {
+      case "title":
+      case "substrate":
+      case "certificateRef":
+      case "blurb":
+      case "updatedAt":
+      case "updatedBy":
+        if (isStr(v)) out[k] = v;
+        break;
+      case "year":
+        if (typeof v === "number" && Number.isFinite(v)) out.year = v;
+        break;
+      case "medium":
+        if (Array.isArray(v) && v.every(isStr)) out.medium = v;
+        break;
+      case "dimensions":
+        if (isObj(v) && posNum(v.height) && posNum(v.width) && isIn(UNITS, v.unit)) {
+          const dims: Record<string, unknown> = {};
+          for (const dk of Object.keys(v)) {
+            if (dk === "height" || dk === "width" || dk === "unit") dims[dk] = v[dk];
+            else if (dk === "depth" && posNum(v.depth)) dims.depth = v.depth;
+          }
+          out.dimensions = dims;
+        }
+        break;
+      case "edition":
+        if (isObj(v) && posNum(v.number) && posNum(v.of)) {
+          const ed: Record<string, unknown> = {};
+          for (const ek of Object.keys(v)) if (ek === "number" || ek === "of") ed[ek] = v[ek];
+          out.edition = ed;
+        }
+        break;
+      case "price":
+        if (
+          isObj(v) &&
+          posNum(v.amount) &&
+          v.currency === PRICE_CURRENCY &&
+          isIn(PRICE_VISIBILITY, v.visibility)
+        ) {
+          const pr: Record<string, unknown> = {};
+          for (const pk of Object.keys(v))
+            if (pk === "amount" || pk === "currency" || pk === "visibility") pr[pk] = v[pk];
+          out.price = pr;
+        }
+        break;
+      case "availability":
+        if (isIn(AVAILABILITY, v)) out.availability = v;
+        break;
+      case "lifecycle":
+        if (isIn(LIFECYCLE, v)) out.lifecycle = v;
+        break;
+      case "publish":
+        if (isIn(PUBLISH, v)) out.publish = v;
+        break;
+    }
+  }
+  return out as ArtworkOverlay;
 }

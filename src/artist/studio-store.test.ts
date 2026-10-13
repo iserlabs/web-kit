@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ArtworkOverlay } from "./overlay";
 import type { Artwork } from "./record";
 import { formatAvailability } from "./record";
-import { createStudioStore, merge, mergeAll, sanitizeStoredOverlay } from "./studio-store";
+import { createStudioStore, merge, mergeAll } from "./studio-store";
 
 const base = (over: Partial<Artwork> = {}): Artwork => ({
   slug: "waterscape-01",
@@ -265,10 +265,8 @@ describe("the store", () => {
       updatedAt: "2026-08-09T00:00:00.000Z",
       updatedBy: "julian",
     };
-    expect(sanitizeStoredOverlay(valid)).toEqual(valid);
-    expect(await storeWith(fakeUpstash(JSON.stringify({ a: valid }))).readOverlays()).toEqual({
-      a: valid,
-    });
+    const back = await storeWith(fakeUpstash(JSON.stringify({ a: valid }))).readOverlays();
+    expect(JSON.stringify(back)).toBe(JSON.stringify({ a: valid }));
   });
 
   it("does not let cachedRead override Authorization or the request", async () => {
@@ -302,5 +300,28 @@ describe("the store", () => {
     });
     await expect(store.writeOverlay("a", { year: 2025 }, "artist")).rejects.toThrow("store 503");
     expect(calls).toHaveLength(2);
+  });
+
+  it("throws when the SET fails inside clearOverlay", async () => {
+    const fetchFn = (async (input: string | URL | Request) => {
+      if (String(input).includes("/set/")) return new Response("down", { status: 503 });
+      return Response.json({ result: JSON.stringify({ a: { title: "A" } }) });
+    }) as typeof fetch;
+    const store = createStudioStore({
+      key: "k",
+      urlEnv: URL_ENV,
+      tokenEnv: TOKEN_ENV,
+      fetch: fetchFn,
+    });
+    await expect(store.clearOverlay("a")).rejects.toThrow("store 503");
+  });
+
+  it("keeps nested stored key order, depth before or after unit, on a round trip", async () => {
+    const stored = {
+      a: { dimensions: { height: 36, depth: 1.5, width: 24, unit: "in" }, title: "A" },
+      b: { title: "B", dimensions: { unit: "cm", height: 9, width: 5, depth: 2 } },
+    };
+    const back = await storeWith(fakeUpstash(JSON.stringify(stored))).readOverlays();
+    expect(JSON.stringify(back)).toBe(JSON.stringify(stored));
   });
 });
