@@ -61,6 +61,7 @@ export interface StudioAuth<R extends string = string> {
 
 const DEFAULT_TTL_SECONDS = 60 * 60 * 12;
 const SAFE_NAME = /^[A-Za-z0-9_-]+$/;
+const SAFE_TOKEN = /^[A-Za-z0-9._-]+$/;
 
 /** A real ArrayBuffer, not the ArrayBufferLike a TextEncoder hands back: WebCrypto's
     BufferSource will not accept the latter under strict types, and copying a few
@@ -90,7 +91,8 @@ async function sign(payload: string, secret: string): Promise<string> {
   return b64url(await crypto.subtle.sign("HMAC", key, enc(payload)));
 }
 
-/** Length-independent comparison, so a wrong guess leaks nothing through timing. */
+/** Constant-time over equal-length inputs. A length mismatch returns early, which is
+    harmless for signatures because they are always the same length. */
 function safeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
@@ -126,6 +128,9 @@ export function createStudioAuth<const R extends string>(
   const ttl = options.ttlSeconds ?? DEFAULT_TTL_SECONDS;
   if (!SAFE_NAME.test(cookieName)) {
     throw new Error(`createStudioAuth: "${cookieName}" is not a usable cookie name`);
+  }
+  if (!Number.isSafeInteger(ttl) || ttl <= 0) {
+    throw new Error(`createStudioAuth: ttlSeconds must be a positive whole number, got ${ttl}`);
   }
   if (roles.length === 0) throw new Error("createStudioAuth: at least one role is required");
   for (const r of roles) {
@@ -181,7 +186,14 @@ export function createStudioAuth<const R extends string>(
     configured,
     canReset: (role) => roles.some((r) => r.id === role && r.canReset === true),
     roleFrom: (request) => verify(readCookie(request.headers.get("cookie"), cookieName)),
-    setCookie: (token) => cookieHeader(cookieName, token, ttl),
+    setCookie: (token) => {
+      if (!SAFE_TOKEN.test(token)) {
+        throw new Error(
+          'createStudioAuth: setCookie token may use only letters, digits, ".", "_" and "-"',
+        );
+      }
+      return cookieHeader(cookieName, token, ttl);
+    },
     clearCookie: () => cookieHeader(cookieName, "", 0),
   };
 }

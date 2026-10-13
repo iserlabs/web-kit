@@ -85,7 +85,11 @@ describe("the cookie cannot be edited into a promotion", () => {
 
   it("rejects an expired cookie", async () => {
     const past = Math.floor(Date.now() / 1000) - 10;
-    expect(await auth.verify(`operator.${past}.whatever`)).toBeNull();
+    // Validly signed, so only the expiry check can reject it.
+    const mac = createHmac("sha256", "test-secret-value")
+      .update(`operator.${past}`)
+      .digest("base64url");
+    expect(await auth.verify(`operator.${past}.${mac}`)).toBeNull();
   });
 
   it("rejects a malformed token, an unknown role, and nothing at all", async () => {
@@ -135,6 +139,19 @@ describe("configuration", () => {
     ).toThrow(/cookie name/);
   });
 
+  it("refuses a lifetime that is not a positive whole number of seconds", () => {
+    for (const ttlSeconds of [0, -1, 1.5, Number.NaN]) {
+      expect(() =>
+        createStudioAuth({
+          cookieName: "ok",
+          secretEnv: SECRET,
+          ttlSeconds,
+          roles: [{ id: "a", passphraseEnv: PASS_ARTIST }],
+        }),
+      ).toThrow(/ttlSeconds/);
+    }
+  });
+
   it("lets only a role marked canReset reset a record", () => {
     expect(auth.canReset("operator")).toBe(true);
     expect(auth.canReset("artist")).toBe(false);
@@ -180,6 +197,11 @@ describe("cookies on the wire", () => {
     for (const part of ["Max-Age=43200", "Secure", "HttpOnly", "SameSite=lax"]) {
       expect(header).toContain(part);
     }
+  });
+
+  it("refuses to write a token that could break out of the cookie", () => {
+    expect(() => auth.setCookie("tok; Path=/evil")).toThrow(/token/);
+    expect(() => auth.setCookie("a b")).toThrow(/token/);
   });
 
   it("clears the cookie by expiring it at once", () => {
