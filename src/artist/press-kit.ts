@@ -42,7 +42,9 @@ export interface PriceListEntry {
 }
 
 export interface PressKitWork<A extends Artwork> {
-  work: A;
+  /** The work's record without its master file, and without a price unless the work
+      is available, the same rule the price list follows. */
+  work: Omit<A, "masterSrc">;
   /** The highest-resolution image the site serves: `hi` when there is one, else `src`.
       `masterSrc` is never used, because a site keeps its master apart and may not
       serve it at all. */
@@ -67,6 +69,14 @@ function priceLine(w: Artwork): PriceListEntry {
   };
 }
 
+/** The record a gallerist sees: no master file ever, and a price only where the work
+    can still be had. */
+function publicRecord<A extends Artwork>(w: A): Omit<A, "masterSrc"> {
+  const { masterSrc: _master, price, ...rest } = w;
+  const keepsPrice = w.availability === "available" && price;
+  return (keepsPrice ? { ...rest, price } : rest) as Omit<A, "masterSrc">;
+}
+
 export function pressKit<A extends Artwork>({
   works,
   cv,
@@ -79,7 +89,7 @@ export function pressKit<A extends Artwork>({
   return {
     ...(statement?.trim() ? { statement } : {}),
     cv: mergeCv(cv, cvFromShows(shows, now, timeZone)),
-    works: published.map((work) => ({ work, image: work.hi ?? work.src })),
+    works: published.map((work) => ({ work: publicRecord(work), image: work.hi ?? work.src })),
     priceList: published.map(priceLine),
   };
 }

@@ -177,3 +177,42 @@ describe("the press token", () => {
     expect(pressTokenMatches("short", "short")).toBe(false);
   });
 });
+
+describe("pressKit: the full record carries no hidden price or master file", () => {
+  const hidden = pressKit({
+    works: [
+      work("a-sold", { availability: "sold", price: usd(1000, "public"), masterSrc: "/m/a.tif" }),
+      work("a-reserved", {
+        availability: "reserved",
+        price: usd(1100, "on-request"),
+        masterSrc: "/m/b.tif",
+      }),
+      work("a-kept", { availability: "not-for-sale", price: usd(1200, "public") }),
+      work("a-unstated", { price: usd(1300, "public"), masterSrc: "/m/d.tif" }),
+      work("a-request", {
+        availability: "available",
+        price: usd(1400, "on-request"),
+        masterSrc: "/m/e.tif",
+      }),
+    ],
+    cv,
+    shows: [],
+    now,
+  });
+  const entry = (slug: string) => hidden.works.find((w) => w.work.slug === slug)?.work;
+
+  it("strips the price from a sold, reserved, not-for-sale or unstated work", () => {
+    for (const slug of ["a-sold", "a-reserved", "a-kept", "a-unstated"]) {
+      expect(entry(slug), slug).toBeDefined();
+      expect(entry(slug), slug).not.toHaveProperty("price");
+    }
+  });
+
+  it("keeps the price of an available work, on request included", () => {
+    expect(entry("a-request")?.price).toEqual(usd(1400, "on-request"));
+  });
+
+  it("never carries masterSrc", () => {
+    for (const w of hidden.works) expect(w.work, w.work.slug).not.toHaveProperty("masterSrc");
+  });
+});

@@ -564,6 +564,44 @@ describe("showsHandler", () => {
     expect(writes).toEqual([{ show: savedNewShow, by: "artist" }]);
   });
 
+  it("PUT with create set answers 409 when that slug is taken, and writes nothing", async () => {
+    const { store, writes, data } = memoryShows();
+    const res = await showsHandler({ auth, store, catalog }).PUT(
+      request("PUT", "/api/studio/shows", {
+        cookie: await cookieFor("artist"),
+        body: showBody({ slug: "test-show", create: true }),
+      }),
+    );
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: "A show with that name already exists." });
+    expect(writes).toEqual([]);
+    expect(data["test-show"]).toEqual(fakeShow());
+  });
+
+  it("PUT with create set saves a show whose slug is free", async () => {
+    const { store, writes } = memoryShows();
+    const res = await showsHandler({ auth, store, catalog }).PUT(
+      request("PUT", "/api/studio/shows", {
+        cookie: await cookieFor("artist"),
+        body: showBody({ create: true }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(writes).toHaveLength(1);
+  });
+
+  it("PUT without create still overwrites its own slug", async () => {
+    const { store, writes } = memoryShows();
+    const res = await showsHandler({ auth, store, catalog }).PUT(
+      request("PUT", "/api/studio/shows", {
+        cookie: await cookieFor("artist"),
+        body: showBody({ slug: "test-show" }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(writes).toHaveLength(1);
+  });
+
   it("PUT refuses a show with problems, naming each one, and saves nothing", async () => {
     const { store, writes } = memoryShows();
     const res = await showsHandler({ auth, store, catalog }).PUT(

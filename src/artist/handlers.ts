@@ -297,6 +297,12 @@ export function showsHandler<R extends string>({
     }
 
     try {
+      if (body.create === true) {
+        const saved = await store.readShows(true);
+        if (saved?.some((s) => s.slug === result.show.slug)) {
+          return json({ error: "A show with that name already exists." }, 409);
+        }
+      }
       const ok = await store.writeShow(result.show, who);
       return ok ? json({ ok: true, show: result.show }) : refused();
     } catch (error) {

@@ -85,11 +85,17 @@ describe("cvFromShows: a show typed once becomes its CV line", () => {
           venue: "Test Gallery",
           location: "Test City",
           href: "https://gallery.example.test/test-show",
-          note: "A line.",
         },
       ],
       groupExhibitions: [],
     });
+  });
+
+  it("leaves the show's note off the CV line, since a CV prints that slot as a role", () => {
+    const s = testShow({ note: "A line." });
+    const line = cvFromShows([s], later).soloExhibitions[0];
+    expect(line).toBeDefined();
+    expect(line).not.toHaveProperty("note");
   });
 
   it("files solo shows and evenings under solo, two-person and group shows under group", () => {

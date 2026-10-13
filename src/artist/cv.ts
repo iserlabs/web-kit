@@ -103,7 +103,6 @@ export function cvFromShows(
       venue: s.venue,
       location: s.city,
       ...(s.href ? { href: s.href } : {}),
-      ...(s.note ? { note: s.note } : {}),
     };
     if (s.kind === "solo" || s.kind === "event") out.soloExhibitions.push(entry);
     else out.groupExhibitions.push(entry);
