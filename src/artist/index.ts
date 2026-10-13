@@ -4,6 +4,9 @@
  * every server handler takes a Web Request and returns a Response.
  */
 export * from "./availability";
+export * from "./config";
 export * from "./cv";
+export * from "./overlay";
 export * from "./record";
 export * from "./studio-auth";
+export * from "./studio-store";
