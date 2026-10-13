@@ -8,6 +8,8 @@ export * from "./config";
 export * from "./cv";
 export * from "./handlers";
 export * from "./overlay";
+export * from "./press-kit";
 export * from "./record";
+export * from "./shows";
 export * from "./studio-auth";
 export * from "./studio-store";

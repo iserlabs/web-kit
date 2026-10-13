@@ -129,3 +129,13 @@ reads it yet, and the export works without it.
 `workHandler` also takes an optional `onError(error, { method, slug })`, called
 whenever the store fails, just before the 503 answer, so a site can report it
 (for example to Sentry). A throwing `onError` never changes the answer.
+
+Shows are typed in the studio and kept under their own store key. Pass
+`showsKey` to `createStudioStore` and mount `showsHandler` the same way as
+`workHandler`, with `store: studioStore.shows`. `showStatus`, `noticeShow` and
+`onView` read show dates as calendar days in the site's time zone (default
+`America/New_York`), and `cvFromShows` plus `mergeCv` put every published show
+that has opened on the CV. `pressKit` assembles a gallerist's press kit (on-request
+prices included); `generatePressToken` and `pressTokenMatches` guard its unlisted
+address. `onError` may be async; it is awaited (for at most `reportTimeoutMs`,
+default 2000) and can never change an answer.
