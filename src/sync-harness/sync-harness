@@ -108,8 +108,7 @@ case $cmd in
     if [ -n "$SYNC_MATCH" ] && pgrep -f "$SYNC_MATCH" >/dev/null; then echo "a run is already going; status follows"; status; exit 0; fi
     manual "run now"
     unstick
-    last_good=0; next_try=0; fail_head=""; harness_write_state
-    /bin/bash "$HERE/run.sh" "$CONFIG"
+    SYNC_HARNESS_FORCE=1 /bin/bash "$HERE/run.sh" "$CONFIG"
     harness_read_state; now=$(harness_now); status ;;
   config)
     for k in CONFIG HOOKS JOB TITLE SHORT_NAME PLAIN LABEL SYNC_CMD SYNC_MATCH SYNC_WRITES_LOG LOG STATE \

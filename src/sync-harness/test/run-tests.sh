@@ -357,6 +357,17 @@ if [ -d "$LIVE" ] && [ "$PLFA_DIR" != "$LIVE" ]; then
   done
 fi
 
+echo "== run now keeps the last good read (2026-10-13: zeroing it made a forced failure read as stale) =="
+reset; seed $((N - 3600)) 0 0 0 0 ""
+FAKE_FIXTURE="$FIX/cloudflare-failure.txt" SYNC_HARNESS_NOW=$N FAKE_SAFARI="$PAGE_CHECK" bash "$H/sync-harness" now "$CFG" > "$T/out" 2>&1
+eq "run now: runs even though not due" "$(calls)" 1
+eq "run now: last good read kept" "$(st last_good)" $((N - 3600))
+eq "run now: one failure recorded" "$(st fails)" 1
+check "run now: not red after one forced failure" bash -c "! grep -q 'PLFA sync: RED' '$T/out'"
+reset; seed $((N - 3600)) 0 0 0 0 ""
+FAKE_FIXTURE="$FIX/cloudflare-failure.txt" SYNC_HARNESS_NOW=$N FAKE_SAFARI="$PAGE_CHECK" bash "$H/run.sh" "$CFG" >/dev/null 2>&1; rc=$?
+eq "a scheduled beat still waits when not due" "$(calls)" 0
+
 echo
 echo "$pass passed, $fail failed"
 [ "$fail" -eq 0 ]
