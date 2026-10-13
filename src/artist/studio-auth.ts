@@ -1,3 +1,5 @@
+import { b64url, safeEqual } from "./bytes";
+
 /**
  * The studio door.
  *
@@ -73,13 +75,6 @@ function enc(s: string): ArrayBuffer {
   return buffer;
 }
 
-function b64url(bytes: ArrayBuffer | Uint8Array): string {
-  const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-  let s = "";
-  for (const b of arr) s += String.fromCharCode(b);
-  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
 async function sign(payload: string, secret: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
@@ -89,15 +84,6 @@ async function sign(payload: string, secret: string): Promise<string> {
     ["sign"],
   );
   return b64url(await crypto.subtle.sign("HMAC", key, enc(payload)));
-}
-
-/** Constant-time over equal-length inputs. A length mismatch returns early, which is
-    harmless for signatures because they are always the same length. */
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
 }
 
 /** One cookie's value from a Cookie header, decoded, or undefined when absent. */
