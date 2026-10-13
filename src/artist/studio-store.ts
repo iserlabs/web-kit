@@ -54,7 +54,14 @@ export interface StudioStoreOptions {
   /** The fetch to use. Default: the global fetch, looked up at call time so a
       framework that patches it (Next does) is honored. */
   fetch?: typeof fetch;
+  /** The longest one store call may take, in milliseconds, before it is abandoned
+      and fails with "store timed out". Default 4000. A store that never answers must
+      not leave a page loading until the platform gives up on it. */
+  timeoutMs?: number;
 }
+
+/** How long a store call may take when the site names no limit of its own. */
+const DEFAULT_TIMEOUT_MS = 4000;
 
 export interface StudioStore {
   readonly key: string;
@@ -121,6 +128,10 @@ export function createStudioStore(options: StudioStoreOptions): StudioStores {
   }
   const urlEnv = options.urlEnv ?? "KV_REST_API_URL";
   const tokenEnv = options.tokenEnv ?? "KV_REST_API_TOKEN";
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    throw new Error(`createStudioStore: timeoutMs must be a positive number, not ${timeoutMs}`);
+  }
 
   function creds(): { url: string; token: string } | null {
     const url = process.env[urlEnv];
@@ -140,15 +151,40 @@ export function createStudioStore(options: StudioStoreOptions): StudioStores {
     const c = creds();
     if (!c) return null;
     const doFetch = options.fetch ?? globalThis.fetch;
-    const res = await doFetch(`${c.url}/${path}`, {
-      ...(fresh ? { cache: "no-store" as const } : (options.cachedRead ?? {})),
-      method: init?.method ?? "GET",
-      body: init?.body,
-      headers: { Authorization: `Bearer ${c.token}`, ...(init?.headers ?? {}) },
-    } as RequestInit);
-    if (!res.ok) throw new Error(`store ${res.status}`);
-    const body = (await res.json()) as { result?: unknown };
-    return body.result ?? null;
+    // A store that never answers is abandoned after timeoutMs: the request is
+    // aborted, and the call fails even if the fetch ignores the abort, so a page is
+    // never left waiting on it. The timeout is decided before the abort, so the
+    // caller always reads "store timed out", never an abort error.
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const expired = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => {
+        reject(new Error(`store timed out after ${timeoutMs} ms`));
+        controller.abort();
+      }, timeoutMs);
+      // Never keep a Node process alive for the sake of a store call.
+      (timer as { unref?: () => void }).unref?.();
+    });
+    // The races below consume the rejection; this keeps a late one from being reported
+    // as unhandled.
+    expired.catch(() => undefined);
+    try {
+      const res = await Promise.race([
+        doFetch(`${c.url}/${path}`, {
+          ...(fresh ? { cache: "no-store" as const } : (options.cachedRead ?? {})),
+          method: init?.method ?? "GET",
+          body: init?.body,
+          headers: { Authorization: `Bearer ${c.token}`, ...(init?.headers ?? {}) },
+          signal: controller.signal,
+        } as RequestInit),
+        expired,
+      ]);
+      if (!res.ok) throw new Error(`store ${res.status}`);
+      const body = (await Promise.race([res.json(), expired])) as { result?: unknown };
+      return body.result ?? null;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /** A stored JSON blob, parsed. undefined when nothing is stored or it is corrupted:

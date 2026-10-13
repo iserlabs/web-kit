@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ArtworkOverlay } from "./overlay";
 import { generatePressToken, pressTokenMatches } from "./press-kit";
 import type { Artwork } from "./record";
@@ -591,5 +591,114 @@ describe("the press token store", () => {
     expect(await storesWith(wrong).press.readToken()).toBeUndefined();
     const corrupted = fakeKv({ [PRESS_KEY]: "{not json" });
     expect(await storesWith(corrupted).press.readToken()).toBeUndefined();
+  });
+});
+
+describe("a store that does not answer", () => {
+  beforeEach(() => {
+    process.env[URL_ENV] = "https://kv.example.test/";
+    process.env[TOKEN_ENV] = "kv-token";
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    process.env = { ...original };
+  });
+
+  const storeOver = (fetchFn: typeof fetch, timeoutMs?: number) =>
+    createStudioStore({
+      key: "studio:test:overlays",
+      showsKey: "studio:test:shows",
+      pressKey: "studio:test:press",
+      urlEnv: URL_ENV,
+      tokenEnv: TOKEN_ENV,
+      fetch: fetchFn,
+      ...(timeoutMs === undefined ? {} : { timeoutMs }),
+    });
+
+  /** Never answers; fails only when its request is aborted, the way fetch does. */
+  const hangsUntilAborted = (seen: AbortSignal[] = []) =>
+    ((_input: string | URL | Request, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        const signal = init?.signal;
+        if (signal) {
+          seen.push(signal);
+          signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+        }
+      })) as typeof fetch;
+
+  it("gives up after its timeout, aborts the request, and says it timed out", async () => {
+    const seen: AbortSignal[] = [];
+    await expect(storeOver(hangsUntilAborted(seen), 20).readOverlays()).rejects.toThrow(
+      "store timed out after 20 ms",
+    );
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.aborted).toBe(true);
+  });
+
+  it("gives up even on a fetch that ignores the abort", async () => {
+    const ignores = (() => new Promise<Response>(() => undefined)) as typeof fetch;
+    await expect(storeOver(ignores, 20).shows.readShows()).rejects.toThrow(
+      "store timed out after 20 ms",
+    );
+  });
+
+  it("gives up on an answer whose body never finishes", async () => {
+    const stalls = (async () =>
+      ({
+        ok: true,
+        status: 200,
+        json: () => new Promise(() => undefined),
+      }) as unknown as Response) as typeof fetch;
+    await expect(storeOver(stalls, 20).press.readToken()).rejects.toThrow(
+      "store timed out after 20 ms",
+    );
+  });
+
+  it("makes a save that times out fail loudly rather than look done", async () => {
+    await expect(
+      storeOver(hangsUntilAborted(), 20).writeOverlay("a", { title: "A" }, "artist"),
+    ).rejects.toThrow("store timed out after 20 ms");
+  });
+
+  it("passes its signal on every call and leaves no timer behind when the store answers", async () => {
+    vi.useFakeTimers();
+    const signals: unknown[] = [];
+    const answers = (async (_input: string | URL | Request, init?: RequestInit) => {
+      signals.push(init?.signal);
+      return Response.json({ result: null });
+    }) as typeof fetch;
+    const store = storeOver(answers);
+    expect(await store.readOverlays()).toEqual({});
+    expect(await store.shows.readShows(true)).toEqual([]);
+    expect(signals).toHaveLength(2);
+    for (const signal of signals) expect(signal).toBeInstanceOf(AbortSignal);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("waits four seconds by default", async () => {
+    vi.useFakeTimers();
+    const pending = storeOver(hangsUntilAborted()).readOverlays();
+    let settled = false;
+    pending.then(
+      () => {
+        settled = true;
+      },
+      () => {
+        settled = true;
+      },
+    );
+    await vi.advanceTimersByTimeAsync(3999);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(pending).rejects.toThrow("store timed out after 4000 ms");
+  });
+
+  it("refuses a timeout that is not a positive number of milliseconds", () => {
+    for (const bad of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => storeOver(hangsUntilAborted(), bad), String(bad)).toThrow(
+        "timeoutMs must be a positive number",
+      );
+    }
   });
 });
