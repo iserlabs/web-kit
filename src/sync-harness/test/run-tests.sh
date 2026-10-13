@@ -368,6 +368,13 @@ reset; seed $((N - 3600)) 0 0 0 0 ""
 FAKE_FIXTURE="$FIX/cloudflare-failure.txt" SYNC_HARNESS_NOW=$N FAKE_SAFARI="$PAGE_CHECK" bash "$H/run.sh" "$CFG" >/dev/null 2>&1; rc=$?
 eq "a scheduled beat still waits when not due" "$(calls)" 0
 
+echo "== a failure inside the daily window still retries on its own timer =="
+reset; seed $((N - 3600)) 1 0 0 $((N - 60)) ""; beat good-run $N
+eq "retry inside the window: the sync ran" "$(calls)" 1
+eq "retry inside the window: failures cleared" "$(st fails)" 0
+reset; seed $((N - 3600)) 0 0 0 0 ""; beat good-run $N
+eq "no failure inside the window: nothing runs" "$(calls)" 0
+
 echo
 echo "$pass passed, $fail failed"
 [ "$fail" -eq 0 ]
