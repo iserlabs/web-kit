@@ -95,3 +95,32 @@ tokens and the real details of each named person, then send the client the
 `web-kit audit --tier required` fails while any value is unfilled or either pick
 is missing. That is deliberate: a board must never render an invented name, job
 title or tagline.
+
+## Artist module
+
+`@iserlabs/web-kit/artist` holds the parts of an artist's portfolio site that are
+the same on every artist's site: the artwork record and its label formatters,
+availability, the CV, and the studio (signed role cookies, per-work overlays over
+Upstash, and the login and work route handlers). It carries no React and no Next
+imports; each handler takes a Web `Request` and returns a `Response`.
+
+A site keeps its own names in `src/artist.config.ts` and wires a route in a few
+lines:
+
+    // src/app/api/studio/work/route.ts
+    import { workHandler } from "@iserlabs/web-kit/artist";
+    import { artworkBySlug } from "@/content/artworks";
+    import { studioAuth, studioStore } from "@/lib/studio";
+
+    const work = workHandler({
+      auth: studioAuth,
+      store: studioStore,
+      catalog: { has: (slug) => artworkBySlug(slug) !== undefined },
+    });
+
+    export const GET = work.GET;
+    export const PUT = work.PUT;
+    export const DELETE = work.DELETE;
+
+Switch it on in the site's `package.json` with
+`"web-kit": { "artist": { "enabled": true } }`.
