@@ -21,6 +21,7 @@
     "./env": "./src/env/index.ts",
     "./utils": "./src/utils/index.ts",
     "./audits": "./src/audits/index.mjs",
+    "./artist": "./src/artist/index.ts",
     "./brand-pack": {
       "types": "./src/brand-pack/types.d.ts",
       "default": "./src/brand-pack/index.mjs"
