@@ -96,6 +96,50 @@ tokens and the real details of each named person, then send the client the
 is missing. That is deliberate: a board must never render an invented name, job
 title or tagline.
 
+## Artist module
+
+`@iserlabs/web-kit/artist` holds the parts of an artist's portfolio site that are
+the same on every artist's site: the artwork record and its label formatters,
+availability, the CV, and the studio (signed role cookies, per-work overlays over
+Upstash, and the login and work route handlers). It carries no React and no Next
+imports; each handler takes a Web `Request` and returns a `Response`.
+
+A site keeps its own names in `src/artist.config.ts` and wires a route in a few
+lines:
+
+    // src/app/api/studio/work/route.ts
+    import { workHandler } from "@iserlabs/web-kit/artist";
+    import { artworkBySlug } from "@/content/artworks";
+    import { studioAuth, studioStore } from "@/lib/studio";
+
+    const work = workHandler({
+      auth: studioAuth,
+      store: studioStore,
+      catalog: { has: (slug) => artworkBySlug(slug) !== undefined },
+    });
+
+    export const GET = work.GET;
+    export const PUT = work.PUT;
+    export const DELETE = work.DELETE;
+
+The `"web-kit": { "artist": { "enabled": true } }` flag in `package.json` is
+reserved for phase-2 tooling (`web-kit artist init` and an audit check). Nothing
+reads it yet, and the export works without it.
+
+`workHandler` also takes an optional `onError(error, { method, slug })`, called
+whenever the store fails, just before the 503 answer, so a site can report it
+(for example to Sentry). A throwing `onError` never changes the answer.
+
+Shows are typed in the studio and kept under their own store key. Pass
+`showsKey` to `createStudioStore` and mount `showsHandler` the same way as
+`workHandler`, with `store: studioStore.shows`. `showStatus`, `noticeShow` and
+`onView` read show dates as calendar days in the site's time zone (default
+`America/New_York`), and `cvFromShows` plus `mergeCv` put every published show
+that has opened on the CV. `pressKit` assembles a gallerist's press kit (on-request
+prices included); `generatePressToken` and `pressTokenMatches` guard its unlisted
+address. `onError` may be async; it is awaited (for at most `reportTimeoutMs`,
+default 2000) and can never change an answer.
+
 ## Sync harness
 
 For a platform that copies something in from outside on a schedule (an inventory archive, a

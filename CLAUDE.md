@@ -23,7 +23,7 @@ or commit SHA in their `package.json` (`github:iserlabs/web-kit#<ref>`).
 ## Exports
 
 `@iserlabs/web-kit/{biome, tsconfig, tsconfig-next, tailwind, seo, schema, forms,
-env, utils, audits, brand-pack, observability, observability/env, observability/server}`. Notes:
+env, utils, audits, brand-pack, artist, observability, observability/env, observability/server}`. Notes:
 - `tsconfig` is **lib-oriented** (ES2022 / `noUncheckedIndexedAccess` /
   `verbatimModuleSyntax`) and breaks Next apps — Next sites extend
   `tsconfig-next` instead (the Next-safe preset).
@@ -32,6 +32,13 @@ env, utils, audits, brand-pack, observability, observability/env, observability/
 - `observability` provides error/event notification helpers (dedup, severity
   scrubbing, Discord notify); `observability/env` and `observability/server`
   are scoped sub-paths for env-var access and server-side transport.
+- `artist` is the artist-site module (artwork record, availability, CV, shows,
+  press kit, studio auth, studio store, studio route handlers), first used by
+  julianpotulicki.com.
+  Framework-free `.ts`: handlers take a Web `Request` and return a `Response`, and
+  the visible pages stay in each site. The `"web-kit": { "artist": { "enabled": true } }`
+  flag is reserved for phase-2 tooling (`web-kit artist init`, an audit check); nothing
+  reads it yet and the export works without it.
 
 ## CLI
 

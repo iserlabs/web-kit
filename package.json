@@ -1,6 +1,6 @@
 {
   "name": "@iserlabs/web-kit",
-  "version": "0.9.2",
+  "version": "0.11.0",
   "private": false,
   "type": "module",
   "license": "MIT",
@@ -21,6 +21,7 @@
     "./env": "./src/env/index.ts",
     "./utils": "./src/utils/index.ts",
     "./audits": "./src/audits/index.mjs",
+    "./artist": "./src/artist/index.ts",
     "./brand-pack": {
       "types": "./src/brand-pack/types.d.ts",
       "default": "./src/brand-pack/index.mjs"
