@@ -1,0 +1,22 @@
+# exit: 0
+# a finished run with another beat's "stood down" line inside it
+# from plfa-sync.log lines 38953-39017 (home path masked, runner lines and per-artist detail removed)
+2026-10-12 20:19:18  start
+2026-10-12 20:19:18  python: /opt/homebrew/bin/python3.12 (Python 3.12.13)
+2026-10-12 20:19:18  safari python: /opt/homebrew/bin/python3.12 (Python 3.12.13)
+2026-10-12 20:19:18  vercel: /Users/me/.nvm/versions/node/v24.17.0/bin/vercel
+2026-10-12 20:19:18  fetching
+2026-10-12 20:19:48  note: fetch failed, working from what is on disk
+2026-10-12 20:19:48  fetched
+2026-10-12 20:19:48  harvesting
+151 works published, 7 sold, 118 with a public price, 57 artists
+2026-10-12 20:19:59  reading artist collections from the archive (no record of the last full collections read)
+2026-10-12 20:20:48  artist collections refreshed
+2026-10-12 20:20:48  reading show membership from the archive
+2026-10-12 20:20:55  start
+2026-10-12 20:20:55  stood down: another run (process 29471) is still going
+2026-10-12 20:21:02  rebuilding the show checklists
+2026-10-12 20:21:02  no change across 151 works
+2026-10-12 20:21:04  nothing moved on the archive, so nothing to publish
+checked in: nothing moved, and the site is level with the archive.
+2026-10-12 20:21:05  checked in, so the health screen knows this run happened

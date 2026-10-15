@@ -139,3 +139,35 @@ that has opened on the CV. `pressKit` assembles a gallerist's press kit (on-requ
 prices included); `generatePressToken` and `pressTokenMatches` guard its unlisted
 address. `onError` may be async; it is awaited (for at most `reportTimeoutMs`,
 default 2000) and can never change an answer.
+
+## Sync harness
+
+For a platform that copies something in from outside on a schedule (an inventory archive, a
+booking system, a feed). The harness runs it once a day or at whatever cadence you set, and
+looks after itself: a half-finished read is retried within the hour, a failed read waits 15,
+then 30, then 60 minutes instead of hammering the source, and a broken code change waits for a
+fix instead of re-running every 15 minutes. It sends at most one alert every six hours (none as
+Mac pop-ups while `~/.config/xenia/no-mac-popups` exists), turns red on the business dashboard
+only after three failures in a row or 30 hours without a good read, and answers "is it healthy"
+in one command. It is bash on purpose: launchd starts it, and macOS grants automation permission
+to the process launchd started. Design and the rules behind it:
+`docs/superpowers/specs/2026-10-13-sync-harness-design.md`.
+
+    src/sync-harness/sync-harness status <job>    # also: week, now, unstick, config
+    src/sync-harness/sync-harness replay <job> --since 2026-10-03
+
+Adding a sync to a new platform, in five steps:
+
+1. Write `~/Claude/clients/<job>.d/config.sh`: `JOB`, `TITLE`, `SYNC_CMD`, `LOG`, `STATE`, the
+   cadence and backoff settings, and `PLAIN`, `LABEL`, `INTERVAL_MIN`, `GRACE_MIN` for the
+   schedule. `src/sync-harness/examples/plfa/config.sh` lists every setting.
+2. Write `hooks.sh` next to it: `hook_classify` turns a run's log lines into one verdict (`ok`,
+   `partial`, `partial-retry-soon`, `fail-browser`, `fail-code`, `fail-build`,
+   `fail-permission`, `skip`) and `hook_explain` says it in a plain sentence. A simple sync can
+   skip the hooks and set `FINISHED_RE` and `SKIP_RE` instead.
+3. Cut fixtures from a real run of the sync into `src/sync-harness/test/fixtures/` and assert
+   their verdicts in `test/run-tests.sh`; run `pnpm test:sync-harness`.
+4. Replay the real log (`sync-harness replay <job>`) and check the verdict table against what
+   happened.
+5. `sync-harness install <job>` writes the launchd plist and prints the `launchctl` line and the
+   `/os` registry row; load the one and add the other.

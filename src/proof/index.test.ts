@@ -12,13 +12,13 @@ describe("OPERATING_RECORD (canonical proof dataset)", () => {
   // any change must be intentional and re-synced to every site's port.
   it("publishes the exact attested figures", () => {
     expect(OPERATING_RECORD.stats).toEqual([
-      { value: "273+", label: "STRs operated" },
-      { value: "120", label: "listings launched" },
-      { value: "16,900+", label: "reservations facilitated" },
-      { value: "$94.5M+", label: "real estate stewarded" },
-      { value: "78", label: "clients served" },
-      { value: "28", label: "markets · 8 states" },
-      { value: "9", label: "hospitality companies built" },
+      { value: "273+", label: "short-term rentals operated" },
+      { value: "120+", label: "listings launched" },
+      { value: "17,000+", label: "reservations handled" },
+      { value: "$97.5M+", label: "in property value managed" },
+      { value: "78", label: "owners served" },
+      { value: "28+", label: "markets · 8 states" },
+      { value: "9", label: "hospitality companies built, run, or scaled" },
       { value: "670+", label: "claims filed" },
     ]);
   });

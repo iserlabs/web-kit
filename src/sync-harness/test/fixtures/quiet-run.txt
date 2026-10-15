@@ -1,0 +1,19 @@
+# exit: 0
+# a quiet run: nothing moved, so nothing to publish
+# from plfa-sync.log lines 27698-27762 (home path masked, runner lines and per-artist detail removed)
+2026-10-03 15:59:28  start
+2026-10-03 15:59:28  python: /opt/homebrew/bin/python3.12 (Python 3.12.13)
+2026-10-03 15:59:29  safari python: /usr/bin/python3 (Python 3.9.6)
+2026-10-03 15:59:29  vercel: /Users/me/.nvm/versions/node/v24.17.0/bin/vercel
+2026-10-03 15:59:29  fetching
+2026-10-03 15:59:30  fetched
+2026-10-03 15:59:30  reading artist collections from the archive
+2026-10-03 16:00:18  artist collections refreshed
+2026-10-03 16:00:18  harvesting
+111 works published, 3 sold, 79 with a public price, 26 artists
+2026-10-03 16:00:29  reading show membership from the archive
+2026-10-03 16:00:43  rebuilding the show checklists
+2026-10-03 16:00:43  no change across 111 works
+2026-10-03 16:00:45  nothing moved on the archive, so nothing to publish
+checked in: nothing moved, and the site is level with the archive.
+2026-10-03 16:00:45  checked in, so the health screen knows this run happened

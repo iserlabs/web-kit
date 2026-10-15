@@ -43,6 +43,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ignore-script": "bash scripts/ci/vercel-ignore.test.sh",
+    "test:sync-harness": "bash src/sync-harness/test/run-tests.sh",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src bin",
     "format": "biome format --write src bin"

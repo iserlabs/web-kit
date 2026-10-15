@@ -1,0 +1,34 @@
+# exit: 1
+# new code from main failed the self-check (after two NOT SIGNED IN misses)
+# from plfa-sync.log lines 31338-31622 (home path masked, runner lines and per-artist detail removed)
+2026-10-07 14:08:27  start
+2026-10-07 14:08:27  python: /opt/homebrew/bin/python3.12 (Python 3.12.13)
+2026-10-07 14:08:27  safari python: /usr/bin/python3 (Python 3.9.6)
+2026-10-07 14:08:27  vercel: /Users/me/.nvm/versions/node/v24.17.0/bin/vercel
+2026-10-07 14:08:27  fetching
+2026-10-07 14:08:28  fetched
+2026-10-07 14:08:28  reading artist collections from the archive
+    raise RuntimeError("Safari did not render %s" % url)
+RuntimeError: Safari did not render https://www.artworkarchive.com/pieces/collections
+2026-10-07 14:09:10  NOT SIGNED IN to the archive, or a collection did not render, so who has work
+2026-10-07 14:09:10          available was not refreshed. Using the collections on disk.
+2026-10-07 14:09:10  harvesting
+149 works published, 4 sold, 116 with a public price, 56 artists
+2026-10-07 14:09:26  reading show membership from the archive
+    raise RuntimeError("Safari did not render %s" % url)
+RuntimeError: Safari did not render https://www.artworkarchive.com/exhibitions
+2026-10-07 14:10:03  NOT SIGNED IN to the archive, so membership was not refreshed. Using the list on disk.
+2026-10-07 14:10:03  rebuilding the show checklists
+2026-10-07 14:10:03  no change across 149 works
+2026-10-07 14:10:04  nothing moved on the archive, so nothing to publish
+2026-10-07 14:10:04  new code from main, proving it before anything needs it
+E       AssertionError: expected at least one string two records could own
+_gen/test_marks.py:97: AssertionError
+E       AssertionError: exhibition-tarot-and-oracle: card title 'Tarot and Oracle: The Art of Divination' is not the page heading 'Tarot and Oracle'
+_gen/test_og_previews.py:183: AssertionError
+_gen/test_og_previews.py:192: AssertionError
+FAILED _gen/test_marks.py::test_a_contested_string_is_only_marked_on_the_page_that_settles_it
+FAILED _gen/test_og_previews.py::test_every_subject_page_previews_its_own_subject
+FAILED _gen/test_og_previews.py::test_the_accepted_form_previews_as_tarot_and_oracle
+3 failed, 608 passed, 1 warning in 16.13s
+2026-10-07 14:10:25  FAILED (exit 1). New code from main failed the self-check. Nothing was published; the live site is as it was.
