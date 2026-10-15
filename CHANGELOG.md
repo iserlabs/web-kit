@@ -3,6 +3,9 @@
 ## Unreleased
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
+## 0.11.1
+- **Operating Record, 2026-10-15 (Jake).** `OPERATING_RECORD` now reads 297+ short-term rentals operated, 17,100+ reservations handled, 83 owners served, 30+ markets across 10 states, and 680+ claims filed. Listings launched (120+), property value managed ($97.5M+) and companies (9) are unchanged.
+
 ## 0.11.0
 - **`@iserlabs/web-kit/artist`: shows.** A show (`Show`: title, kind, venue, address, city, first and last day, opening reception, the works hanging, the gallery's page, one line in the artist's words, published or held back) is typed once in the studio. `showStatus(show, now, timeZone)` reads its dates as calendar days in the site's time zone (default `America/New_York`, `DEFAULT_TIME_ZONE`), never as UTC, with the last day inclusive and daylight saving handled by `Intl`. `noticeShow` picks the homepage line (the show on now, else the next one within 45 days, gone the day after close); `onView` names the show a work is hanging in. `cleanShow(body, catalog)` refuses an incomplete or impossible show and names every problem in plain words (real calendar dates, last day not before first, opening within the run, 24-hour times, every listed work in the catalog, an http or https gallery link). `sanitizeStoredShows` drops a stored show missing a required fact and keeps valid data in stored key order. `showJsonLd(show, site)` builds the `ExhibitionEvent` schema, joined to each work's own `@id`.
 - **Calendar dates.** `cleanShow` and `sanitizeStoredShows` accept only exact zero-padded `YYYY-MM-DD` dates that exist on the calendar.
