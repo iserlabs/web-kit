@@ -898,6 +898,7 @@ describe("pressHandler", () => {
     const res = await pressHandler({ auth, store }).GET(get(await cookieFor("artist")));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ configured: false, token: null });
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
   it("GET answers null until a link is made, and is never cached", async () => {
