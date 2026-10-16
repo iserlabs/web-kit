@@ -54,7 +54,7 @@ fails on any `error` finding).
 
 ### Audits (extended tier — opt-in, browser-backed)
 `web-kit audit --tier extended` adds **Lighthouse** (perf/SEO/best-practices/a11y
-scores + CWV) and **axe** (WCAG a11y) per route. Findings default to `warn`
+scores + CWV) and **axe** (WCAG 2.0, 2.1 and 2.2 A/AA a11y) per route. Findings default to `warn`
 (advisory) — opt a code up to `error` via `severity` to make it a gate.
 
 The browser tools are **install-on-demand** (the kit stays lean for required-only
@@ -67,7 +67,7 @@ Configure in `web-kit.audits.config.mjs`:
 
     extended: {
       // lighthouse: false,            // or { thresholds: { performance: 0.9, seo: 0.95 } }
-      // axe: false,                   // or { tags: ["wcag2a","wcag2aa"] }
+      // axe: false,                   // or { tags: ["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22aa"] } (the default)
       // cwv: { thresholds: { lcp: 2500, cls: 0.1 } },
       // routes: ["/"],                // defaults to the required-tier route list
     }

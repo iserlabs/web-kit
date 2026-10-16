@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **Accessibility audit covers WCAG 2.1 and 2.2.** The extended-tier axe check now runs the `wcag21a`, `wcag21aa` and `wcag22aa` rules alongside `wcag2a` and `wcag2aa` (exported as `DEFAULT_AXE_TAGS`). A site that sets its own `axe.tags` keeps exactly those tags. Expect new advisory findings on sites that passed before, such as touch target size (2.2) and autocomplete and text spacing (2.1).
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
 ## 0.11.1
