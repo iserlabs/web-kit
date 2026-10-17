@@ -184,7 +184,8 @@ describe("letterhead variants", () => {
       '<td style="font-size:12px;white-space:nowrap">a · b</td><div style="width:392.515625px;height:1px">&nbsp;</div><div style="width:1px;height:56px"></div>';
     const out = letterheadSignature(sig);
     expect(out).not.toMatch(/nowrap/);
-    expect(out).toContain("width:100%;max-width:393px");
+    expect(out).toContain("width:100%");
+    expect(out).not.toContain("392.5");
     expect(out).toContain("width:1px;height:56px");
   });
 
@@ -197,5 +198,26 @@ describe("letterhead variants", () => {
     expect(out).not.toContain("border-left");
     expect(out).toContain("padding:0");
     expect(letterheadSignature(sig)).toContain("<img");
+  });
+
+  it("sets money lines as a figures table, amounts right-aligned, last line strongest, words unchanged", () => {
+    const e = {
+      subject: "s",
+      blocks: [
+        {
+          type: "figures",
+          intro: "September:",
+          rows: [
+            ["Booked revenue:", "$3,043.58"],
+            ["Paid to you:", "$2,302.94"],
+          ],
+        },
+      ],
+    };
+    const html = renderLetterhead("paper", config, person, e);
+    expect(parse(html).textContent).toContain("Booked revenue:");
+    expect(html).toMatch(/text-align:right;white-space:nowrap;padding-left:12px;">\$3,043\.58/);
+    expect(html).toMatch(/font-weight:700;[^>]*>Paid to you:/);
+    expect(letterheadPlainText(e, person)).toContain("Paid to you: $2,302.94");
   });
 });

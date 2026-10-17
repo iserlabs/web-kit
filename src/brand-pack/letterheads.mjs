@@ -52,6 +52,8 @@ const tokens = (c) => {
     headerUrl: l.headerUrl,
     headerWidth: l.headerWidth ?? 240,
     headerAlt: l.headerAlt ?? c.wordmark,
+    // A tightly cropped header for left-aligned layouts, so the mark meets the text edge.
+    headerLeftUrl: l.headerLeftUrl ?? l.headerUrl,
     photoUrl: l.photoUrl ?? c.photoUrl,
     photoAlt: l.photoAlt ?? "",
     address: l.address,
@@ -91,6 +93,17 @@ function body(email, c, t, s) {
             )
             .join("");
           return `${b.intro ? `<p style="${P}margin-bottom:6px;">${esc(b.intro)}</p>` : ""}${table(rows, `margin:0 0 24px 0;${s.listRule ? `border-top:1px solid ${t.line};` : ""}`)}`;
+        }
+        case "figures": {
+          const last = b.rows.length - 1;
+          const rows = b.rows
+            .map(([label, amount], i) => {
+              const strong = i === last && b.emphasizeLast !== false;
+              const cell = `padding:10px 0;border-bottom:1px solid ${t.line};font-family:${s.font};font-size:${strong ? s.size + 1 : s.size}px;line-height:1.4;color:${c.ink};${strong ? "font-weight:700;" : ""}`;
+              return `<tr><td style="${cell}">${esc(label)}</td><td align="right" style="${cell}text-align:right;white-space:nowrap;padding-left:12px;">${esc(amount)}</td></tr>`;
+            })
+            .join("");
+          return `${b.intro ? `<p style="${P}margin-bottom:6px;">${esc(b.intro)}</p>` : ""}${table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`)}`;
         }
         case "link":
           return s.link(b);
@@ -151,7 +164,7 @@ export function letterheadSignature(html, { logo = true } = {}) {
     )
     .replace(/white-space:\s*nowrap;?/gi, "")
     .replace(/(<div\b[^>]*style="[^"]*?)width:\s*(\d+(?:\.\d+)?)px/gi, (m, pre, px) =>
-      Number(px) > 120 ? `${pre}width:100%;max-width:${Math.round(Number(px))}px` : m,
+      Number(px) > 120 ? `${pre}width:100%` : m,
     );
 }
 
@@ -172,7 +185,7 @@ const nameBlock = (c, t, p, align = "left") =>
   `<div style="text-align:${align};font-family:${c.bodyFont};font-size:13px;line-height:1.5;letter-spacing:.14em;text-transform:uppercase;color:${t.soft};padding-top:3px;">${esc(p.title)}</div>`;
 
 const shell = (c, t, inner) =>
-  `<div style="background-color:${t.surround};padding:24px 12px;">${table(`<tr><td align="center" style="padding:0;">${table(`<tr><td style="padding:0;">${inner}</td></tr>`, `max-width:${MAX_WIDTH}px;`)}</td></tr>`)}</div>`;
+  `<div style="background-color:${t.surround};padding:20px 6px;">${table(`<tr><td align="center" style="padding:0;">${table(`<tr><td style="padding:0;">${inner}</td></tr>`, `max-width:${MAX_WIDTH}px;`)}</td></tr>`)}</div>`;
 
 const footerLine = (c, t, color) =>
   t.footer
@@ -200,7 +213,7 @@ function paper(email, c, p, sig) {
   const s = {
     font: c.displayFont,
     size: 18,
-    leadSize: 20,
+    leadSize: 19,
     listRule: true,
     link: (b) =>
       table(
@@ -208,7 +221,7 @@ function paper(email, c, p, sig) {
           (b.label
             ? `<div style="font-family:${c.displayFont};font-size:17px;color:${t.soft};">${esc(b.label)}</div>`
             : "") +
-          `<div style="font-family:${c.displayFont};font-size:19px;padding-top:8px;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:6px 0;">${esc(b.href)}</a></div>` +
+          `<div style="font-family:${c.displayFont};font-size:17px;padding-top:8px;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:6px 0;">${esc(b.href)}</a></div>` +
           (b.note
             ? `<div style="font-family:${c.displayFont};font-size:17px;color:${c.ink};padding-top:6px;">${esc(b.note)}</div>`
             : "") +
@@ -221,9 +234,9 @@ function paper(email, c, p, sig) {
     t,
     `<div style="background-color:${t.paper};border:1px solid ${t.line};">
 <div style="text-align:center;padding:30px 24px 22px;background-color:${t.paper};">${header(c, t)}</div>
-<div style="height:1px;line-height:1px;font-size:1px;background-color:${t.rule};margin:0 40px;">&nbsp;</div>
-<div style="padding:32px 34px 8px;">${body(email, c, t, s)}</div>
-<div style="padding:0 34px 30px;">${sig ?? `<div style="text-align:center;">${nameBlock(c, t, p, "center")}<div style="padding-top:10px;text-align:center;line-height:1.8;">${contactLines(c, t, p, c.ink, c.bodyFont, 14)}</div></div>`}</div>
+<div style="height:1px;line-height:1px;font-size:1px;background-color:${t.rule};margin:0 26px;">&nbsp;</div>
+<div style="padding:30px 26px 8px;">${body(email, c, t, s)}</div>
+<div style="padding:0 26px 30px;">${sig ?? `<div style="text-align:center;">${nameBlock(c, t, p, "center")}<div style="padding-top:10px;text-align:center;line-height:1.8;">${contactLines(c, t, p, c.ink, c.bodyFont, 14)}</div></div>`}</div>
 </div>${footerLine(c, t, t.soft)}`,
   );
 }
@@ -259,7 +272,7 @@ function masthead(email, c, p, sig) {
     c,
     { ...t, surround: t.paper },
     `<div style="background-color:${t.paper};">
-${table(`<tr><td valign="middle" style="padding:8px 0 18px 0;">${header(c, t, Math.min(t.headerWidth, 300), "left")}</td>${t.mastheadContact ? `<td valign="middle" style="padding:8px 0 18px 16px;">${contact}</td>` : ""}</tr>`)}
+${table(`<tr><td valign="middle" style="padding:8px 0 18px 0;">${header(c, { ...t, headerUrl: t.headerLeftUrl }, Math.min(t.headerWidth, 260), "left")}</td>${t.mastheadContact ? `<td valign="middle" style="padding:8px 0 18px 16px;">${contact}</td>` : ""}</tr>`)}
 <div style="height:2px;line-height:2px;font-size:2px;background-color:${t.rule};">&nbsp;</div>
 <div style="padding:30px 0 6px;">${body(email, c, t, s)}</div>
 <div style="padding:0 0 26px;">${sig ?? `${nameBlock(c, t, p)}`}</div>
@@ -353,6 +366,8 @@ export function letterheadPlainText(email, person) {
     if (b.type === "link") return [b.label, b.href, b.note].filter(Boolean).join("\n");
     if (b.type === "list")
       return [b.intro, ...b.items.map((x, i) => `${i + 1}) ${x}`)].filter(Boolean).join("\n\n");
+    if (b.type === "figures")
+      return [b.intro, ...b.rows.map(([l, a]) => `${l} ${a}`)].filter(Boolean).join("\n");
     return b.text;
   });
   const sig = [person.name, person.title, person.phone, person.email].filter(Boolean).join("\n");
