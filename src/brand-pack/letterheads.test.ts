@@ -220,4 +220,26 @@ describe("letterhead variants", () => {
     expect(html).toMatch(/font-weight:700;[^>]*>Paid to you:/);
     expect(letterheadPlainText(e, person)).toContain("Paid to you: $2,302.94");
   });
+
+  it("gives the bottom-line figure the most weight and keeps signature dots off a line start", () => {
+    const e = {
+      subject: "s",
+      blocks: [
+        {
+          type: "figures",
+          rows: [
+            ["A:", "$1"],
+            ["Paid to you:", "$2,302.94"],
+          ],
+        },
+      ],
+    };
+    const html = renderLetterhead("paper", config, person, e);
+    expect(html).toMatch(/font-size:26px;text-align:right[^>]*>\$2,302\.94/);
+    const sig =
+      '<table style="border-collapse:collapse"><tr><td><a href="mailto:a@b.co">a@b.co</a><span style="padding:0 7px">·</span><a href="https://b.co">b.co</a></td></tr></table>';
+    const out = letterheadSignature(sig);
+    expect(out).toContain("&#8288;·");
+    expect(out).toContain('style="width:100%;border-collapse');
+  });
 });

@@ -99,8 +99,9 @@ function body(email, c, t, s) {
           const rows = b.rows
             .map(([label, amount], i) => {
               const strong = i === last && b.emphasizeLast !== false;
-              const cell = `padding:10px 0;border-bottom:1px solid ${t.line};font-family:${s.font};font-size:${strong ? s.size + 1 : s.size}px;line-height:1.4;color:${c.ink};${strong ? "font-weight:700;" : ""}`;
-              return `<tr><td style="${cell}">${esc(label)}</td><td align="right" style="${cell}text-align:right;white-space:nowrap;padding-left:12px;">${esc(amount)}</td></tr>`;
+              const cell = `padding:${strong ? "14px" : "10px"} 0;${strong ? `border-top:2px solid ${t.rule};` : ""}border-bottom:1px solid ${t.line};font-family:${s.font};font-size:${strong ? s.size + 1 : s.size}px;line-height:1.3;color:${c.ink};${strong ? "font-weight:700;" : ""}`;
+              const money = strong ? `font-size:${s.size + 8}px;` : "";
+              return `<tr><td style="${cell}">${esc(label)}</td><td align="right" style="${cell}${money}text-align:right;white-space:nowrap;padding-left:12px;">${esc(amount)}</td></tr>`;
             })
             .join("");
           return `${b.intro ? `<p style="${P}margin-bottom:6px;">${esc(b.intro)}</p>` : ""}${table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`)}`;
@@ -153,19 +154,25 @@ export function letterheadSignature(html, { logo = true } = {}) {
           /(<td\b[^>]*style="[^"]*?)padding:\s*0(?:px)?\s+0(?:px)?\s+0(?:px)?\s+\d+px/gi,
           "$1padding:0",
         );
-  return out
-    .replace(/<a\b[^>]*href="tel:[^"]*"[^>]*>([\s\S]*?)<\/a>/gi, "<span>$1</span>")
-    .replace(
-      /<a\b([^>]*?)style="([^"]*)"/gi,
-      (m, pre, st) => `<a${pre}style="${st};display:inline-block;padding:10px 0"`,
-    )
-    .replace(/font-size:\s*(\d+(?:\.\d+)?)px/gi, (m, px) =>
-      Number(px) < 13 ? "font-size:13px" : m,
-    )
-    .replace(/white-space:\s*nowrap;?/gi, "")
-    .replace(/(<div\b[^>]*style="[^"]*?)width:\s*(\d+(?:\.\d+)?)px/gi, (m, pre, px) =>
-      Number(px) > 120 ? `${pre}width:100%` : m,
-    );
+  return (
+    out
+      .replace(/<a\b[^>]*href="tel:[^"]*"[^>]*>([\s\S]*?)<\/a>/gi, "<span>$1</span>")
+      .replace(
+        /<a\b([^>]*?)style="([^"]*)"/gi,
+        (m, pre, st) => `<a${pre}style="${st};display:inline-block;padding:10px 0"`,
+      )
+      .replace(/font-size:\s*(\d+(?:\.\d+)?)px/gi, (m, px) =>
+        Number(px) < 13 ? "font-size:13px" : m,
+      )
+      .replace(/white-space:\s*nowrap;?/gi, "")
+      // a separator dot travels with the item before it, so a wrapped line never starts on a dot
+      .replace(/(<\/a>\s*<span\b[^>]*>)\s*(·|&middot;|&#183;)/gi, "$1&#8288;$2")
+      // and the signature spans the letter, so its rules run the full width
+      .replace(/<table\b([^>]*?)style="/i, '<table$1style="width:100%;')
+      .replace(/(<div\b[^>]*style="[^"]*?)width:\s*(\d+(?:\.\d+)?)px/gi, (m, pre, px) =>
+        Number(px) > 120 ? `${pre}width:100%` : m,
+      )
+  );
 }
 
 const contactLines = (c, t, p, color, font, size, sep = "<br>") =>
@@ -217,7 +224,7 @@ function paper(email, c, p, sig) {
     listRule: true,
     link: (b) =>
       table(
-        `<tr><td style="border-top:1px solid ${t.rule};border-bottom:1px solid ${t.rule};padding:20px 4px;text-align:center;">` +
+        `<tr><td style="border-top:1px solid ${t.rule};border-bottom:1px solid ${t.rule};padding:18px 0;text-align:left;">` +
           (b.label
             ? `<div style="font-family:${c.displayFont};font-size:17px;color:${t.soft};">${esc(b.label)}</div>`
             : "") +
