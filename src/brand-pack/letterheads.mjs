@@ -125,9 +125,22 @@ const button = (c, t, b, font) =>
  * or holds a fixed width past a phone screen, and a tel: link
  * becomes plain text, since mail apps link phone numbers themselves and a call
  * link at the foot of a letter is not the business phone a reader hunts for.
+ * Pass { logo: false } under a letterhead header, so the mark shows once.
  */
-export function letterheadSignature(html) {
-  return String(html)
+export function letterheadSignature(html, { logo = true } = {}) {
+  const out = logo
+    ? String(html)
+    : String(html)
+        .replace(/<img\b[^>]*>/gi, "")
+        // the cell that held the logo, now empty or holding an empty link
+        .replace(/<td\b[^>]*>\s*(?:<a\b[^>]*>\s*<\/a>)?\s*<\/td>/gi, "")
+        // and the divider and gutter that sat beside it
+        .replace(/(<td\b[^>]*style="[^"]*?)border-left:[^;"]*;?/gi, "$1")
+        .replace(
+          /(<td\b[^>]*style="[^"]*?)padding:\s*0(?:px)?\s+0(?:px)?\s+0(?:px)?\s+\d+px/gi,
+          "$1padding:0",
+        );
+  return out
     .replace(/<a\b[^>]*href="tel:[^"]*"[^>]*>([\s\S]*?)<\/a>/gi, "<span>$1</span>")
     .replace(
       /<a\b([^>]*?)style="([^"]*)"/gi,
@@ -231,7 +244,7 @@ function masthead(email, c, p, sig) {
       table(
         `<tr><td width="3" style="width:3px;background-color:${t.rule};font-size:1px;line-height:1px;">&nbsp;</td><td style="padding:4px 0 4px 18px;">` +
           (b.label
-            ? `<div style="font-family:${c.bodyFont};font-size:15px;line-height:1.5;color:${t.soft};">${esc(b.label)}</div>`
+            ? `<div style="font-family:${c.displayFont};font-size:18px;line-height:1.5;color:${c.ink};">${esc(b.label)}</div>`
             : "") +
           `<div style="font-family:${c.displayFont};font-size:19px;line-height:1.4;padding-top:6px;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:4px 0;">${esc(b.href)}</a></div>` +
           (b.note

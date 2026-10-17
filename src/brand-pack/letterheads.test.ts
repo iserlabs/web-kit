@@ -187,4 +187,15 @@ describe("letterhead variants", () => {
     expect(out).toContain("width:100%;max-width:393px");
     expect(out).toContain("width:1px;height:56px");
   });
+
+  it("drops the signature's logo on request, so a letterhead shows its mark once", () => {
+    const sig =
+      '<table><tr><td style="padding:0 16px 0 0"><a href="x"><img src="mark.png" alt="Brand"></a></td><td style="padding:0px 0px 0px 18px;border-left:1px solid #ccc"><div>Jake Lee</div></td></tr></table>';
+    const out = letterheadSignature(sig, { logo: false });
+    expect(out).not.toContain("<img");
+    expect(out.match(/<td/g)?.length).toBe(1);
+    expect(out).not.toContain("border-left");
+    expect(out).toContain("padding:0");
+    expect(letterheadSignature(sig)).toContain("<img");
+  });
 });
