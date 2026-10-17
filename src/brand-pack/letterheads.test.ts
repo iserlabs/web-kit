@@ -221,7 +221,7 @@ describe("letterhead variants", () => {
     expect(letterheadPlainText(e, person)).toContain("Paid to you: $2,302.94");
   });
 
-  it("gives the bottom-line figure the most weight and keeps signature dots off a line start", () => {
+  it("gives the bottom-line figure the most weight and runs the signature full width", () => {
     const e = {
       subject: "s",
       blocks: [
@@ -239,7 +239,6 @@ describe("letterhead variants", () => {
     const sig =
       '<table style="border-collapse:collapse"><tr><td><a href="mailto:a@b.co">a@b.co</a><span style="padding:0 7px">·</span><a href="https://b.co">b.co</a></td></tr></table>';
     const out = letterheadSignature(sig);
-    expect(out).toContain("&#8288;·");
     expect(out).toContain('style="width:100%;border-collapse');
   });
 });

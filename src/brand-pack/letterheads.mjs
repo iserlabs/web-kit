@@ -165,8 +165,6 @@ export function letterheadSignature(html, { logo = true } = {}) {
         Number(px) < 13 ? "font-size:13px" : m,
       )
       .replace(/white-space:\s*nowrap;?/gi, "")
-      // a separator dot travels with the item before it, so a wrapped line never starts on a dot
-      .replace(/(<\/a>\s*<span\b[^>]*>)\s*(·|&middot;|&#183;)/gi, "$1&#8288;$2")
       // and the signature spans the letter, so its rules run the full width
       .replace(/<table\b([^>]*?)style="/i, '<table$1style="width:100%;')
       .replace(/(<div\b[^>]*style="[^"]*?)width:\s*(\d+(?:\.\d+)?)px/gi, (m, pre, px) =>
