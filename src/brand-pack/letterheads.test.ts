@@ -171,7 +171,7 @@ describe("letterhead variants", () => {
     const out = letterheadSignature(sig);
     expect(parse(out).textContent).toBe(parse(sig).textContent);
     expect(out).not.toContain("tel:");
-    expect(out).toContain("display:inline-block;padding:10px 0");
+    expect(out).toContain("display:inline-block;padding:4px 0");
   });
 
   it("uses the address itself as button text when no label is given, so no words are added", () => {

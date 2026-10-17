@@ -159,7 +159,7 @@ export function letterheadSignature(html, { logo = true } = {}) {
       .replace(/<a\b[^>]*href="tel:[^"]*"[^>]*>([\s\S]*?)<\/a>/gi, "<span>$1</span>")
       .replace(
         /<a\b([^>]*?)style="([^"]*)"/gi,
-        (m, pre, st) => `<a${pre}style="${st};display:inline-block;padding:10px 0"`,
+        (m, pre, st) => `<a${pre}style="${st};display:inline-block;padding:4px 0"`,
       )
       .replace(/font-size:\s*(\d+(?:\.\d+)?)px/gi, (m, px) =>
         Number(px) < 13 ? "font-size:13px" : m,
