@@ -121,9 +121,10 @@ const button = (c, t, b, font) =>
 
 /**
  * A pasted signature made fit for a letterhead without changing a word: its
- * links get a tappable height, and a tel: link becomes plain text, since mail
- * apps link phone numbers themselves and a call link at the foot of a letter
- * is not the business phone a reader hunts for.
+ * links get a tappable height, no text runs under 13px, nothing refuses to wrap
+ * or holds a fixed width past a phone screen, and a tel: link
+ * becomes plain text, since mail apps link phone numbers themselves and a call
+ * link at the foot of a letter is not the business phone a reader hunts for.
  */
 export function letterheadSignature(html) {
   return String(html)
@@ -131,6 +132,13 @@ export function letterheadSignature(html) {
     .replace(
       /<a\b([^>]*?)style="([^"]*)"/gi,
       (m, pre, st) => `<a${pre}style="${st};display:inline-block;padding:10px 0"`,
+    )
+    .replace(/font-size:\s*(\d+(?:\.\d+)?)px/gi, (m, px) =>
+      Number(px) < 13 ? "font-size:13px" : m,
+    )
+    .replace(/white-space:\s*nowrap;?/gi, "")
+    .replace(/(<div\b[^>]*style="[^"]*?)width:\s*(\d+(?:\.\d+)?)px/gi, (m, pre, px) =>
+      Number(px) > 120 ? `${pre}width:100%;max-width:${Math.round(Number(px))}px` : m,
     );
 }
 
@@ -225,7 +233,7 @@ function masthead(email, c, p, sig) {
           (b.label
             ? `<div style="font-family:${c.bodyFont};font-size:15px;line-height:1.5;color:${t.soft};">${esc(b.label)}</div>`
             : "") +
-          `<div style="font-family:${c.displayFont};font-size:19px;line-height:1.4;padding-top:6px;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};">${esc(b.href)}</a></div>` +
+          `<div style="font-family:${c.displayFont};font-size:19px;line-height:1.4;padding-top:6px;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:4px 0;">${esc(b.href)}</a></div>` +
           (b.note
             ? `<div style="font-family:${c.bodyFont};font-size:15px;color:${c.ink};padding-top:6px;">${esc(b.note)}</div>`
             : "") +
@@ -236,9 +244,9 @@ function masthead(email, c, p, sig) {
   const contact = `<div style="text-align:right;line-height:1.7;">${contactLines(c, t, p, c.ink, c.bodyFont, 13)}${t.address ? `<br><span style="font-family:${c.bodyFont};font-size:13px;color:${t.soft};">${esc(t.address)}</span>` : ""}</div>`;
   return shell(
     c,
-    { ...t, surround: "#ffffff" },
-    `<div style="background-color:#ffffff;">
-${table(`<tr><td valign="middle" style="padding:8px 0 18px 0;">${header(c, t, Math.min(t.headerWidth, 230), "left")}</td>${t.mastheadContact ? `<td valign="middle" style="padding:8px 0 18px 16px;">${contact}</td>` : ""}</tr>`)}
+    { ...t, surround: t.paper },
+    `<div style="background-color:${t.paper};">
+${table(`<tr><td valign="middle" style="padding:8px 0 18px 0;">${header(c, t, Math.min(t.headerWidth, 300), "left")}</td>${t.mastheadContact ? `<td valign="middle" style="padding:8px 0 18px 16px;">${contact}</td>` : ""}</tr>`)}
 <div style="height:2px;line-height:2px;font-size:2px;background-color:${t.rule};">&nbsp;</div>
 <div style="padding:30px 0 6px;">${body(email, c, t, s)}</div>
 <div style="padding:0 0 26px;">${sig ?? `${nameBlock(c, t, p)}`}</div>
@@ -262,10 +270,10 @@ function postcard(email, c, p, sig) {
   if (isUnfilled(t.photoUrl))
     return `<!-- postcard: no photoUrl, rendered paper -->${paper(email, c, p, sig)}`;
   const s = {
-    font: c.bodyFont,
+    font: c.displayFont,
     size: 17,
     leadFont: c.displayFont,
-    leadSize: 22,
+    leadSize: 19,
     numeral: c.accent,
     link: (b) => button(c, t, b, c.bodyFont),
   };
@@ -274,8 +282,9 @@ function postcard(email, c, p, sig) {
     t,
     `<div style="background-color:${t.paper};">
 <img src="${esc(t.photoUrl)}" width="${MAX_WIDTH}" alt="${esc(t.photoAlt)}" style="display:block;width:100%;max-width:${MAX_WIDTH}px;height:auto;border:0;">
-<div style="text-align:center;padding:26px 24px 4px;background-color:${t.paper};">${header(c, t)}</div>
-<div style="padding:24px 34px 8px;">${body(email, c, t, s)}</div>
+<div style="text-align:center;padding:22px 24px 18px;background-color:${t.paper};">${header(c, t, Math.min(t.headerWidth, 300))}</div>
+<div style="height:1px;line-height:1px;font-size:1px;background-color:${t.rule};margin:0 40px;">&nbsp;</div>
+<div style="padding:28px 34px 8px;">${body(email, c, t, s)}</div>
 <div style="padding:0 34px 30px;">${sig ?? nameBlock(c, t, p)}</div>
 </div>${footerLine(c, t, t.soft)}`,
   );
@@ -302,7 +311,7 @@ export const LETTERHEAD_VARIANTS = [
   {
     id: "postcard",
     label: "Postcard",
-    note: "A real photograph of the place on top, header beneath, sans text, link as a button.",
+    note: "A band cropped from a real photograph of the place, header beneath, serif text, link as a button.",
   },
 ];
 

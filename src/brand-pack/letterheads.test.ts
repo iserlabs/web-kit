@@ -178,4 +178,13 @@ describe("letterhead variants", () => {
     const html = renderLetterhead("postcard", config, person, email);
     expect(parse(html).textContent).not.toContain("Open the page");
   });
+
+  it("lets a pasted signature fit a 390px phone: no nowrap, no fixed-width rule", () => {
+    const sig =
+      '<td style="font-size:12px;white-space:nowrap">a · b</td><div style="width:392.515625px;height:1px">&nbsp;</div><div style="width:1px;height:56px"></div>';
+    const out = letterheadSignature(sig);
+    expect(out).not.toMatch(/nowrap/);
+    expect(out).toContain("width:100%;max-width:393px");
+    expect(out).toContain("width:1px;height:56px");
+  });
 });
