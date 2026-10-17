@@ -241,4 +241,10 @@ describe("letterhead variants", () => {
     const out = letterheadSignature(sig);
     expect(out).toContain('style="width:100%;border-collapse');
   });
+
+  it("leaves no empty link behind when it drops the signature logo", () => {
+    const sig =
+      '<div><a href="https://x.co"><img src="m.png" alt="X"></a></div><div>Jake Lee</div>';
+    expect(letterheadSignature(sig, { logo: false })).not.toMatch(/<a\b[^>]*>\s*<\/a>/);
+  });
 });

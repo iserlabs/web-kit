@@ -146,6 +146,8 @@ export function letterheadSignature(html, { logo = true } = {}) {
     ? String(html)
     : String(html)
         .replace(/<img\b[^>]*>/gi, "")
+        // a link that only wrapped the logo is now empty, and an empty link has no name
+        .replace(/<a\b[^>]*>\s*<\/a>/gi, "")
         // the cell that held the logo, now empty or holding an empty link
         .replace(/<td\b[^>]*>\s*(?:<a\b[^>]*>\s*<\/a>)?\s*<\/td>/gi, "")
         // and the divider and gutter that sat beside it
