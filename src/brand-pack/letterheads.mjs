@@ -137,7 +137,7 @@ const button = (c, t, b, font) =>
 
 /**
  * A pasted signature made fit for a letterhead without changing a word: its
- * links get a tappable height, no text runs under 13px, nothing refuses to wrap
+ * links get a tappable height, contact text reads at 15px (small capitals 13px), nothing refuses to wrap
  * or holds a fixed width past a phone screen, and a tel: link
  * becomes plain text, since mail apps link phone numbers themselves and a call
  * link at the foot of a letter is not the business phone a reader hunts for.
@@ -193,8 +193,18 @@ export function letterheadSignature(html, { logo = true, name, nameSize = 20 } =
         /<a\b([^>]*?)style="([^"]*)"/gi,
         (m, pre, st) => `<a${pre}style="${st};display:inline-block;padding:4px 0"`,
       )
-      .replace(/font-size:\s*(\d+(?:\.\d+)?)px/gi, (m, px) =>
-        Number(px) < 13 ? "font-size:13px" : m,
+      // contact text reads at 15px beside 18px body; small capital labels keep 13px
+      .replace(
+        /style="([^"]*)"/gi,
+        (m, st) =>
+          `style="${st.replace(/font-size:\s*(\d+(?:\.\d+)?)px/gi, (f, px) => {
+            const floor = /text-transform:\s*uppercase|letter-spacing:\s*(?:0?\.[1-9]|[1-9])/i.test(
+              st,
+            )
+              ? 13
+              : 15;
+            return Number(px) < floor ? `font-size:${floor}px` : f;
+          })}"`,
       )
       .replace(/white-space:\s*nowrap;?/gi, "")
       // and the signature spans the letter, so its rules run the full width
@@ -250,7 +260,7 @@ function paper(email, c, p, sig) {
   const s = {
     font: c.displayFont,
     size: 18,
-    leadSize: 19,
+    leadSize: 18,
     listRule: true,
     link: (b) =>
       table(
