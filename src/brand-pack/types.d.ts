@@ -26,10 +26,23 @@ export interface BrandPackConfig {
   /** id of the picked signature variant. Null until the client picks. */
   signature?: string | null;
   people: BrandPackPerson[];
+  /** id of the picked letterhead layout. Null until the client picks. */
+  letterheadPick?: string | null;
+  /** Letterhead-only tokens; everything else comes from the fields above. */
+  letterhead?: BrandPackLetterhead;
   /** Replace one of the five with a renderer written for this client. */
   overrides?: {
     signatures?: Record<string, (config: BrandPackConfig, person: BrandPackPerson) => string>;
     shareCards?: Record<string, (config: BrandPackConfig) => ShareCardNode>;
+    letterheads?: Record<
+      string,
+      (
+        config: BrandPackConfig,
+        person: BrandPackPerson,
+        email: LetterheadEmail,
+        signatureHtml?: string,
+      ) => string
+    >;
   };
 }
 
@@ -98,3 +111,49 @@ export declare function renderSignature(
   config: BrandPackConfig,
   person: BrandPackPerson,
 ): string;
+
+export interface BrandPackLetterhead {
+  /** Header image with its background painted in (opaque), so Gmail dark mode cannot hide it. */
+  headerUrl: string;
+  headerWidth?: number;
+  headerAlt?: string;
+  paper?: string;
+  surround?: string;
+  rule?: string;
+  line?: string;
+  soft?: string;
+  link?: string;
+  photoUrl?: string;
+  photoAlt?: string;
+  address?: string;
+  footer?: string;
+}
+
+export type LetterheadBlock =
+  | { type: "p" | "lead" | "close"; text: string }
+  | { type: "link"; label?: string; href: string; note?: string; button?: string }
+  | { type: "list"; intro?: string; items: string[] };
+
+export interface LetterheadEmail {
+  subject: string;
+  blocks: LetterheadBlock[];
+}
+
+export declare const LETTERHEAD_VARIANTS: BrandPackVariant[];
+export declare const LETTERHEAD_IDS: string[];
+export declare function renderLetterhead(
+  variantId: string,
+  config: BrandPackConfig,
+  person: BrandPackPerson,
+  email: LetterheadEmail,
+  signatureHtml?: string,
+): string;
+export declare function letterheadPlainText(
+  email: LetterheadEmail,
+  person: BrandPackPerson,
+): string;
+export declare function letterheadDocument(
+  html: string,
+  opts?: { subject?: string; fontsHref?: string },
+): string;
+export declare function letterheadSignature(html: string): string;
