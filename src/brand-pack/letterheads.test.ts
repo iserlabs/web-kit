@@ -279,4 +279,19 @@ describe("letterhead variants", () => {
     expect(out).toContain('style="font-size:15px"');
     expect(out).toContain("font-size:13px;text-transform:uppercase");
   });
+
+  it("puts one rule above the signature, unless the letter already ends on the link panel's rule", () => {
+    const rule = /margin:0 0 20px 0;">&nbsp;<\/div><div>SIG/;
+    expect(renderLetterhead("paper", config, person, email, "<div>SIG</div>")).toMatch(rule);
+    const endsOnLink = {
+      subject: "s",
+      blocks: [
+        { type: "p", text: "Hi," },
+        { type: "link", href: "https://x.co/a" },
+      ],
+    };
+    expect(renderLetterhead("paper", config, person, endsOnLink, "<div>SIG</div>")).not.toMatch(
+      rule,
+    );
+  });
 });
