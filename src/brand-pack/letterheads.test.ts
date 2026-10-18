@@ -254,7 +254,7 @@ describe("letterhead variants", () => {
     const sig =
       '<table><tr><td width="3" style="width:3px;background:#b5975a"> </td><td style="padding:1px 0px 1px 24px"><img src="m.png" alt="M"><div style="height:17px"> </div><div style="font-size:22px">Jake Lee</div><a href="tel:+1201" style="color:#000">201</a><span style="padding:0 7px">·</span><a href="mailto:a@b.co" style="color:#000">a@b.co</a></td></tr></table>';
     const out = letterheadSignature(sig, { logo: false, name: "Jake Lee" });
-    expect(out).toContain('font-size:20px">Jake Lee');
+    expect(out).toContain('font-size:22px">Jake Lee');
     expect(out).not.toContain("·");
     expect(out).toContain("<br>");
     expect(out).toContain("padding:1px 0px 1px 0");
@@ -269,7 +269,7 @@ describe("letterhead variants", () => {
       '<div><span style="font-size:17px;color:#000">Jake Lee</span></div><div><a href="tel:+1" style="c">201</a><span style="padding:0 3px"><span> </span>·<span> </span></span><a href="mailto:a@b.co" style="c">a@b.co</a></div>';
     const out = letterheadSignature(sig, { logo: false, name: "Jake Lee" });
     expect(out).not.toContain("·");
-    expect(out).toContain('font-size:20px;color:#000">Jake Lee');
+    expect(out).toContain('font-size:22px;color:#000">Jake Lee');
   });
 
   it("sets signature contact text at 15px and keeps small capital labels at 13px", () => {
