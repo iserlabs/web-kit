@@ -254,11 +254,11 @@ function paper(email, c, p, sig) {
     listRule: true,
     link: (b) =>
       table(
-        `<tr><td style="border-top:1px solid ${t.rule};border-bottom:1px solid ${t.rule};padding:18px 0;text-align:left;">` +
+        `<tr><td style="border-top:1px solid ${t.rule};border-bottom:1px solid ${t.rule};padding:18px 0 12px;text-align:left;">` +
           (b.label
             ? `<div style="font-family:${c.displayFont};font-size:17px;line-height:1.5;color:${t.soft};">${esc(b.label)}</div>`
             : "") +
-          `<div style="font-family:${c.displayFont};font-size:17px;line-height:1.5;padding-top:6px;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:4px 0;">${url(b.href)}</a></div>` +
+          `<div style="font-family:${c.displayFont};font-size:17px;line-height:1.5;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:10px 0;">${url(b.href)}</a></div>` +
           (b.note
             ? `<div style="font-family:${c.displayFont};font-size:17px;color:${c.ink};padding-top:6px;">${esc(b.note)}</div>`
             : "") +
@@ -296,7 +296,7 @@ function masthead(email, c, p, sig) {
           (b.label
             ? `<div style="font-family:${c.displayFont};font-size:18px;line-height:1.5;color:${c.ink};">${esc(b.label)}</div>`
             : "") +
-          `<div style="font-family:${c.displayFont};font-size:19px;line-height:1.4;padding-top:6px;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:4px 0;">${url(b.href)}</a></div>` +
+          `<div style="font-family:${c.displayFont};font-size:19px;line-height:1.4;padding-top:6px;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:10px 0;">${url(b.href)}</a></div>` +
           (b.note
             ? `<div style="font-family:${c.bodyFont};font-size:15px;color:${c.ink};padding-top:6px;">${esc(b.note)}</div>`
             : "") +
