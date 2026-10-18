@@ -266,7 +266,7 @@ function paper(email, c, p, sig) {
       table(
         `<tr><td style="border-top:1px solid ${t.rule};border-bottom:1px solid ${t.rule};padding:18px 0 12px;text-align:left;">` +
           (b.label
-            ? `<div style="font-family:${c.displayFont};font-size:17px;line-height:1.5;color:${t.soft};">${esc(b.label)}</div>`
+            ? `<div style="font-family:${c.displayFont};font-size:18px;line-height:1.6;color:${c.ink};">${esc(b.label)}</div>`
             : "") +
           `<div style="font-family:${c.displayFont};font-size:17px;line-height:1.5;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:10px 0;">${url(b.href)}</a></div>` +
           (b.note
