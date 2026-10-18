@@ -143,7 +143,7 @@ const button = (c, t, b, font) =>
  * link at the foot of a letter is not the business phone a reader hunts for.
  * Pass { logo: false } under a letterhead header, so the mark shows once.
  */
-export function letterheadSignature(html, { logo = true, name, nameSize = 20 } = {}) {
+export function letterheadSignature(html, { logo = true, name, nameSize = 22 } = {}) {
   const BLANK = "(?:\\s|&nbsp;|\u00a0)*";
   const out = logo
     ? String(html)
@@ -173,7 +173,10 @@ export function letterheadSignature(html, { logo = true, name, nameSize = 20 } =
         .replace(
           /(<td\b[^>]*style="[^"]*?padding:\s*[\d.]+(?:px)?\s+[\d.]+(?:px)?\s+[\d.]+(?:px)?\s+)[\d.]+(?:px)?/gi,
           "$10",
-        );
+        )
+        // one rhythm: each live signature's own gaps and line heights give way to one spacing
+        .replace(/(<div\b[^>]*style="[^"]*?)padding-top:\s*[\d.]+px;?/gi, "$1")
+        .replace(/(<(?:div|td)\b[^>]*style="[^"]*?)line-height:\s*[^;"]+/gi, "$1line-height:1.6");
   const named = name
     ? out.replace(
         new RegExp(
@@ -283,7 +286,7 @@ function paper(email, c, p, sig) {
 <div style="text-align:center;padding:30px 24px 22px;background-color:${t.paper};">${header(c, t)}</div>
 <div style="height:1px;line-height:1px;font-size:1px;background-color:${t.rule};margin:0 20px;">&nbsp;</div>
 <div style="padding:30px 20px 0;">${body(email, c, t, s)}</div>
-<div style="padding:14px 20px 30px;">${sig ?? `<div style="text-align:center;">${nameBlock(c, t, p, "center")}<div style="padding-top:10px;text-align:center;line-height:1.8;">${contactLines(c, t, p, c.ink, c.bodyFont, 14)}</div></div>`}</div>
+<div style="padding:14px 20px 30px;">${sig ? `<div style="height:1px;line-height:1px;font-size:1px;background-color:${t.line};margin:0 0 20px 0;">&nbsp;</div>${sig}` : `<div style="text-align:center;">${nameBlock(c, t, p, "center")}<div style="padding-top:10px;text-align:center;line-height:1.8;">${contactLines(c, t, p, c.ink, c.bodyFont, 14)}</div></div>`}</div>
 </div>${footerLine(c, t, t.soft)}`,
   );
 }

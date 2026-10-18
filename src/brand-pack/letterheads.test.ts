@@ -273,7 +273,9 @@ describe("letterhead variants", () => {
   });
 
   it("sets signature contact text at 15px and keeps small capital labels at 13px", () => {
-    const out = letterheadSignature('<div style="font-size:12px">a@b.co</div><div style="font-size:10px;text-transform:uppercase">FOUNDER</div>');
+    const out = letterheadSignature(
+      '<div style="font-size:12px">a@b.co</div><div style="font-size:10px;text-transform:uppercase">FOUNDER</div>',
+    );
     expect(out).toContain('style="font-size:15px"');
     expect(out).toContain("font-size:13px;text-transform:uppercase");
   });
