@@ -216,7 +216,9 @@ describe("letterhead variants", () => {
     };
     const html = renderLetterhead("paper", config, person, e);
     expect(parse(html).textContent).toContain("Booked revenue:");
-    expect(html).toMatch(/text-align:right;white-space:nowrap;padding-left:12px;">\$3,043\.58/);
+    expect(html).toMatch(
+      /text-align:right;white-space:nowrap;padding-left:12px;width:1%;">\$3,043\.58/,
+    );
     expect(html).toMatch(/font-weight:700;[^>]*>Paid to you:/);
     expect(letterheadPlainText(e, person)).toContain("Paid to you: $2,302.94");
   });
@@ -246,5 +248,27 @@ describe("letterhead variants", () => {
     const sig =
       '<div><a href="https://x.co"><img src="m.png" alt="X"></a></div><div>Jake Lee</div>';
     expect(letterheadSignature(sig, { logo: false })).not.toMatch(/<a\b[^>]*>\s*<\/a>/);
+  });
+
+  it("under a header, stacks the contact line, drops logo leftovers, sets one name size and wraps addresses at slashes", () => {
+    const sig =
+      '<table><tr><td width="3" style="width:3px;background:#b5975a"> </td><td style="padding:1px 0px 1px 24px"><img src="m.png" alt="M"><div style="height:17px"> </div><div style="font-size:22px">Jake Lee</div><a href="tel:+1201" style="color:#000">201</a><span style="padding:0 7px">·</span><a href="mailto:a@b.co" style="color:#000">a@b.co</a></td></tr></table>';
+    const out = letterheadSignature(sig, { logo: false, name: "Jake Lee" });
+    expect(out).toContain('font-size:20px">Jake Lee');
+    expect(out).not.toContain("·");
+    expect(out).toContain("<br>");
+    expect(out).toContain("padding:1px 0px 1px 0");
+    expect(out.match(/<td/g)?.length).toBe(1);
+    expect(out).toContain('<span style="display:inline-block;padding:4px 0">201</span>');
+    const html = renderLetterhead("paper", config, person, email);
+    expect(html).toContain("sunmountainstays.com/<wbr>owners/<wbr>kiowa/<wbr>2026-09");
+  });
+
+  it("handles a separator built from spacer spans and a name set in a span", () => {
+    const sig =
+      '<div><span style="font-size:17px;color:#000">Jake Lee</span></div><div><a href="tel:+1" style="c">201</a><span style="padding:0 3px"><span> </span>·<span> </span></span><a href="mailto:a@b.co" style="c">a@b.co</a></div>';
+    const out = letterheadSignature(sig, { logo: false, name: "Jake Lee" });
+    expect(out).not.toContain("·");
+    expect(out).toContain('font-size:20px;color:#000">Jake Lee');
   });
 });

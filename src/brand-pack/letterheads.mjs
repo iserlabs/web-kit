@@ -37,7 +37,9 @@ const esc = (s) =>
 const table = (inner, style = "") =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;${style}">${inner}</table>`;
 
-const BREAK = "word-break:break-word;overflow-wrap:anywhere;";
+const BREAK = "overflow-wrap:break-word;word-break:normal;";
+/** An address printed as text, with a soft break after each slash so it wraps at a slash, not mid-word. */
+const url = (href) => esc(href).replace(/([^/])\/(?!\/)/g, "$1/<wbr>");
 
 /** Letterhead-only tokens, with defaults drawn from the brand-pack tokens. */
 const tokens = (c) => {
@@ -82,9 +84,9 @@ function body(email, c, t, s) {
         case "p":
           return `<p style="${P}">${esc(b.text)}</p>`;
         case "lead":
-          return `<p style="${P}font-family:${s.leadFont ?? s.font};font-size:${s.leadSize}px;line-height:1.45;">${esc(b.text)}</p>`;
+          return `<p style="${P}font-family:${s.leadFont ?? s.font};font-size:${s.leadSize}px;line-height:1.6;">${esc(b.text)}</p>`;
         case "close":
-          return `<p style="${P}margin-bottom:22px;">${esc(b.text)}</p>`;
+          return `<p style="${P}">${esc(b.text)}</p>`;
         case "list": {
           const rows = b.items
             .map(
@@ -101,7 +103,7 @@ function body(email, c, t, s) {
               const strong = i === last && b.emphasizeLast !== false;
               const cell = `padding:${strong ? "14px" : "10px"} 0;${strong ? `border-top:2px solid ${t.rule};` : ""}border-bottom:1px solid ${t.line};font-family:${s.font};font-size:${strong ? s.size + 1 : s.size}px;line-height:1.3;color:${c.ink};${strong ? "font-weight:700;" : ""}`;
               const money = strong ? `font-size:${s.size + 8}px;` : "";
-              return `<tr><td style="${cell}">${esc(label)}</td><td align="right" style="${cell}${money}text-align:right;white-space:nowrap;padding-left:12px;">${esc(amount)}</td></tr>`;
+              return `<tr><td style="${cell}">${esc(label)}</td><td align="right" style="${cell}${money}text-align:right;white-space:nowrap;padding-left:12px;width:1%;">${esc(amount)}</td></tr>`;
             })
             .join("");
           return `${b.intro ? `<p style="${P}margin-bottom:6px;">${esc(b.intro)}</p>` : ""}${table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`)}`;
@@ -123,9 +125,9 @@ function body(email, c, t, s) {
 const button = (c, t, b, font) =>
   `${b.label ? `<p style="margin:0 0 10px 0;font-family:${font};font-size:17px;line-height:1.5;color:${c.ink};">${esc(b.label)}</p>` : ""}` +
   table(
-    `<tr><td style="padding:0 0 8px 0;"><a href="${esc(b.href)}" style="display:inline-block;max-width:100%;box-sizing:border-box;padding:13px 22px;background-color:${c.ink};color:${t.paper};font-family:${c.bodyFont};font-size:15px;font-weight:600;letter-spacing:.02em;text-decoration:none;border-radius:3px;${BREAK}">${esc(b.button ?? b.href)}</a></td></tr>` +
+    `<tr><td style="padding:0 0 8px 0;"><a href="${esc(b.href)}" style="display:inline-block;max-width:100%;box-sizing:border-box;padding:13px 22px;background-color:${c.ink};color:${t.paper};font-family:${c.bodyFont};font-size:15px;font-weight:600;letter-spacing:.02em;text-decoration:none;border-radius:3px;${BREAK}">${b.button ? esc(b.button) : url(b.href)}</a></td></tr>` +
       (b.button
-        ? `<tr><td style="padding:0;font-family:${c.bodyFont};font-size:14px;line-height:1.5;color:${t.soft};${BREAK}"><a href="${esc(b.href)}" style="color:${t.soft};display:inline-block;padding:6px 0;">${esc(b.href)}</a></td></tr>`
+        ? `<tr><td style="padding:0;font-family:${c.bodyFont};font-size:14px;line-height:1.5;color:${t.soft};${BREAK}"><a href="${esc(b.href)}" style="color:${t.soft};display:inline-block;padding:6px 0;">${url(b.href)}</a></td></tr>`
         : "") +
       (b.note
         ? `<tr><td style="padding:8px 0 0 0;font-family:${c.bodyFont};font-size:15px;color:${c.ink};">${esc(b.note)}</td></tr>`
@@ -141,11 +143,23 @@ const button = (c, t, b, font) =>
  * link at the foot of a letter is not the business phone a reader hunts for.
  * Pass { logo: false } under a letterhead header, so the mark shows once.
  */
-export function letterheadSignature(html, { logo = true } = {}) {
+export function letterheadSignature(html, { logo = true, name, nameSize = 20 } = {}) {
+  const BLANK = "(?:\\s|&nbsp;|\u00a0)*";
   const out = logo
     ? String(html)
     : String(html)
         .replace(/<img\b[^>]*>/gi, "")
+        // spacer divs and divider rules that only made room beside the logo
+        .replace(new RegExp(`<div\\b[^>]*>${BLANK}</div>`, "gi"), "")
+        .replace(new RegExp(`<td\\b[^>]*>${BLANK}</td>`, "gi"), "")
+        // contact items stack one per line, so a phone never strands a separator dot
+        .replace(
+          new RegExp(
+            `<span\\b[^>]*>(?:${BLANK}|<span>${BLANK}</span>)*(?:·|&middot;|&#183;)(?:${BLANK}|<span>${BLANK}</span>)*</span>`,
+            "gi",
+          ),
+          "<br>",
+        )
         // a link that only wrapped the logo is now empty, and an empty link has no name
         .replace(/<a\b[^>]*>\s*<\/a>/gi, "")
         // the cell that held the logo, now empty or holding an empty link
@@ -155,10 +169,26 @@ export function letterheadSignature(html, { logo = true } = {}) {
         .replace(
           /(<td\b[^>]*style="[^"]*?)padding:\s*0(?:px)?\s+0(?:px)?\s+0(?:px)?\s+\d+px/gi,
           "$1padding:0",
+        )
+        .replace(
+          /(<td\b[^>]*style="[^"]*?padding:\s*[\d.]+(?:px)?\s+[\d.]+(?:px)?\s+[\d.]+(?:px)?\s+)[\d.]+(?:px)?/gi,
+          "$10",
         );
+  const named = name
+    ? out.replace(
+        new RegExp(
+          `(<(?:div|span)\\b[^>]*style="[^"]*?)font-size:\\s*\\d+px([^"]*"[^>]*>\\s*${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*</(?:div|span)>)`,
+          "i",
+        ),
+        `$1font-size:${nameSize}px$2`,
+      )
+    : out;
   return (
-    out
-      .replace(/<a\b[^>]*href="tel:[^"]*"[^>]*>([\s\S]*?)<\/a>/gi, "<span>$1</span>")
+    named
+      .replace(
+        /<a\b[^>]*href="tel:[^"]*"[^>]*>([\s\S]*?)<\/a>/gi,
+        '<span style="display:inline-block;padding:4px 0">$1</span>',
+      )
       .replace(
         /<a\b([^>]*?)style="([^"]*)"/gi,
         (m, pre, st) => `<a${pre}style="${st};display:inline-block;padding:4px 0"`,
@@ -209,7 +239,7 @@ function setLetter(email, c, p, sig) {
     size: 17,
     leadSize: 17,
     link: (b) =>
-      `<p style="margin:0 0 18px 0;font-family:${c.displayFont};font-size:17px;line-height:1.6;color:${c.ink};">${b.label ? `${esc(b.label)}<br>` : ""}<a href="${esc(b.href)}" style="color:${t.link};${BREAK}">${esc(b.href)}</a>${b.note ? `<br>${esc(b.note)}` : ""}</p>`,
+      `<p style="margin:0 0 18px 0;font-family:${c.displayFont};font-size:17px;line-height:1.6;color:${c.ink};">${b.label ? `${esc(b.label)}<br>` : ""}<a href="${esc(b.href)}" style="color:${t.link};${BREAK}">${url(b.href)}</a>${b.note ? `<br>${esc(b.note)}` : ""}</p>`,
   };
   return `<div style="background-color:#ffffff;padding:24px 20px;">${table(`<tr><td style="padding:0;">${body(email, c, t, s)}<div style="padding-top:6px;">${sig}</div></td></tr>`, `max-width:${MAX_WIDTH}px;`)}</div>`;
 }
@@ -226,9 +256,9 @@ function paper(email, c, p, sig) {
       table(
         `<tr><td style="border-top:1px solid ${t.rule};border-bottom:1px solid ${t.rule};padding:18px 0;text-align:left;">` +
           (b.label
-            ? `<div style="font-family:${c.displayFont};font-size:17px;color:${t.soft};">${esc(b.label)}</div>`
+            ? `<div style="font-family:${c.displayFont};font-size:17px;line-height:1.5;color:${t.soft};">${esc(b.label)}</div>`
             : "") +
-          `<div style="font-family:${c.displayFont};font-size:17px;padding-top:8px;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:6px 0;">${esc(b.href)}</a></div>` +
+          `<div style="font-family:${c.displayFont};font-size:17px;line-height:1.5;padding-top:6px;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:4px 0;">${url(b.href)}</a></div>` +
           (b.note
             ? `<div style="font-family:${c.displayFont};font-size:17px;color:${c.ink};padding-top:6px;">${esc(b.note)}</div>`
             : "") +
@@ -241,9 +271,9 @@ function paper(email, c, p, sig) {
     t,
     `<div style="background-color:${t.paper};border:1px solid ${t.line};">
 <div style="text-align:center;padding:30px 24px 22px;background-color:${t.paper};">${header(c, t)}</div>
-<div style="height:1px;line-height:1px;font-size:1px;background-color:${t.rule};margin:0 26px;">&nbsp;</div>
-<div style="padding:30px 26px 8px;">${body(email, c, t, s)}</div>
-<div style="padding:0 26px 30px;">${sig ?? `<div style="text-align:center;">${nameBlock(c, t, p, "center")}<div style="padding-top:10px;text-align:center;line-height:1.8;">${contactLines(c, t, p, c.ink, c.bodyFont, 14)}</div></div>`}</div>
+<div style="height:1px;line-height:1px;font-size:1px;background-color:${t.rule};margin:0 20px;">&nbsp;</div>
+<div style="padding:30px 20px 0;">${body(email, c, t, s)}</div>
+<div style="padding:14px 20px 30px;">${sig ?? `<div style="text-align:center;">${nameBlock(c, t, p, "center")}<div style="padding-top:10px;text-align:center;line-height:1.8;">${contactLines(c, t, p, c.ink, c.bodyFont, 14)}</div></div>`}</div>
 </div>${footerLine(c, t, t.soft)}`,
   );
 }
@@ -266,7 +296,7 @@ function masthead(email, c, p, sig) {
           (b.label
             ? `<div style="font-family:${c.displayFont};font-size:18px;line-height:1.5;color:${c.ink};">${esc(b.label)}</div>`
             : "") +
-          `<div style="font-family:${c.displayFont};font-size:19px;line-height:1.4;padding-top:6px;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:4px 0;">${esc(b.href)}</a></div>` +
+          `<div style="font-family:${c.displayFont};font-size:19px;line-height:1.4;padding-top:6px;${BREAK}"><a href="${esc(b.href)}" style="color:${t.link};display:inline-block;padding:4px 0;">${url(b.href)}</a></div>` +
           (b.note
             ? `<div style="font-family:${c.bodyFont};font-size:15px;color:${c.ink};padding-top:6px;">${esc(b.note)}</div>`
             : "") +
