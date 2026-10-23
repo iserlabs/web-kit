@@ -66,5 +66,24 @@ if (cmd === "brand-pack") {
   process.exit(0);
 }
 
-console.log("Usage: web-kit <doctor|audit|brand-pack> [--tier required|extended] [siteDir]");
+if (cmd === "inquiry") {
+  if (argv[1] !== "init") {
+    console.log("Usage: web-kit inquiry init [siteDir]");
+    process.exit(1);
+  }
+  const dir = argv[2] || process.cwd();
+  const { initInquiry } = await import("../src/inquiry/init.mjs");
+  const { written, skipped, routeSnippet } = initInquiry(dir);
+  for (const p of written) console.log(`wrote  ${p}`);
+  for (const p of skipped) console.log(`kept   ${p} (already exists)`);
+  console.log(`\nAdd this route (for example src/app/api/inquiry/route.ts):\n\n${routeSnippet}`);
+  console.log(
+    `web-kit inquiry: ${written.length} written, ${skipped.length} kept. Edit src/content/inquiry-flow.ts for your questions and copy, then render <InquiryFlow /> on your inquiry page.`,
+  );
+  process.exit(0);
+}
+
+console.log(
+  "Usage: web-kit <doctor|audit|brand-pack|inquiry> [--tier required|extended] [siteDir]",
+);
 process.exit(cmd ? 1 : 0);

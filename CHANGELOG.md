@@ -4,6 +4,10 @@
 - **Accessibility audit covers WCAG 2.1 and 2.2.** The extended-tier axe check now runs the `wcag21a`, `wcag21aa` and `wcag22aa` rules alongside `wcag2a` and `wcag2aa` (exported as `DEFAULT_AXE_TAGS`). A site that sets its own `axe.tags` keeps exactly those tags. Expect new advisory findings on sites that passed before, such as touch target size (2.2) and autocomplete and text spacing (2.1).
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
+## 0.12.0
+- **`@iserlabs/web-kit/inquiry`**, new export: a one-question-per-screen inquiry flow. `defineInquiry` (typed config: choice steps with optional follow-ups, one contact step), `useInquiryFlow` (React hook; React 19 is an optional peer), `createInquiryController` (the same logic without React), `buildPayload` (structured answers plus "Question: answer" lines), honeypot and minimum-time trap, `createInquiryHandler` / `createInquiryRoute` (server validation and email through the existing sender interface). `web-kit inquiry init` scaffolds `src/components/inquiry/inquiry-flow.tsx` and `src/content/inquiry-flow.ts` and prints the route. See `docs/inquiry.md`.
+- `forms.createContactHandler` now accepts any schema with `safeParse` (`SafeParseSchema`), so a zod schema still works unchanged.
+
 ## 0.11.1
 - **Operating Record, 2026-10-15 (Jake).** `OPERATING_RECORD` now reads 297+ short-term rentals operated, 17,100+ reservations handled, 83 owners served, 30+ markets across 10 states, and 680+ claims filed. Listings launched (120+), property value managed ($97.5M+) and companies (9) are unchanged.
 
