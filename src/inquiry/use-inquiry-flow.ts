@@ -1,7 +1,7 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { type ControllerDeps, createInquiryController } from "./controller";
-import { answerText, choiceSteps, contactStep, stepAt } from "./core";
-import type { ChoiceStep, ContactStep, InquiryConfig } from "./types";
+import { answerSteps, answerText, contactStep, stepAt } from "./core";
+import type { ChoiceStep, ContactStep, CountStep, InquiryConfig } from "./types";
 
 /**
  * The whole flow for a React component. Renders nothing itself: the site's
@@ -15,11 +15,11 @@ export function useInquiryFlow(config: InquiryConfig, deps: ControllerDeps = {})
 
   const answered = useMemo(
     () =>
-      choiceSteps(config)
+      answerSteps(config)
         .filter(
           (s) => config.steps.indexOf(s) < state.index || state.index >= config.steps.length - 1,
         )
-        .filter((s) => (state.answers[s.id]?.choices.length ?? 0) > 0 || s.optional)
+        .filter((s) => answerText(s, state.answers[s.id]) !== "" || s.optional)
         .map((s) => ({
           stepId: s.id,
           question: s.question,
@@ -34,7 +34,7 @@ export function useInquiryFlow(config: InquiryConfig, deps: ControllerDeps = {})
     /** The sentence to show when status is "failed". */
     failure: state.failure,
     /** The screen showing now. */
-    step: step as ChoiceStep | ContactStep,
+    step: step as ChoiceStep | CountStep | ContactStep,
     stepIndex: state.index,
     isContact: step.kind === "contact",
     contactStep: contactStep(config),
@@ -49,6 +49,10 @@ export function useInquiryFlow(config: InquiryConfig, deps: ControllerDeps = {})
     canGoBack: state.index > 0 && state.status !== "sending",
     choose: ctl.choose,
     chooseFollowUp: ctl.chooseFollowUp,
+    /** Sets a count step's number (null clears it). Read the live value at `answers[stepId].count`. */
+    setCount: ctl.setCount,
+    /** One minus (-1) or plus (1) tap, clamped to min and max. */
+    bumpCount: ctl.bumpCount,
     next: ctl.next,
     back: ctl.back,
     change: ctl.change,

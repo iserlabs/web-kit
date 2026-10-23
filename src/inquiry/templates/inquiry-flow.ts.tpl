@@ -39,6 +39,17 @@ export const inquiryFlow = defineInquiry({
       ],
     },
     {
+      // A number question: minus and plus buttons around a typeable box.
+      kind: "count",
+      id: "guests",
+      question: "How many guests?",
+      help: "Tap the buttons or type a number.",
+      min: 1,
+      max: 20,
+      default: 2,
+      unit: { one: "guest", other: "guests" },
+    },
+    {
       kind: "contact",
       id: "contact",
       heading: "How can we reach you?",

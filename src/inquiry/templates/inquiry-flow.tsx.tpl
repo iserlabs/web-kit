@@ -1,7 +1,13 @@
 "use client";
 
-import { type ChoiceStep, type InquiryOption, useInquiryFlow } from "@iserlabs/web-kit/inquiry";
-import { type ReactNode, type RefObject, useEffect, useRef } from "react";
+import {
+  type ChoiceStep,
+  type CountStep,
+  countUnit,
+  type InquiryOption,
+  useInquiryFlow,
+} from "@iserlabs/web-kit/inquiry";
+import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
 import { inquiryFlow } from "@/content/inquiry-flow";
 
 /**
@@ -18,7 +24,7 @@ import { inquiryFlow } from "@/content/inquiry-flow";
  */
 
 const TAP =
-  "flex min-h-12 w-full items-center justify-between gap-3 rounded-md border px-4 py-3 text-left text-base leading-snug focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "flex touch-manipulation min-h-12 w-full items-center justify-between gap-3 rounded-md border px-4 py-3 text-left text-base leading-snug focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 const TAP_ON = "border-primary bg-primary text-primary-foreground";
 const TAP_OFF = "border-border bg-background text-foreground hover:bg-muted";
 const FIELD =
@@ -125,7 +131,7 @@ export function InquiryFlow({ source }: { source?: string }) {
   return (
     <section className="mx-auto w-full max-w-xl px-4 pt-6 pb-24" aria-label="Inquiry">
       <p className="text-sm text-muted-foreground">
-        {step.kind === "choice" ? `Question ${flow.progress.n} of ${flow.progress.total}` : "Last step"}
+        {step.kind !== "contact" ? `Question ${flow.progress.n} of ${flow.progress.total}` : "Last step"}
       </p>
 
       {flow.summaries.length > 0 ? (
@@ -145,11 +151,9 @@ export function InquiryFlow({ source }: { source?: string }) {
       ) : null}
 
       {step.kind === "choice" ? (
-        <ChoiceScreen
-          step={step}
-          flow={flow}
-          headingRef={heading}
-        />
+        <ChoiceScreen step={step} flow={flow} headingRef={heading} />
+      ) : step.kind === "count" ? (
+        <CountScreen step={step} flow={flow} headingRef={heading} />
       ) : (
         <form
           noValidate
@@ -317,6 +321,96 @@ function ChoiceScreen({
             Next
           </button>
         ) : null}
+        {flow.canGoBack ? (
+          <button type="button" onClick={flow.back} className={LINK}>
+            Back
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/* A number question: big minus and plus around an input you can also type in. */
+function CountScreen({
+  step,
+  flow,
+  headingRef,
+}: {
+  step: CountStep;
+  flow: ReturnType<typeof useInquiryFlow>;
+  headingRef: RefObject<HTMLHeadingElement | null>;
+}) {
+  const value = flow.answers[step.id]?.count ?? null;
+  const min = step.min ?? 0;
+  const max = step.max ?? 9999;
+  /* What the visitor is typing, kept apart from the number so a half-typed value is never
+     overwritten. null means "show the number itself", so the buttons update the box at once. */
+  const [draft, setDraft] = useState<string | null>(null);
+  const shown = draft ?? (value === null ? "" : String(value));
+  const err = flow.errors[step.id];
+  const unit = countUnit(step, value);
+  const inputId = `inq-${step.id}`;
+
+  const bump = (d: 1 | -1) => {
+    setDraft(null);
+    flow.bumpCount(step.id, d);
+  };
+  return (
+    <div className="mt-6">
+      <h2 id={`${inputId}-q`} ref={headingRef} tabIndex={-1} className="scroll-mt-4 text-2xl leading-tight outline-none">
+        {step.question}
+      </h2>
+      {step.help ? <p className="mt-2 text-base text-muted-foreground">{step.help}</p> : null}
+      <div className="mt-4 flex items-stretch gap-3">
+        <button
+          type="button"
+          aria-label={`Decrease: ${step.question}`}
+          disabled={value !== null && value <= min}
+          onClick={() => bump(-1)}
+          className="inline-flex min-h-14 w-14 shrink-0 touch-manipulation items-center justify-center rounded-md border border-border bg-background text-3xl leading-none text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-40"
+        >
+          <span aria-hidden="true">{"\u2212"}</span>
+        </button>
+        <input
+          id={inputId}
+          className="block w-full min-w-0 min-h-14 flex-1 rounded-md border border-input bg-background px-2 py-3 text-center text-2xl text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="off"
+          enterKeyHint="next"
+          aria-labelledby={`${inputId}-q`}
+          aria-invalid={!!err}
+          aria-describedby={err ? `${inputId}-error` : undefined}
+          value={shown}
+          onChange={(e) => {
+            const text = e.target.value.replace(min < 0 ? /[^\d-]/g : /\D/g, "");
+            setDraft(text);
+            flow.setCount(step.id, text === "" || text === "-" ? null : Number(text));
+          }}
+          onBlur={() => setDraft(null)}
+        />
+        <button
+          type="button"
+          aria-label={`Increase: ${step.question}`}
+          disabled={value !== null && value >= max}
+          onClick={() => bump(1)}
+          className="inline-flex min-h-14 w-14 shrink-0 touch-manipulation items-center justify-center rounded-md border border-border bg-background text-3xl leading-none text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-40"
+        >
+          <span aria-hidden="true">+</span>
+        </button>
+      </div>
+      {unit ? <p className="mt-2 text-center text-base text-muted-foreground">{unit}</p> : null}
+      {err ? (
+        <p id={`${inputId}-error`} role="alert" className="mt-4 text-base text-destructive">
+          {err}
+        </p>
+      ) : null}
+      <div className="mt-6 grid gap-2">
+        <button type="button" onClick={flow.next} className={PRIMARY}>
+          Next
+        </button>
         {flow.canGoBack ? (
           <button type="button" onClick={flow.back} className={LINK}>
             Back

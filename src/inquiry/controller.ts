@@ -1,6 +1,7 @@
 import {
   advance,
   buildPayload,
+  bumpCount,
   changeStep,
   chooseFollowUp,
   chooseOption,
@@ -11,9 +12,10 @@ import {
   localToday,
   looksAutomated,
   setContactField,
+  setCount,
   validateContact,
 } from "./core";
-import type { ContactValues, InquiryConfig, InquiryPayload } from "./types";
+import type { ContactValues, InquiryAnswers, InquiryConfig, InquiryPayload } from "./types";
 
 export interface ControllerDeps {
   /** Defaults to the global fetch. */
@@ -27,6 +29,9 @@ export interface ControllerDeps {
   today?: () => string;
   /** The page the inquiry came from. */
   source?: string;
+  /** Called after any answer changes (a tap on a choice, a plus or minus, typing a number),
+   *  with every answer so far. A count's live value is `answers[stepId].count`. */
+  onChange?: (answers: InquiryAnswers) => void;
 }
 
 /**
@@ -41,7 +46,9 @@ export function createInquiryController(config: InquiryConfig, deps: ControllerD
   const listeners = new Set<() => void>();
   const set = (next: FlowState) => {
     if (next === state) return;
+    const answersChanged = next.answers !== state.answers;
     state = next;
+    if (answersChanged) deps.onChange?.(state.answers);
     for (const l of listeners) l();
   };
 
@@ -111,6 +118,11 @@ export function createInquiryController(config: InquiryConfig, deps: ControllerD
       set(chooseOption(config, state, stepId, optionId)),
     chooseFollowUp: (stepId: string, optionId: string) =>
       set(chooseFollowUp(config, state, stepId, optionId)),
+    /** Sets a count step's number (null clears it). Typed values are checked on Next. */
+    setCount: (stepId: string, value: number | null) => set(setCount(config, state, stepId, value)),
+    /** One minus or plus tap: moves by the step size, stays inside min and max. */
+    bumpCount: (stepId: string, direction: 1 | -1) =>
+      set(bumpCount(config, state, stepId, direction)),
     next: () => set(advance(config, state)),
     back: () => set(goBack(state)),
     change: (stepId: string) => set(changeStep(config, state, stepId)),

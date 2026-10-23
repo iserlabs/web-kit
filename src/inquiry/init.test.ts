@@ -63,9 +63,32 @@ describe("web-kit inquiry init", () => {
     );
     const mod = await import(/* @vite-ignore */ pathToFileURL(comp).href);
     const html = renderToStaticMarkup(createElement(mod.InquiryFlow, {}));
-    expect(html).toContain("Question 1 of 3");
+    expect(html).toContain("Question 1 of 4");
     expect(html).toContain("What are you looking for?");
     expect((html.match(/<button type="button" aria-pressed="false"/g) ?? []).length).toBe(3);
     expect(html).not.toContain("<input");
+
+    // A count screen renders its buttons and numeric box.
+    const cfg2 = cfg.replace(".render.ts", ".count.ts");
+    const comp2 = comp.replace(".render.tsx", ".count.tsx");
+    writeFileSync(
+      cfg2,
+      `import { defineInquiry } from ${JSON.stringify(kit)};
+export const inquiryFlow = defineInquiry({ endpoint: "/x", failureMessage: "no", steps: [
+  { kind: "count", id: "n", question: "How many?", min: 1, max: 9, default: 3, unit: { one: "guest", other: "guests" } },
+  { kind: "contact", id: "contact", heading: "C", fields: {}, labels: { name: "N", email: "E", phone: "P", date: "D", message: "M" }, submitLabel: "Send" },
+] });`,
+    );
+    writeFileSync(
+      comp2,
+      readFileSync(comp, "utf8").replace(pathToFileURL(cfg).href, pathToFileURL(cfg2).href),
+    );
+    const mod2 = await import(/* @vite-ignore */ pathToFileURL(comp2).href);
+    const html2 = renderToStaticMarkup(createElement(mod2.InquiryFlow, {}));
+    expect(html2).toContain('aria-label="Decrease: How many?"');
+    expect(html2).toContain('aria-label="Increase: How many?"');
+    expect(html2.toLowerCase()).toContain('inputmode="numeric"');
+    expect(html2).toContain('value="3"');
+    expect(html2).toContain("guests");
   });
 });

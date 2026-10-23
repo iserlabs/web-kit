@@ -36,6 +36,17 @@ describe("checkBrandPack", () => {
     expect(await run({})).toEqual([]);
   });
 
+  it("passes a brand pack whose people have no phone", async () => {
+    expect(
+      await run({
+        loadConfig: async () => ({
+          ...goodConfig,
+          people: [{ name: "A", title: "B", email: "a@x.com" }],
+        }),
+      }),
+    ).toEqual([]);
+  });
+
   it("says nothing about a site that has not adopted web-kit", async () => {
     expect(await run({ readJson: () => ({ dependencies: {} }) })).toEqual([]);
   });

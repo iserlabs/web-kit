@@ -57,15 +57,27 @@ export const inquiryFlow = defineInquiry({
 });
 ```
 
-Rules `defineInquiry` enforces: choice steps first, exactly one contact step last, unique step ids, unique option ids. Optional: `autoAdvance` (default true: a single-choice step with no follow-up moves on at the tap), `minFillMs` (default 2500), `maxMessageLength` (default 2000), per-field `errors` text on the contact step.
+### Count step: a question answered with a number
+
+```ts
+{ kind: "count", id: "listings", question: "How many listings?", help: "Tap or type.",
+  min: 1, max: 50, step: 1, default: 10, optional: false,
+  unit: { one: "listing", other: "listings" } }   // or a plain string, or leave it out
+```
+
+Large minus and plus buttons (56 px, real buttons with aria-labels) around a numeric box (`inputMode="numeric"`, 24 px, typing allowed). `min` defaults to 0, `max` to 9999, `step` to 1. With a `default` the box starts there; without one it starts empty and the first tap lands on `min`. The buttons stay inside min and max; a typed value outside them is refused on Next with "Please enter a number from 1 to 50." (override with the contact step's `errors.count`). Required unless `optional: true`. The summary line reads "How many listings?: 12 listings" ("1 listing" for one). The server checks the number against the same min and max.
+
+A live figure (for example a worked quote): read `flow.answers.listings?.count` on every render, or pass `useInquiryFlow(config, { onChange: (answers) => ... })`, which fires after every tap, typed digit or choice with all answers so far.
+
+Rules `defineInquiry` enforces: choice and count steps first, exactly one contact step last, unique step ids, unique option ids. Optional: `autoAdvance` (default true: a single-choice step with no follow-up moves on at the tap), `minFillMs` (default 2500), `maxMessageLength` (default 2000), per-field `errors` text on the contact step.
 
 ## Hook
 
-`useInquiryFlow(config, { source?, fetcher? })` returns:
+`useInquiryFlow(config, { source?, fetcher?, onChange? })` returns:
 
 - `step`, `stepIndex`, `isContact`, `progress: { n, total }`
 - `answers`, `summaries` (earlier steps as `{ stepId, question, answer }`), `contact`, `errors`
-- `choose(stepId, optionId)`, `chooseFollowUp(stepId, optionId)`, `next()`, `back()`, `change(stepId)`, `setContact(field, value)`
+- `choose(stepId, optionId)`, `chooseFollowUp(stepId, optionId)`, `setCount(stepId, number | null)`, `bumpCount(stepId, 1 | -1)`, `next()`, `back()`, `change(stepId)`, `setContact(field, value)`
 - `submit()` returns `"sent" | "failed" | "invalid" | "ignored"`; `status` is `idle | sending | sent | failed`; `failure` is the config's `failureMessage` when failed; `retry()`
 - `buildPayload()`: `{ answers, contact, summary, website, elapsedMs, source }`, where `summary` is the "Question: answer" lines
 - `honeypotProps`: spread onto a hidden input. A filled honeypot, or a send sooner than `minFillMs`, looks sent to the visitor and posts nothing; the server drops both too.

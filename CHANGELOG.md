@@ -4,6 +4,10 @@
 - **Accessibility audit covers WCAG 2.1 and 2.2.** The extended-tier axe check now runs the `wcag21a`, `wcag21aa` and `wcag22aa` rules alongside `wcag2a` and `wcag2aa` (exported as `DEFAULT_AXE_TAGS`). A site that sets its own `axe.tags` keeps exactly those tags. Expect new advisory findings on sites that passed before, such as touch target size (2.2) and autocomplete and text spacing (2.1).
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
+## 0.12.2
+- **inquiry: a `count` step kind.** A question answered with a number: large minus and plus buttons around a numeric box (config `min`, `max`, `step`, `default`, `unit`, `optional`). The hook gains `setCount`, `bumpCount` and an `onChange(answers)` option for live figures; the summary line reads "Question: 12 listings". Buttons clamp to min and max, a typed value outside them is refused on Next, and the server validates counts against the same config. The scaffold gains a `CountScreen` and an example count step. Sites already scaffolded keep their file; re-run `web-kit inquiry init` into a scratch folder and copy `CountScreen` across to use the new step.
+- **brand-pack: `person.phone` is optional** (the owner banned his phone from every surface, 2026-10-23). With no phone the signatures omit the tel link and its neighboring separator dot, the letterheads already did, and `brand-pack init` no longer asks for one. A phone that is present must still be real (`__UNFILLED__` fails the audit). `web-kit audit --tier required` passes a brand pack with no phone.
+
 ## 0.12.1
 - **inquiry: a chosen answer no longer flashes unreadable.** The scaffolded answer buttons faded their colors over 150 ms, and halfway through, the chosen text sat on a fill of nearly the same shade (measured 1.6:1, so it looked disabled in a screenshot or on a slow phone). The color transition is gone: a chosen answer is the filled, high-contrast state (9.2:1 text) the instant it is tapped. Sites already scaffolded with 0.12.0 should delete `transition-colors motion-reduce:transition-none` from the `TAP` class in `inquiry-flow.tsx`.
 

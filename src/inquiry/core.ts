@@ -1,7 +1,9 @@
 import type {
+  AnswerStep,
   ChoiceStep,
   ContactStep,
   ContactValues,
+  CountStep,
   FieldErrors,
   FlowStatus,
   InquiryAnswers,
@@ -19,6 +21,7 @@ export const DEFAULT_MAX_MESSAGE = 2000;
 
 const DEFAULT_ERRORS: Record<InquiryErrorCode, string> = {
   choose: "Please pick an answer to keep going.",
+  count: "Please enter a number in range.",
   name: "Please add your name.",
   email: "Please add an email address we can reply to.",
   phone: "That phone number does not look right.",
@@ -35,6 +38,33 @@ export function errorText(step: ContactStep, code: InquiryErrorCode): string {
 
 export function choiceSteps(config: InquiryConfig): ChoiceStep[] {
   return config.steps.filter((s): s is ChoiceStep => s.kind === "choice");
+}
+
+/** Every step the visitor answers: choice and count steps, in order. */
+export function answerSteps(config: InquiryConfig): AnswerStep[] {
+  return config.steps.filter((s): s is AnswerStep => s.kind === "choice" || s.kind === "count");
+}
+
+export const countMin = (s: CountStep) => s.min ?? 0;
+export const countMax = (s: CountStep) => s.max ?? 9999;
+export const countStepBy = (s: CountStep) => s.step ?? 1;
+
+/** Keeps a count inside its bounds. */
+export function clampCount(s: CountStep, n: number): number {
+  return Math.min(countMax(s), Math.max(countMin(s), n));
+}
+
+/** The unit word for a number ("listing" for 1, "listings" otherwise); "" when the step has none. */
+export function countUnit(s: CountStep, n: number | null): string {
+  const u = s.unit;
+  if (!u) return "";
+  return typeof u === "string" ? u : n === 1 ? u.one : u.other;
+}
+
+/** "12 listings", "1 listing"; the bare number when the step has no unit. */
+export function countText(s: CountStep, n: number): string {
+  const word = countUnit(s, n);
+  return word ? `${n} ${word}` : String(n);
 }
 
 export function contactStep(config: InquiryConfig): ContactStep {
@@ -55,10 +85,18 @@ export function defineInquiry<C extends InquiryConfig>(config: C): C {
     const last = i === config.steps.length - 1;
     if (last && s.kind !== "contact")
       throw new Error("inquiry config: the last step must be the contact step");
-    if (!last && s.kind !== "choice")
+    if (!last && s.kind === "contact")
       throw new Error(
-        `inquiry config: step "${s.id}" must be a choice step; only the last step is the contact step`,
+        `inquiry config: step "${s.id}" must be a choice or count step; only the last step is the contact step`,
       );
+    if (s.kind === "count") {
+      const [lo, hi, by] = [countMin(s), countMax(s), countStepBy(s)];
+      if (!(lo <= hi)) throw new Error(`inquiry config: count step "${s.id}" has min above max`);
+      if (!(by > 0))
+        throw new Error(`inquiry config: count step "${s.id}" needs a step above zero`);
+      if (s.default !== undefined && (s.default < lo || s.default > hi))
+        throw new Error(`inquiry config: count step "${s.id}" default is outside min and max`);
+    }
     if (s.kind === "choice") {
       for (const list of [s.options, s.followUp?.options ?? []]) {
         const seen = new Set<string>();
@@ -84,7 +122,11 @@ export const EMPTY_CONTACT: ContactValues = {
 
 export function emptyAnswers(config: InquiryConfig): InquiryAnswers {
   const out: InquiryAnswers = {};
-  for (const s of choiceSteps(config)) out[s.id] = { choices: [], followUp: [] };
+  for (const s of answerSteps(config))
+    out[s.id] =
+      s.kind === "count"
+        ? { choices: [], followUp: [], count: s.default ?? null }
+        : { choices: [], followUp: [] };
   return out;
 }
 
@@ -94,17 +136,32 @@ export function pick(list: readonly string[], id: string, multi: boolean): strin
   return list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
 }
 
-export function stepIsAnswered(step: ChoiceStep, a: StepAnswer | undefined): boolean {
+export function stepIsAnswered(step: AnswerStep, a: StepAnswer | undefined): boolean {
   if (step.optional) return true;
+  if (step.kind === "count") return typeof a?.count === "number";
   return (a?.choices.length ?? 0) > 0;
 }
 
+function countError(step: CountStep, contact: ContactStep): string {
+  return (
+    contact.errors?.count ?? `Please enter a number from ${countMin(step)} to ${countMax(step)}.`
+  );
+}
+
 export function validateChoice(
-  step: ChoiceStep,
+  step: AnswerStep,
   a: StepAnswer | undefined,
   contact: ContactStep,
 ): FieldErrors {
   const errors: FieldErrors = {};
+  if (step.kind === "count") {
+    const n = a?.count;
+    if (typeof n !== "number" || !Number.isFinite(n)) {
+      if (!step.optional) errors[step.id] = countError(step, contact);
+    } else if (n < countMin(step) || n > countMax(step))
+      errors[step.id] = countError(step, contact);
+    return errors;
+  }
   const choices = a?.choices ?? [];
   if (!step.optional && choices.length === 0) errors[step.id] = errorText(contact, "choose");
   return errors;
@@ -173,7 +230,8 @@ export function answerLabels(step: ChoiceStep, a: StepAnswer | undefined): strin
   return labelsFor(step.options, a?.choices ?? []).map((x) => x.label);
 }
 
-export function answerText(step: ChoiceStep, a: StepAnswer | undefined): string {
+export function answerText(step: AnswerStep, a: StepAnswer | undefined): string {
+  if (step.kind === "count") return typeof a?.count === "number" ? countText(step, a.count) : "";
   const main = answerLabels(step, a).join(", ");
   const more = labelsFor(step.followUp?.options ?? [], a?.followUp ?? []).map((x) => x.label);
   return more.length ? `${main} (${more.join(", ")})` : main;
@@ -189,8 +247,15 @@ export function buildPayload(
   const cs = contactStep(config);
   const out: PayloadAnswer[] = [];
   const summary: string[] = [];
-  for (const s of choiceSteps(config)) {
+  for (const s of answerSteps(config)) {
     const a = answers[s.id];
+    if (s.kind === "count") {
+      const n = a?.count;
+      if (typeof n !== "number" || !Number.isFinite(n)) continue;
+      out.push({ stepId: s.id, question: s.question, choices: [], count: n });
+      summary.push(`${s.question}: ${countText(s, n)}`);
+      continue;
+    }
     const choices = labelsFor(s.options, a?.choices ?? []);
     if (choices.length === 0) continue;
     const entry: PayloadAnswer = { stepId: s.id, question: s.question, choices };
@@ -273,7 +338,7 @@ function moveTo(state: FlowState, index: number): FlowState {
 /** Leave the current choice step if it is answered; otherwise show its error. */
 export function advance(config: InquiryConfig, state: FlowState): FlowState {
   const step = stepAt(config, state.index);
-  if (step.kind !== "choice") return state;
+  if (step.kind === "contact") return state;
   const errors = validateChoice(step, state.answers[step.id], contactStep(config));
   if (Object.keys(errors).length) return { ...state, errors };
   const target = state.editing ? state.reached : state.index + 1;
@@ -319,6 +384,41 @@ export function chooseFollowUp(
       [stepId]: { ...prev, followUp: pick(prev.followUp, optionId, !!step.followUp.multi) },
     },
   };
+}
+
+/** Sets a count step's number. Typing may pass through values outside the bounds (validation
+ *  catches them on Next); null clears it. Buttons use `bumpCount`, which clamps. */
+export function setCount(
+  config: InquiryConfig,
+  state: FlowState,
+  stepId: string,
+  value: number | null,
+): FlowState {
+  const step = config.steps.find((x) => x.id === stepId);
+  if (!step || step.kind !== "count") return state;
+  const n = value === null || !Number.isFinite(value) ? null : value;
+  const prev = state.answers[stepId] ?? { choices: [], followUp: [] };
+  const errors = { ...state.errors };
+  delete errors[stepId];
+  return { ...state, answers: { ...state.answers, [stepId]: { ...prev, count: n } }, errors };
+}
+
+/** One minus (-1) or plus (+1) tap: moves by the step size and stays inside min and max.
+ *  From an empty counter the first tap lands on `min` (plus) or `min` (minus). */
+export function bumpCount(
+  config: InquiryConfig,
+  state: FlowState,
+  stepId: string,
+  direction: 1 | -1,
+): FlowState {
+  const step = config.steps.find((x) => x.id === stepId);
+  if (!step || step.kind !== "count") return state;
+  const cur = state.answers[stepId]?.count;
+  const next =
+    typeof cur !== "number"
+      ? countMin(step)
+      : clampCount(step, cur + direction * countStepBy(step));
+  return setCount(config, state, stepId, next);
 }
 
 export function goBack(state: FlowState): FlowState {

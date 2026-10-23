@@ -37,7 +37,7 @@ const person = {
   name: "Jake Lee",
   title: "Founder",
   email: "hello@sunmountainstays.com",
-  phone: "201.321.5446",
+  phone: "555.010.0100",
 };
 
 const email = {
@@ -167,7 +167,7 @@ describe("letterhead variants", () => {
 
   it("keeps a pasted signature's words while making its links tappable and its phone plain text", () => {
     const sig =
-      '<a href="tel:+12013215446" style="color:#000">201.321.5446</a> · <a href="mailto:a@b.co" style="color:#000">a@b.co</a>';
+      '<a href="tel:+15550100100" style="color:#000">555.010.0100</a> · <a href="mailto:a@b.co" style="color:#000">a@b.co</a>';
     const out = letterheadSignature(sig);
     expect(parse(out).textContent).toBe(parse(sig).textContent);
     expect(out).not.toContain("tel:");

@@ -24,7 +24,11 @@ const TOKEN_KEYS = [
   "accent",
 ];
 
-const PERSON_KEYS = ["name", "title", "email", "phone"];
+const PERSON_KEYS = ["name", "title", "email"];
+/** Phone is optional (the owner banned his phone from every surface, 2026-10-23). When
+ *  one is given it must be real, never the placeholder. */
+const hasValue = (v) =>
+  v !== undefined && v !== null && !(typeof v === "string" && v.trim() === "");
 
 /** Identity helper that gives a consumer's plain object its types. */
 export function defineBrandPack(config) {
@@ -49,6 +53,9 @@ export function validateBrandPackConfig(config) {
       if (isUnfilled(person?.[key])) {
         err("brand-pack-placeholder", `${who}: "${key}" is unfilled`);
       }
+    }
+    if (hasValue(person?.phone) && isUnfilled(person.phone)) {
+      err("brand-pack-placeholder", `${who}: "phone" is unfilled`);
     }
   }
 

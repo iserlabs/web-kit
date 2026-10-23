@@ -26,6 +26,26 @@ export interface ChoiceStep {
   followUp?: InquiryFollowUp;
 }
 
+/** A question answered with a number: large minus and plus buttons around a numeric input. */
+export interface CountStep {
+  kind: "count";
+  id: string;
+  question: string;
+  help?: string;
+  /** Smallest allowed value. Default 0. */
+  min?: number;
+  /** Largest allowed value. Default 9999. */
+  max?: number;
+  /** What each minus or plus tap moves by. Default 1. */
+  step?: number;
+  /** Where the counter starts. When absent the input starts empty and the first tap lands on `min`. */
+  default?: number;
+  /** Words after the number in the summary, "12 listings". A string, or one and other forms. */
+  unit?: string | { one: string; other: string };
+  /** When true the visitor may move on without a number. Default: required. */
+  optional?: boolean;
+}
+
 export type ContactFieldMode = false | true | "required";
 
 export interface ContactLabels {
@@ -49,10 +69,13 @@ export interface ContactStep {
   submitLabel: string;
 }
 
-export type InquiryStep = ChoiceStep | ContactStep;
+export type InquiryStep = ChoiceStep | CountStep | ContactStep;
+
+/** A step the visitor answers (everything but the contact step). */
+export type AnswerStep = ChoiceStep | CountStep;
 
 export interface InquiryConfig {
-  /** Choice steps, then exactly one contact step last. */
+  /** Choice and count steps, then exactly one contact step last. */
   steps: readonly InquiryStep[];
   /** Where the flow POSTs its JSON. */
   endpoint: string;
@@ -68,6 +91,7 @@ export interface InquiryConfig {
 
 export type InquiryErrorCode =
   | "choose"
+  | "count"
   | "name"
   | "email"
   | "phone"
@@ -80,6 +104,8 @@ export type InquiryErrorCode =
 export interface StepAnswer {
   choices: string[];
   followUp: string[];
+  /** The number, for a count step. null (or absent) means not answered. */
+  count?: number | null;
 }
 
 export type InquiryAnswers = Record<string, StepAnswer>;
@@ -103,6 +129,8 @@ export interface PayloadAnswer {
   question: string;
   choices: { id: string; label: string }[];
   followUp?: { question: string; choices: { id: string; label: string }[] };
+  /** The number, for a count step (its `choices` is empty). */
+  count?: number;
 }
 
 export interface InquiryPayload {

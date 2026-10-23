@@ -43,12 +43,17 @@ const mark = (c, size) =>
 
 const dot = (c) => `<span style="color:${c.brand};font-size:11px;padding:0 7px;">&#183;</span>`;
 
+/** A phone is optional: absent (undefined, null or blank) means no link and no dot. */
+const hasPhone = (p) => typeof p.phone === "string" && p.phone.trim() !== "";
+
 const contactLine = (c, p) =>
   [
-    link(tel(p.phone), p.phone, c.ink, c.bodyFont, 12),
+    hasPhone(p) ? link(tel(p.phone), p.phone, c.ink, c.bodyFont, 12) : null,
     link(`mailto:${p.email}`, p.email, c.ink, c.bodyFont, 12),
     link(c.siteUrl, c.siteUrl.replace(/^https?:\/\//, ""), c.ink, c.bodyFont, 12),
-  ].join(dot(c));
+  ]
+    .filter(Boolean)
+    .join(dot(c));
 
 const nameBlock = (c, p) =>
   `<div style="font-family:${c.displayFont};font-size:18px;line-height:23px;color:${c.ink};font-weight:600;">${esc(p.name)}</div>` +
@@ -74,7 +79,7 @@ ${T_CLOSE}`;
 function singleLine(c, p) {
   return `${T_OPEN}
 <tr><td style="padding:0;font-family:${c.bodyFont};font-size:12px;line-height:18px;color:${c.ink};">
-<span style="font-family:${c.displayFont};font-size:14px;color:${c.ink};font-weight:600;">${esc(p.name)}</span>${dot(c)}<span style="color:${c.accent};">${esc(p.title)}</span>${dot(c)}<span>${esc(c.wordmark)}</span>${dot(c)}${link(tel(p.phone), p.phone, c.ink, c.bodyFont, 12)}${dot(c)}${link(`mailto:${p.email}`, p.email, c.ink, c.bodyFont, 12)}
+<span style="font-family:${c.displayFont};font-size:14px;color:${c.ink};font-weight:600;">${esc(p.name)}</span>${dot(c)}<span style="color:${c.accent};">${esc(p.title)}</span>${dot(c)}<span>${esc(c.wordmark)}</span>${dot(c)}${hasPhone(p) ? `${link(tel(p.phone), p.phone, c.ink, c.bodyFont, 12)}${dot(c)}` : ""}${link(`mailto:${p.email}`, p.email, c.ink, c.bodyFont, 12)}
 </td></tr>
 ${T_CLOSE}`;
 }

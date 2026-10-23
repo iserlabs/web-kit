@@ -1,10 +1,14 @@
 export { type ControllerDeps, createInquiryController, type InquiryController } from "./controller";
 export {
   answerLabels,
+  answerSteps,
   answerText,
   buildPayload,
   choiceSteps,
+  clampCount,
   contactStep,
+  countText,
+  countUnit,
   defineInquiry,
   looksAutomated,
   validateContact,

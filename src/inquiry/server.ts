@@ -1,10 +1,11 @@
 import { type ContactResult, type ContactSender, createContactHandler } from "../forms/index";
 import {
+  answerSteps,
   buildPayload,
-  choiceSteps,
   contactStep,
   localToday,
   looksAutomated,
+  validateChoice,
   validateContact,
 } from "./core";
 import type { ContactValues, InquiryConfig, InquiryPayload } from "./types";
@@ -40,11 +41,23 @@ export function inquirySchema(config: InquiryConfig, today: () => string = local
         message: str(rawContact.message),
       };
       const rawAnswers = Array.isArray(o.answers) ? o.answers : [];
-      const answers: Record<string, { choices: string[]; followUp: string[] }> = {};
-      for (const s of choiceSteps(config)) {
+      const answers: Record<
+        string,
+        { choices: string[]; followUp: string[]; count?: number | null }
+      > = {};
+      for (const s of answerSteps(config)) {
         const found = rawAnswers.find(
           (a) => a && typeof a === "object" && (a as { stepId?: unknown }).stepId === s.id,
-        ) as { choices?: unknown; followUp?: { choices?: unknown } } | undefined;
+        ) as { choices?: unknown; followUp?: { choices?: unknown }; count?: unknown } | undefined;
+        if (s.kind === "count") {
+          const n =
+            typeof found?.count === "number" && Number.isFinite(found.count) ? found.count : null;
+          const a = { choices: [], followUp: [], count: n };
+          for (const [k, m] of Object.entries(validateChoice(s, a, cs)))
+            issues.push({ path: [k], message: m });
+          answers[s.id] = a;
+          continue;
+        }
         const ids = (v: unknown) =>
           Array.isArray(v)
             ? v.map((x) => (x && typeof x === "object" ? str((x as { id?: unknown }).id) : str(x)))
