@@ -12,11 +12,13 @@ import { inquiryFlow } from "@/content/inquiry-flow";
  *  - focus moves to each new question heading and the step scrolls into view
  *  - inputs are 16px or larger (smaller makes iOS Safari zoom the page)
  *  - errors sit beside the field; nothing is sticky or fixed
+ *  - no color transition on answer buttons: mid-transition, a chosen answer's text
+ *    crosses the fill color and reads as disabled (measured contrast 1.6:1)
  * Uses only the site's Tailwind theme tokens (no new fonts or colors).
  */
 
 const TAP =
-  "flex min-h-12 w-full items-center justify-between gap-3 rounded-md border px-4 py-3 text-left text-base leading-snug transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "flex min-h-12 w-full items-center justify-between gap-3 rounded-md border px-4 py-3 text-left text-base leading-snug focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 const TAP_ON = "border-primary bg-primary text-primary-foreground";
 const TAP_OFF = "border-border bg-background text-foreground hover:bg-muted";
 const FIELD =

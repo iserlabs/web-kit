@@ -36,6 +36,8 @@ describe("web-kit inquiry init", () => {
     expect(ui).toContain("min-h-12");
     expect(ui).toContain("text-base");
     expect(ui).toContain("prefers-reduced-motion");
+    // A color transition on a chosen answer dips to about 1.6:1 text contrast mid-way (v0.12.0).
+    expect(ui.replace(/\/\*[\s\S]*?\*\//g, "")).not.toMatch(/\btransition(-colors|-all)?\b/);
     expect(ui).toContain('autoComplete="email"');
     expect(ui).toContain('type="tel"');
     expect(ui.replace(/\/\*[\s\S]*?\*\//g, "")).not.toMatch(/\b(fixed|sticky)\b/);

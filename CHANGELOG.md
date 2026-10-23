@@ -4,6 +4,9 @@
 - **Accessibility audit covers WCAG 2.1 and 2.2.** The extended-tier axe check now runs the `wcag21a`, `wcag21aa` and `wcag22aa` rules alongside `wcag2a` and `wcag2aa` (exported as `DEFAULT_AXE_TAGS`). A site that sets its own `axe.tags` keeps exactly those tags. Expect new advisory findings on sites that passed before, such as touch target size (2.2) and autocomplete and text spacing (2.1).
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
+## 0.12.1
+- **inquiry: a chosen answer no longer flashes unreadable.** The scaffolded answer buttons faded their colors over 150 ms, and halfway through, the chosen text sat on a fill of nearly the same shade (measured 1.6:1, so it looked disabled in a screenshot or on a slow phone). The color transition is gone: a chosen answer is the filled, high-contrast state (9.2:1 text) the instant it is tapped. Sites already scaffolded with 0.12.0 should delete `transition-colors motion-reduce:transition-none` from the `TAP` class in `inquiry-flow.tsx`.
+
 ## 0.12.0
 - **`@iserlabs/web-kit/inquiry`**, new export: a one-question-per-screen inquiry flow. `defineInquiry` (typed config: choice steps with optional follow-ups, one contact step), `useInquiryFlow` (React hook; React 19 is an optional peer), `createInquiryController` (the same logic without React), `buildPayload` (structured answers plus "Question: answer" lines), honeypot and minimum-time trap, `createInquiryHandler` / `createInquiryRoute` (server validation and email through the existing sender interface). `web-kit inquiry init` scaffolds `src/components/inquiry/inquiry-flow.tsx` and `src/content/inquiry-flow.ts` and prints the route. See `docs/inquiry.md`.
 - `forms.createContactHandler` now accepts any schema with `safeParse` (`SafeParseSchema`), so a zod schema still works unchanged.
