@@ -153,4 +153,75 @@ describe("validateGuide", () => {
     expect(problems).toContain("photos.1: no alt text");
     expect(problems).toContain("photos.1: long side 1200 px is under 2000 px");
   });
+
+  it("flags code-shaped numbers in their varied forms", () => {
+    for (const body of [
+      "The lockbox code is 4821.",
+      "The code is 4-8-2-1",
+      "code is 48 21",
+      "Garage keypad: 556677",
+      "pin 4.8.2.1",
+    ]) {
+      const g = validGuide();
+      g.sections[0]!.items[0]!.body = body;
+      expect(validateGuide(g, { today: TODAY }), body).toContain(
+        "sections.0.items.0.body: looks like an entry code",
+      );
+    }
+  });
+
+  it("does not flag zip codes, years, phones, urls, sources or Wi-Fi values", () => {
+    for (const body of [
+      "Zip code 80903",
+      "Updated PIN system in 2026",
+      "If the keypad is dead, call (719) 555-0100.",
+      "keypad, call 719 5550100",
+    ]) {
+      const g = validGuide();
+      g.sections[0]!.items[0]!.body = body;
+      expect(validateGuide(g, { today: TODAY }), body).toEqual([]);
+    }
+    const g = validGuide();
+    g.wifi.network = s("code-net");
+    g.wifi.password = s("12345678");
+    g.sections[0]!.items[0]!.source = "Hospitable field code 12345";
+    g.nearby[0]!.url = "https://x.com/?code=12345";
+    expect(validateGuide(g, { today: TODAY })).toEqual([]);
+  });
+
+  it("rejects an exclamation mark in guest copy but not in Wi-Fi values or urls", () => {
+    const g = validGuide();
+    g.sections[0]!.items[0]!.body = "Welcome!";
+    g.wifi.password = s("pass!word");
+    g.nearby[0]!.url = "https://x.com/a!b";
+    expect(validateGuide(g, { today: TODAY })).toEqual([
+      "sections.0.items.0.body: contains an exclamation mark",
+    ]);
+  });
+
+  it("requires 12-hour check-in and check-out times", () => {
+    const g = validGuide();
+    g.checkIn = s("16:00");
+    g.checkOut = s("10 AM");
+    const problems = validateGuide(g, { today: TODAY });
+    expect(problems).toContain('checkIn: "16:00" is not a 12-hour time like 4:00 PM');
+    expect(problems).toContain('checkOut: "10 AM" is not a 12-hour time like 4:00 PM');
+  });
+
+  it("rejects dates that do not exist", () => {
+    const g = validGuide();
+    g.parking = { value: "Driveway", source: "x", checked: "2026-02-30" };
+    g.checkIn = { value: "4:00 PM", source: "x", checked: "2026-13-45" };
+    const problems = validateGuide(g, { today: TODAY });
+    expect(problems).toContain('parking: checked "2026-02-30" is not a real date');
+    expect(problems).toContain('checkIn: checked "2026-13-45" is not a real date');
+  });
+
+  it("requires an https map link", () => {
+    const g = validGuide();
+    g.address.mapUrl = "http://maps.google.com";
+    expect(validateGuide(g, { today: TODAY })).toContain(
+      "address.mapUrl: must start with https://",
+    );
+  });
 });

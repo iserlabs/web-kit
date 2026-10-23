@@ -3,7 +3,7 @@ import { findLeaks } from "./leaks";
 
 describe("findLeaks", () => {
   it("finds a code standing alone in the HTML, masked", () => {
-    expect(findLeaks("<p>Use 4821 at the door</p>", ["4821"])).toEqual(["4***"]);
+    expect(findLeaks("<p>Use 4821 at the door</p>", ["4821"])).toEqual(["code 1 of 1"]);
   });
 
   it("ignores the digits inside a longer token", () => {
@@ -12,8 +12,18 @@ describe("findLeaks", () => {
 
   it("ignores blank entries and reports each leaked code once", () => {
     expect(findLeaks("4821 and 4821 and 7777", ["", " ", "4821", "7777"])).toEqual([
-      "4***",
-      "7***",
+      "code 3 of 4",
+      "code 4 of 4",
     ]);
+  });
+
+  it("never prints a digit of a code", () => {
+    expect(findLeaks("<p>Use 4821 at the door</p>", ["4821"])).toEqual(["code 1 of 1"]);
+    expect(findLeaks("Use 4821", ["4821"]).join("")).not.toContain("4");
+  });
+
+  it("matches a code with regex characters only as a standalone token", () => {
+    expect(findLeaks("door 4.8+1 here", ["4.8+1"])).toEqual(["code 1 of 1"]);
+    expect(findLeaks("door 4x8+1 here", ["4.8+1"])).toEqual([]);
   });
 });

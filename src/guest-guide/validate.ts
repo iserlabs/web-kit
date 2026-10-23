@@ -4,13 +4,42 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /** Built from its code point so the character itself never sits in source. */
 const EM_DASH = String.fromCharCode(0x2014);
+const ENTRY_WORD = /\b(?:code|pin|passcode|lockbox|lock box|combo|combination|keypad)\b/gi;
+const NOT_ENTRY = /\b(?:zip|area|postal|promo|qr|dress) code\b/gi;
+const PHONE = /\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/g;
+/** 4 to 8 digits, optionally split by single spaces, hyphens or dots. */
+const DIGIT_RUN = /(?<![\d-])\d(?:[ .-]?\d){3,7}(?!\d)/;
+const TIME_12H = /^(1[0-2]|[1-9]):[0-5]\d (AM|PM)$/;
+/** Keys that hold links, citations and dates rather than guest copy. */
+const NOT_COPY_KEYS = new Set(["source", "checked", "url", "mapUrl", "src"]);
+/** Wi-Fi values print as typed and may be plain digits. */
+const WIFI_VALUES = new Set(["wifi.network.value", "wifi.password.value"]);
+
 /**
- * A 4 to 8 digit number shortly after an entry word reads as a code. The
- * look-arounds skip digits joined by a hyphen, so "555-0100" is not a code.
+ * Whether a string reads like an entry code: an entry word, then within 40
+ * characters a 4 to 8 digit run (separators allowed). Phone numbers and
+ * phrases like "zip code" are removed first, and a bare 1900-2099 is a year.
  * This is a backstop; the served-HTML leak check with real values is the gate.
  */
-const CODE_SHAPED =
-  /\b(?:code|pin|passcode|lockbox|lock box|combo|combination|keypad)\b[^.\n]{0,25}?(?<![\d-])\d{4,8}(?![\d-])/i;
+function looksLikeEntryCode(text: string): boolean {
+  const s = text.replace(PHONE, " ").replace(NOT_ENTRY, " ");
+  for (const m of s.matchAll(ENTRY_WORD)) {
+    const after = s.slice((m.index ?? 0) + m[0].length);
+    const window = after.split(/[\n]/)[0]?.slice(0, 40) ?? "";
+    const run = DIGIT_RUN.exec(window);
+    if (!run) continue;
+    const digits = run[0];
+    if (/^\d{4}$/.test(digits) && Number(digits) >= 1900 && Number(digits) <= 2099) continue;
+    return true;
+  }
+  return false;
+}
+
+function isRealDate(iso: string): boolean {
+  const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
 
 export type ValidateOptions = { today: string; minPhotoLongSide?: number };
 
@@ -41,8 +70,11 @@ export function validateGuide(g: GuestGuide, opts: ValidateOptions): string[] {
 
   walk(g, "", (path, v) => {
     if (typeof v === "string") {
+      if (path.split(".").some((k) => NOT_COPY_KEYS.has(k))) return;
       if (v.includes(EM_DASH)) problems.push(`${path}: contains an em dash`);
-      if (CODE_SHAPED.test(v)) problems.push(`${path}: looks like an entry code`);
+      if (WIFI_VALUES.has(path)) return;
+      if (v.includes("!")) problems.push(`${path}: contains an exclamation mark`);
+      if (looksLikeEntryCode(v)) problems.push(`${path}: looks like an entry code`);
       return;
     }
     if (isSourcedLike(v)) {
@@ -51,11 +83,22 @@ export function validateGuide(g: GuestGuide, opts: ValidateOptions): string[] {
         problems.push(`${where}: no source`);
       if (typeof v.checked !== "string" || !ISO.test(v.checked)) {
         problems.push(`${where}: checked "${String(v.checked)}" is not YYYY-MM-DD`);
+      } else if (!isRealDate(v.checked)) {
+        problems.push(`${where}: checked "${v.checked}" is not a real date`);
       } else if (v.checked > opts.today) {
         problems.push(`${where}: checked "${v.checked}" is after today`);
       }
     }
   });
+
+  for (const [k, v] of [
+    ["checkIn", g.checkIn.value],
+    ["checkOut", g.checkOut.value],
+  ] as const) {
+    if (!TIME_12H.test(v)) problems.push(`${k}: "${v}" is not a 12-hour time like 4:00 PM`);
+  }
+  if (!g.address.mapUrl.startsWith("https://"))
+    problems.push("address.mapUrl: must start with https://");
 
   if (!g.wifi.network.value.trim()) problems.push("wifi.network: empty");
   if (!g.wifi.password.value.trim()) problems.push("wifi.password: empty");
