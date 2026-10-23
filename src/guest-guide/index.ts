@@ -1,3 +1,5 @@
+export { type FactRow, factsMarkdown, factsTable } from "./facts";
+export { findLeaks } from "./leaks";
 export type {
   GuestAddress,
   GuestGuide,
