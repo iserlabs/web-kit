@@ -18,8 +18,9 @@ describe("findLeaks", () => {
   });
 
   it("never prints a digit of a code", () => {
-    expect(findLeaks("<p>Use 4821 at the door</p>", ["4821"])).toEqual(["code 1 of 1"]);
-    expect(findLeaks("Use 4821", ["4821"]).join("")).not.toContain("4");
+    const out = findLeaks("Use 7777 at the door", ["7777"]);
+    expect(out).toEqual(["code 1 of 1"]);
+    expect(out.join("")).not.toContain("7");
   });
 
   it("matches a code with regex characters only as a standalone token", () => {

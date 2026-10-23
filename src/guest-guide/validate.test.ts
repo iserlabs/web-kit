@@ -5,6 +5,18 @@ import { validateGuide } from "./validate";
 const TODAY = "2026-10-23";
 const s = (value: string) => ({ value, source: "test fixture", checked: "2026-10-20" });
 
+function firstItem(g: GuestGuide) {
+  const item = g.sections[0]?.items[0];
+  if (!item) throw new Error("fixture has no first item");
+  return item;
+}
+
+function firstPick(g: GuestGuide) {
+  const pick = g.nearby[0];
+  if (!pick) throw new Error("fixture has no first pick");
+  return pick;
+}
+
 function validGuide(): GuestGuide {
   return {
     slug: "test-house",
@@ -99,7 +111,7 @@ describe("validateGuide", () => {
 
   it("rejects an em dash anywhere", () => {
     const g = validGuide();
-    g.sections[0]!.items[0]!.body = `Thermostat${String.fromCharCode(0x2014)}hall`;
+    firstItem(g).body = `Thermostat${String.fromCharCode(0x2014)}hall`;
     expect(validateGuide(g, { today: TODAY })).toContain(
       "sections.0.items.0.body: contains an em dash",
     );
@@ -107,7 +119,7 @@ describe("validateGuide", () => {
 
   it("rejects a code-shaped number next to an entry word", () => {
     const g = validGuide();
-    g.sections[0]!.items[0]!.body = "The lockbox code is 4821.";
+    firstItem(g).body = "The lockbox code is 4821.";
     expect(validateGuide(g, { today: TODAY })).toContain(
       "sections.0.items.0.body: looks like an entry code",
     );
@@ -115,7 +127,7 @@ describe("validateGuide", () => {
 
   it("does not mistake a phone number for a code", () => {
     const g = validGuide();
-    g.sections[0]!.items[0]!.body = "If the keypad is dead, call (719) 555-0100.";
+    firstItem(g).body = "If the keypad is dead, call (719) 555-0100.";
     expect(validateGuide(g, { today: TODAY })).toEqual([]);
   });
 
@@ -140,7 +152,7 @@ describe("validateGuide", () => {
 
   it("rejects a nearby pick without an https link", () => {
     const g = validGuide();
-    g.nearby[0]!.url = "http://example.com";
+    firstPick(g).url = "http://example.com";
     expect(validateGuide(g, { today: TODAY })).toContain(
       'nearby.0: url must start with https:// ("Shop")',
     );
@@ -163,7 +175,7 @@ describe("validateGuide", () => {
       "pin 4.8.2.1",
     ]) {
       const g = validGuide();
-      g.sections[0]!.items[0]!.body = body;
+      firstItem(g).body = body;
       expect(validateGuide(g, { today: TODAY }), body).toContain(
         "sections.0.items.0.body: looks like an entry code",
       );
@@ -178,22 +190,22 @@ describe("validateGuide", () => {
       "keypad, call 719 5550100",
     ]) {
       const g = validGuide();
-      g.sections[0]!.items[0]!.body = body;
+      firstItem(g).body = body;
       expect(validateGuide(g, { today: TODAY }), body).toEqual([]);
     }
     const g = validGuide();
     g.wifi.network = s("code-net");
     g.wifi.password = s("12345678");
-    g.sections[0]!.items[0]!.source = "Hospitable field code 12345";
-    g.nearby[0]!.url = "https://x.com/?code=12345";
+    firstItem(g).source = "Hospitable field code 12345";
+    firstPick(g).url = "https://x.com/?code=12345";
     expect(validateGuide(g, { today: TODAY })).toEqual([]);
   });
 
   it("rejects an exclamation mark in guest copy but not in Wi-Fi values or urls", () => {
     const g = validGuide();
-    g.sections[0]!.items[0]!.body = "Welcome!";
+    firstItem(g).body = "Welcome!";
     g.wifi.password = s("pass!word");
-    g.nearby[0]!.url = "https://x.com/a!b";
+    firstPick(g).url = "https://x.com/a!b";
     expect(validateGuide(g, { today: TODAY })).toEqual([
       "sections.0.items.0.body: contains an exclamation mark",
     ]);
@@ -223,5 +235,50 @@ describe("validateGuide", () => {
     expect(validateGuide(g, { today: TODAY })).toContain(
       "address.mapUrl: must start with https://",
     );
+  });
+
+  it("stops the code window at a sentence boundary and ignores local phones", () => {
+    for (const body of [
+      "Use the keypad. Parking at 1204 Elm St.",
+      "If the keypad is dead, call 555-0100.",
+      "Check the PIN pad. Quiet hours start 10.20 PM",
+    ]) {
+      const g = validGuide();
+      firstItem(g).body = body;
+      expect(validateGuide(g, { today: TODAY }), body).toEqual([]);
+    }
+  });
+
+  it("still flags a code before the end of its sentence, and one after a year", () => {
+    for (const body of [
+      "The keypad code is 4821. Parking is out front.",
+      "Keypad installed in 2026, use 4821",
+    ]) {
+      const g = validGuide();
+      firstItem(g).body = body;
+      expect(validateGuide(g, { today: TODAY }), body).toContain(
+        "sections.0.items.0.body: looks like an entry code",
+      );
+    }
+  });
+
+  it("reports an em dash in a source, url, map link or photo path", () => {
+    const dash = String.fromCharCode(0x2014);
+    const g = validGuide();
+    firstItem(g).source = `WhatsApp${dash}Anthony`;
+    firstPick(g).url = `https://x.com/a${dash}b`;
+    g.address.mapUrl = `https://maps.google.com/${dash}`;
+    g.photos[0] = {
+      src: `/a${dash}b.jpg`,
+      alt: "Living room",
+      room: "Living room",
+      width: 2400,
+      height: 1600,
+    };
+    const problems = validateGuide(g, { today: TODAY });
+    expect(problems).toContain("sections.0.items.0.source: contains an em dash");
+    expect(problems).toContain("nearby.0.url: contains an em dash");
+    expect(problems).toContain("address.mapUrl: contains an em dash");
+    expect(problems).toContain("photos.0.src: contains an em dash");
   });
 });

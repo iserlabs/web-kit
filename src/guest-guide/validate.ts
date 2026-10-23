@@ -6,9 +6,11 @@ const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const EM_DASH = String.fromCharCode(0x2014);
 const ENTRY_WORD = /\b(?:code|pin|passcode|lockbox|lock box|combo|combination|keypad)\b/gi;
 const NOT_ENTRY = /\b(?:zip|area|postal|promo|qr|dress) code\b/gi;
+const PHONE_LOCAL = /\b\d{3}[-.\s]\d{4}\b/g;
+const SENTENCE_END = /[.!?]\s|\n/;
 const PHONE = /\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/g;
 /** 4 to 8 digits, optionally split by single spaces, hyphens or dots. */
-const DIGIT_RUN = /(?<![\d-])\d(?:[ .-]?\d){3,7}(?!\d)/;
+const DIGIT_RUN = /(?<![\d-])\d(?:[ .-]?\d){3,7}(?!\d)/g;
 const TIME_12H = /^(1[0-2]|[1-9]):[0-5]\d (AM|PM)$/;
 /** Keys that hold links, citations and dates rather than guest copy. */
 const NOT_COPY_KEYS = new Set(["source", "checked", "url", "mapUrl", "src"]);
@@ -22,15 +24,18 @@ const WIFI_VALUES = new Set(["wifi.network.value", "wifi.password.value"]);
  * This is a backstop; the served-HTML leak check with real values is the gate.
  */
 function looksLikeEntryCode(text: string): boolean {
-  const s = text.replace(PHONE, " ").replace(NOT_ENTRY, " ");
+  const s = text.replace(PHONE, " ").replace(PHONE_LOCAL, " ").replace(NOT_ENTRY, " ");
   for (const m of s.matchAll(ENTRY_WORD)) {
     const after = s.slice((m.index ?? 0) + m[0].length);
-    const window = after.split(/[\n]/)[0]?.slice(0, 40) ?? "";
-    const run = DIGIT_RUN.exec(window);
-    if (!run) continue;
-    const digits = run[0];
-    if (/^\d{4}$/.test(digits) && Number(digits) >= 1900 && Number(digits) <= 2099) continue;
-    return true;
+    // The window ends at a sentence boundary, a newline, or 40 characters.
+    const window = (after.split(SENTENCE_END)[0] ?? "").slice(0, 40);
+    for (const run of window.matchAll(DIGIT_RUN)) {
+      const digits = run[0];
+      // A code that is itself 1900 to 2099 is not caught here by design; the
+      // served-HTML leak check with real values is the gate for that case.
+      if (/^\d{4}$/.test(digits) && Number(digits) >= 1900 && Number(digits) <= 2099) continue;
+      return true;
+    }
   }
   return false;
 }
@@ -70,8 +75,8 @@ export function validateGuide(g: GuestGuide, opts: ValidateOptions): string[] {
 
   walk(g, "", (path, v) => {
     if (typeof v === "string") {
-      if (path.split(".").some((k) => NOT_COPY_KEYS.has(k))) return;
       if (v.includes(EM_DASH)) problems.push(`${path}: contains an em dash`);
+      if (path.split(".").some((k) => NOT_COPY_KEYS.has(k))) return;
       if (WIFI_VALUES.has(path)) return;
       if (v.includes("!")) problems.push(`${path}: contains an exclamation mark`);
       if (looksLikeEntryCode(v)) problems.push(`${path}: looks like an entry code`);
