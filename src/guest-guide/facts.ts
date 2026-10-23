@@ -38,14 +38,8 @@ export function factsTable(g: GuestGuide): FactRow[] {
     row("wifi.network", g.wifi.network),
     row("wifi.password", g.wifi.password),
     {
-      claim: `${g.contact.label}: ${g.contact.phone}`,
+      claim: g.contact.phone ? `${g.contact.label}: ${g.contact.phone}` : g.contact.label,
       where: "contact",
-      source: g.contact.source,
-      checked: g.contact.checked,
-    },
-    {
-      claim: g.contact.phone,
-      where: "contact.phone",
       source: g.contact.source,
       checked: g.contact.checked,
     },

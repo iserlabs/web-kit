@@ -131,15 +131,31 @@ describe("validateGuide", () => {
     expect(validateGuide(g, { today: TODAY })).toEqual([]);
   });
 
-  it("requires Wi-Fi, entry steps and a contact phone", () => {
+  it("requires Wi-Fi and entry steps", () => {
     const g = validGuide();
     g.wifi.password = s("");
     g.entry.steps = { value: [], source: "x", checked: "2026-10-20" };
-    g.contact.phone = "";
     const problems = validateGuide(g, { today: TODAY });
     expect(problems).toContain("wifi.password: empty");
     expect(problems).toContain("entry.steps: needs at least one step");
-    expect(problems).toContain("contact.phone: empty");
+  });
+
+  it("accepts a guide with no phone, and requires a contact label", () => {
+    const g = validGuide();
+    g.contact = {
+      label: "Message us in your booking app, we answer any hour",
+      source: "owner ruling",
+      checked: "2026-10-20",
+    };
+    expect(validateGuide(g, { today: TODAY })).toEqual([]);
+    g.contact.label = " ";
+    expect(validateGuide(g, { today: TODAY })).toContain("contact.label: empty");
+  });
+
+  it("rejects a phone that is present but blank", () => {
+    const g = validGuide();
+    g.contact.phone = " ";
+    expect(validateGuide(g, { today: TODAY })).toContain("contact.phone: empty");
   });
 
   it("rejects duplicate or empty sections", () => {

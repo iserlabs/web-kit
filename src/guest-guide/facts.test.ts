@@ -91,7 +91,7 @@ describe("factsTable", () => {
     expect(md).toContain("| 4:00 PM | checkIn | Hospitable details | 2026-10-20 |");
   });
 
-  it("adds rows for the map link, the phone, and each pick's note and distance", () => {
+  it("adds rows for the map link, the contact, and each pick's note and distance", () => {
     const g: GuestGuide = {
       ...guide,
       nearby: [
@@ -115,11 +115,12 @@ describe("factsTable", () => {
       checked: "2026-10-20",
     });
     expect(rows).toContainEqual({
-      claim: "(719) 555-0100",
-      where: "contact.phone",
+      claim: "Text us: (719) 555-0100",
+      where: "contact",
       source: "site",
       checked: "2026-10-20",
     });
+    expect(rows.some((r) => r.where === "contact.phone")).toBe(false);
     expect(rows).toContainEqual({
       claim: "Closest",
       where: "nearby.grocery.Shop.note",
@@ -183,5 +184,20 @@ describe("factsTable", () => {
       "| A \\| B C | parking | x\\|y | 2026-10-20 |",
     );
     expect(lines).toHaveLength(factsTable(g).length + 2);
+  });
+
+  it("writes the contact row without a phone", () => {
+    const g: GuestGuide = {
+      ...guide,
+      contact: { label: "Message us in your booking app", source: "owner", checked: "2026-10-20" },
+    };
+    expect(factsTable(g).filter((r) => r.where.startsWith("contact"))).toEqual([
+      {
+        claim: "Message us in your booking app",
+        where: "contact",
+        source: "owner",
+        checked: "2026-10-20",
+      },
+    ]);
   });
 });

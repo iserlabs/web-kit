@@ -108,7 +108,9 @@ export function validateGuide(g: GuestGuide, opts: ValidateOptions): string[] {
   if (!g.wifi.network.value.trim()) problems.push("wifi.network: empty");
   if (!g.wifi.password.value.trim()) problems.push("wifi.password: empty");
   if (g.entry.steps.value.length === 0) problems.push("entry.steps: needs at least one step");
-  if (!g.contact.phone.trim()) problems.push("contact.phone: empty");
+  if (!g.contact.label.trim()) problems.push("contact.label: empty");
+  if (g.contact.phone !== undefined && !g.contact.phone.trim())
+    problems.push("contact.phone: empty");
 
   const ids = new Set<string>();
   g.sections.forEach((sec, i) => {

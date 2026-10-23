@@ -60,7 +60,7 @@ export type GuestGuide = {
   entry: { lock: Sourced; steps: Sourced<string[]>; codeDelivery: Sourced };
   parking: Sourced;
   wifi: { network: Sourced; password: Sourced };
-  contact: { label: string; phone: string; source: string; checked: string };
+  contact: { label: string; phone?: string; source: string; checked: string };
   sections: GuideSection[];
   nearby: LocalPick[];
   photos: GuidePhoto[];
