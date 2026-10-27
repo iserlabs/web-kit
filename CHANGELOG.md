@@ -1,9 +1,11 @@
 # Changelog
 
 ## Unreleased
-- guest-guide module: GuestGuide types, validateGuide, factsTable and factsMarkdown, findLeaks.
 - **Accessibility audit covers WCAG 2.1 and 2.2.** The extended-tier axe check now runs the `wcag21a`, `wcag21aa` and `wcag22aa` rules alongside `wcag2a` and `wcag2aa` (exported as `DEFAULT_AXE_TAGS`). A site that sets its own `axe.tags` keeps exactly those tags. Expect new advisory findings on sites that passed before, such as touch target size (2.2) and autocomplete and text spacing (2.1).
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
+
+## 0.13.0
+- **guest-guide: a new module, `@iserlabs/web-kit/guest-guide`.** The data model for a digital guest guide (`GuestGuide`, every fact carrying its source and checked date), `validateGuide` (refuses an unsourced fact, a code-shaped number, a 24-hour time), `factsTable` and `factsMarkdown` (one row per fact, for a reviewer), and `findLeaks` (scans served HTML for an entry code and reports it masked). Additive: nothing existing changes.
 
 ## 0.12.2
 - **inquiry: a `count` step kind.** A question answered with a number: large minus and plus buttons around a numeric box (config `min`, `max`, `step`, `default`, `unit`, `optional`). The hook gains `setCount`, `bumpCount` and an `onChange(answers)` option for live figures; the summary line reads "Question: 12 listings". Buttons clamp to min and max, a typed value outside them is refused on Next, and the server validates counts against the same config. The scaffold gains a `CountScreen` and an example count step. Sites already scaffolded keep their file; re-run `web-kit inquiry init` into a scratch folder and copy `CountScreen` across to use the new step.
