@@ -30,6 +30,7 @@ For Next sites, transpile it: `next.config.ts` → `transpilePackages: ["@iserla
 - `import { pageMeta } from "@iserlabs/web-kit/seo"`
 - `import { organization, lodgingBusiness, breadcrumb, faq } from "@iserlabs/web-kit/schema"`
 - `import { createContactHandler } from "@iserlabs/web-kit/forms"`
+- `import { useInquiryFlow, createInquiryRoute } from "@iserlabs/web-kit/inquiry"` (docs/inquiry.md)
 - `import { validateEnv } from "@iserlabs/web-kit/env"`
 - `import { cn } from "@iserlabs/web-kit/utils"`
 

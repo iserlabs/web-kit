@@ -2,7 +2,8 @@ export interface BrandPackPerson {
   name: string;
   title: string;
   email: string;
-  phone: string;
+  /** Optional. When absent the signatures and letterheads omit the phone and its separator. */
+  phone?: string;
   /** Optional per-person booking or inquiry link shown by the two-column variant. */
   link?: { label: string; href: string };
 }

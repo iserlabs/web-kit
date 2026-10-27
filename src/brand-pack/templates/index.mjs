@@ -345,7 +345,7 @@ export default function SignatureBoard() {
 
         {config.people.length === 0 ? (
           <p style={unfilled(config)}>
-            No one has been added yet. Send us each person's name, job title, email and phone and
+            No one has been added yet. Send us each person's name, job title and email and
             their block will appear here.
           </p>
         ) : null}

@@ -23,7 +23,7 @@ const person = {
   name: "Jake Lee",
   title: "Founder",
   email: "hello@sunmountainstays.com",
-  phone: "201.321.5446",
+  phone: "555.010.0100",
   link: { label: "Book a call", href: "https://sunmountainstays.com/contact" },
 };
 
@@ -149,5 +149,33 @@ describe("signature variants", () => {
     expect(renderSignature("ruled", { ...config, markUrl: "__UNFILLED__" }, person)).toContain(
       "No mark",
     );
+  });
+});
+
+describe("a person with no phone", () => {
+  const { phone: _omit, ...noPhone } = person;
+  for (const id of SIGNATURE_IDS as string[]) {
+    it(`${id}: no tel link, no "undefined", no empty link, no stray separator dot`, () => {
+      const html = renderSignature(id, config, noPhone);
+      expect(html).not.toContain("tel:");
+      expect(html).not.toContain("undefined");
+      expect(html).not.toMatch(/<a\b[^>]*>\s*<\/a>/);
+      const text = html
+        .replace(/<[^>]+>/g, "")
+        .replace(/&#183;/g, "\u00b7")
+        .replace(/&nbsp;/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      expect(text).not.toMatch(/\u00b7\s*\u00b7/);
+      expect(text.startsWith("\u00b7")).toBe(false);
+      expect(text.endsWith("\u00b7")).toBe(false);
+      expect(html).toContain("mailto:");
+    });
+  }
+
+  it("keeps the phone and its dot when one is given", () => {
+    for (const id of SIGNATURE_IDS as string[]) {
+      expect(renderSignature(id, config, person)).toContain("tel:5550100100");
+    }
   });
 });

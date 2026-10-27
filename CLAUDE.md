@@ -23,7 +23,7 @@ or commit SHA in their `package.json` (`github:iserlabs/web-kit#<ref>`).
 ## Exports
 
 `@iserlabs/web-kit/{biome, tsconfig, tsconfig-next, tailwind, seo, schema, forms,
-env, utils, audits, brand-pack, artist, observability, observability/env, observability/server}`. Notes:
+env, utils, audits, brand-pack, artist, inquiry, observability, observability/env, observability/server}`. Notes:
 - `tsconfig` is **lib-oriented** (ES2022 / `noUncheckedIndexedAccess` /
   `verbatimModuleSyntax`) and breaks Next apps — Next sites extend
   `tsconfig-next` instead (the Next-safe preset).
@@ -40,6 +40,11 @@ env, utils, audits, brand-pack, artist, observability, observability/env, observ
   flag is reserved for phase-2 tooling (`web-kit artist init`, an audit check); nothing
   reads it yet and the export works without it.
 
+- `inquiry` is the one-question-per-screen inquiry flow (`defineInquiry`, `useInquiryFlow`,
+  `createInquiryController`, `createInquiryHandler`/`createInquiryRoute`). Logic in the kit,
+  `.ts` with no brand names; the visible UI is scaffolded into each site by
+  `web-kit inquiry init` and art-directed there. See `docs/inquiry.md`.
+
 ## CLI
 
 The `web-kit` bin (used by consumers as `pnpm wk:doctor` / `wk:audit`):
@@ -51,6 +56,7 @@ The `web-kit` bin (used by consumers as `pnpm wk:doctor` / `wk:audit`):
   boards into a client site. Required on every new client build and major
   redesign; `audit --tier required` fails an adopted site without one, unless
   its `package.json` carries a dated `web-kit.brandPack.skip` with a reason.
+- `web-kit inquiry init` scaffolds the inquiry flow component and an example config into a site.
 - `web-kit audit --tier extended` — Lighthouse (perf/SEO/BP/a11y + CWV) + axe
   (WCAG), advisory `warn` by default. Browser deps (`lighthouse`,
   `chrome-launcher`, `@axe-core/playwright`, `playwright`) install on demand so
