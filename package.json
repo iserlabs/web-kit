@@ -1,6 +1,6 @@
 {
   "name": "@iserlabs/web-kit",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "private": false,
   "type": "module",
   "license": "MIT",
@@ -17,6 +17,7 @@
     "./schema": "./src/schema/index.ts",
     "./network": "./src/network/index.ts",
     "./proof": "./src/proof/index.ts",
+    "./guest-guide": "./src/guest-guide/index.ts",
     "./forms": "./src/forms/index.ts",
     "./inquiry": "./src/inquiry/index.ts",
     "./env": "./src/env/index.ts",
