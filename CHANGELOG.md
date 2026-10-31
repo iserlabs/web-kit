@@ -4,6 +4,9 @@
 - **Accessibility audit covers WCAG 2.1 and 2.2.** The extended-tier axe check now runs the `wcag21a`, `wcag21aa` and `wcag22aa` rules alongside `wcag2a` and `wcag2aa` (exported as `DEFAULT_AXE_TAGS`). A site that sets its own `axe.tags` keeps exactly those tags. Expect new advisory findings on sites that passed before, such as touch target size (2.2) and autocomplete and text spacing (2.1).
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
+## 0.13.1
+- **Operating Record, 2026-10-31 (Jake).** `OPERATING_RECORD` now reads 17,000+ reservations handled (was 17,100+) and 31+ markets across 10 states (was 30+; adds Colorado Springs, CO). Every other figure is unchanged. Also ships the WCAG 2.1 and 2.2 axe tags listed above.
+
 ## 0.13.0
 - **guest-guide: a new module, `@iserlabs/web-kit/guest-guide`.** The data model for a digital guest guide (`GuestGuide`, every fact carrying its source and checked date), `validateGuide` (refuses an unsourced fact, a code-shaped number, a 24-hour time), `factsTable` and `factsMarkdown` (one row per fact, for a reviewer), and `findLeaks` (scans served HTML for an entry code and reports it masked). Additive: nothing existing changes.
 
