@@ -47,10 +47,10 @@ export const OPERATING_RECORD: OperatingRecord = {
   stats: [
     { value: "297+", label: "short-term rentals operated" },
     { value: "120+", label: "listings launched" },
-    { value: "17,100+", label: "reservations handled" },
+    { value: "17,000+", label: "reservations handled" },
     { value: "$97.5M+", label: "in property value managed" },
     { value: "83", label: "owners served" },
-    { value: "30+", label: "markets · 10 states" },
+    { value: "31+", label: "markets · 10 states" },
     { value: "9", label: "hospitality companies built, run, or scaled" },
     { value: "680+", label: "claims filed" },
   ],
