@@ -23,7 +23,7 @@ or commit SHA in their `package.json` (`github:iserlabs/web-kit#<ref>`).
 ## Exports
 
 `@iserlabs/web-kit/{biome, tsconfig, tsconfig-next, tailwind, seo, schema, forms,
-env, utils, audits, brand-pack, artist, inquiry, observability, observability/env, observability/server}`. Notes:
+env, utils, audits, brand-pack, artist, inquiry, owner-portal, observability, observability/env, observability/server}`. Notes:
 - `tsconfig` is **lib-oriented** (ES2022 / `noUncheckedIndexedAccess` /
   `verbatimModuleSyntax`) and breaks Next apps — Next sites extend
   `tsconfig-next` instead (the Next-safe preset).
@@ -44,6 +44,11 @@ env, utils, audits, brand-pack, artist, inquiry, observability, observability/en
   `createInquiryController`, `createInquiryHandler`/`createInquiryRoute`). Logic in the kit,
   `.ts` with no brand names; the visible UI is scaffolded into each site by
   `web-kit inquiry init` and art-directed there. See `docs/inquiry.md`.
+
+- `owner-portal` is the owner statements module (`StatementTabs`, `groupStatements`,
+  `portalTotals`, `validateModel`): statements by year, then month, as accessible tabs.
+  Figures come from the statement itself; the kit holds no client name or number. See
+  `docs/owner-portal.md`.
 
 ## CLI
 
