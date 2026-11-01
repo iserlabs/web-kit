@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { StatementTabs } from "./index";
-import type { OwnerPortalModel } from "./types";
+import type { OwnerPortalModel, StatementLabels } from "./types";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -39,9 +39,14 @@ const model: OwnerPortalModel = {
 let host: HTMLDivElement;
 let root: Root;
 
-function mount(initial?: { year: number; month: number }) {
+function mount(
+  initial?: { year: number; month: number },
+  extra?: { labels?: StatementLabels; model?: OwnerPortalModel },
+) {
   act(() => {
-    root.render(<StatementTabs model={model} initial={initial} />);
+    root.render(
+      <StatementTabs model={extra?.model ?? model} initial={initial} labels={extra?.labels} />,
+    );
   });
 }
 const tabs = (label: string) =>
@@ -135,5 +140,67 @@ describe("StatementTabs", () => {
       root.render(<StatementTabs model={{ ...model, through: { year: 2026, month: 1 } }} />);
     });
     expect(host.textContent).toContain("No statement months to show yet.");
+  });
+
+  it("keeps the default captions and empty-month sentence when no labels are given", () => {
+    mount({ year: 2026, month: 12 });
+    const panel = document.querySelector("[role=tabpanel] [role=tabpanel]") as HTMLElement;
+    const dts = Array.from(panel.querySelectorAll("dt")).map((d) => d.textContent);
+    expect(dts).toEqual(["Booked revenue", "Management fee", "To you"]);
+  });
+
+  it("renames the three figure captions with labels", () => {
+    mount(
+      { year: 2026, month: 12 },
+      {
+        labels: {
+          bookedRevenue: "Payout counted",
+          managementFee: "Costs",
+          toOwner: "Net before pending costs",
+        },
+      },
+    );
+    // The entry sets toOwnerLabel "To you", which still wins over labels.toOwner.
+    const dts = Array.from(document.querySelectorAll("dt")).map((d) => d.textContent);
+    expect(dts).toEqual(["Payout counted", "Costs", "To you"]);
+  });
+
+  it("uses labels.toOwner when the entry has no toOwnerLabel", () => {
+    const noOwn: OwnerPortalModel = {
+      ...model,
+      statements: model.statements.map((s) => ({ ...s, toOwnerLabel: undefined })),
+    };
+    mount(
+      { year: 2026, month: 12 },
+      { model: noOwn, labels: { toOwner: "Net before pending costs" } },
+    );
+    const dts = Array.from(document.querySelectorAll("dt")).map((d) => d.textContent);
+    expect(dts).toEqual(["Booked revenue", "Management fee", "Net before pending costs"]);
+  });
+
+  it("renames the empty-month sentence with labels.emptyMonth", () => {
+    mount(
+      { year: 2026, month: 11 },
+      { labels: { emptyMonth: (m) => `Nothing was issued for ${m}.` } },
+    );
+    const panel = document.querySelector("[role=tabpanel] [role=tabpanel]") as HTMLElement;
+    expect(panel.textContent).toBe("Nothing was issued for November 2026.");
+  });
+
+  it("shows an emptyMonthNotes reason for that month only, ahead of labels.emptyMonth", () => {
+    const withNote: OwnerPortalModel = {
+      ...model,
+      emptyMonthNotes: { "2026-11": "No statement: operations began in December." },
+    };
+    mount(
+      { year: 2026, month: 11 },
+      { model: withNote, labels: { emptyMonth: (m) => `Nothing for ${m}.` } },
+    );
+    const panel = () => document.querySelector("[role=tabpanel] [role=tabpanel]") as HTMLElement;
+    expect(panel().textContent).toBe("No statement: operations began in December.");
+    // A month with a statement is untouched by the notes.
+    const months = tabs("Month in 2026");
+    act(() => (months[0] as HTMLElement).click());
+    expect(panel().textContent).toContain("Final");
   });
 });
