@@ -15,6 +15,7 @@ export type {
   MonthGroup,
   OwnerPortalModel,
   StatementEntry,
+  StatementLabels,
   StatementStatus,
   Totals,
   YearGroup,

@@ -23,6 +23,18 @@ export type StatementEntry = {
 
 export type YearMonth = { year: number; month: number };
 
+/** Optional wording overrides. Anything left out keeps the default. */
+export type StatementLabels = {
+  /** Default "Booked revenue". */
+  bookedRevenue?: string;
+  /** Default "Management fee". */
+  managementFee?: string;
+  /** Default "To you". An entry's own `toOwnerLabel` still wins. */
+  toOwner?: string;
+  /** Default "There is no statement for {monthLabel}." */
+  emptyMonth?: (monthLabel: string) => string;
+};
+
 export type OwnerPortalModel = {
   owner: string;
   brand: string;
@@ -30,6 +42,11 @@ export type OwnerPortalModel = {
   from: YearMonth;
   through: YearMonth;
   statements: StatementEntry[];
+  /**
+   * Why a month has no statement, keyed "YYYY-MM" (e.g. "2026-09": "No statement: operations
+   * began September 28, 2026."). Shown instead of the default empty-month sentence.
+   */
+  emptyMonthNotes?: Record<string, string>;
 };
 
 export type MonthGroup = {

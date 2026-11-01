@@ -30,6 +30,16 @@ keys move and select (they wrap), Home and End jump to the ends. The selection i
 `?year=&month=` with `history.replaceState` and read back on load; a server page may pass the same
 values as `initial` so the first paint is already right.
 
+## Wording (v0.14.1)
+
+All optional; with none set the output is identical to v0.14.0.
+
+- `<StatementTabs labels={{ bookedRevenue, managementFee, toOwner, emptyMonth }} />` renames the three
+  figure captions (defaults "Booked revenue", "Management fee", "To you") and the empty-month
+  sentence (`emptyMonth(monthLabel)`). An entry's own `toOwnerLabel` still wins over `labels.toOwner`.
+- `model.emptyMonthNotes` is a `Record<"YYYY-MM", string>` saying why a month has no statement. It is
+  shown in place of the empty-month sentence for that month only.
+
 ## Styling
 
 Only CSS variables: `--op-ink`, `--op-paper`, `--op-accent`, `--op-muted`, `--op-rule`, and

@@ -11,18 +11,20 @@ import {
   parseSelection,
 } from "./core";
 import { STATEMENT_TABS_CSS } from "./styles";
-import type { OwnerPortalModel, StatementEntry, YearMonth } from "./types";
+import type { OwnerPortalModel, StatementEntry, StatementLabels, YearMonth } from "./types";
+
+const monthKey = (year: number, month: number) => `${year}-${String(month).padStart(2, "0")}`;
 
 const STATUS_WORD = { final: "Final", draft: "Draft", waiting: "Waiting" } as const;
 
-function Entry({ entry }: { entry: StatementEntry }) {
+function Entry({ entry, labels }: { entry: StatementEntry; labels?: StatementLabels }) {
   const figures: [string, number, boolean][] = [];
   if (entry.bookedRevenue !== undefined)
-    figures.push(["Booked revenue", entry.bookedRevenue, false]);
+    figures.push([labels?.bookedRevenue ?? "Booked revenue", entry.bookedRevenue, false]);
   if (entry.managementFee !== undefined)
-    figures.push(["Management fee", entry.managementFee, false]);
+    figures.push([labels?.managementFee ?? "Management fee", entry.managementFee, false]);
   if (entry.toOwner !== undefined)
-    figures.push([entry.toOwnerLabel ?? "To you", entry.toOwner, true]);
+    figures.push([entry.toOwnerLabel ?? labels?.toOwner ?? "To you", entry.toOwner, true]);
   return (
     <article className="op-entry" data-status={entry.status}>
       <div className="op-head">
@@ -58,9 +60,12 @@ function Entry({ entry }: { entry: StatementEntry }) {
 export function StatementTabs({
   model,
   initial,
+  labels,
 }: {
   model: OwnerPortalModel;
   initial?: YearMonth;
+  /** Rename the three figure captions and the empty-month sentence. Defaults are unchanged. */
+  labels?: StatementLabels;
 }) {
   const groups = useMemo(() => groupStatements(model), [model]);
   const base = useId();
@@ -227,10 +232,14 @@ export function StatementTabs({
           tabIndex={0}
         >
           {monthGroup.entries.length === 0 ? (
-            <p className="op-empty">There is no statement for {monthGroup.label}.</p>
+            <p className="op-empty">
+              {model.emptyMonthNotes?.[monthKey(yearGroup.year, monthGroup.month)] ??
+                labels?.emptyMonth?.(monthGroup.label) ??
+                `There is no statement for ${monthGroup.label}.`}
+            </p>
           ) : (
             monthGroup.entries.map((e) => (
-              <Entry key={`${e.label}-${e.property ?? ""}`} entry={e} />
+              <Entry key={`${e.label}-${e.property ?? ""}`} entry={e} labels={labels} />
             ))
           )}
         </div>
