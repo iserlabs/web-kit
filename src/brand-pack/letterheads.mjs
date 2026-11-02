@@ -108,6 +108,38 @@ function body(email, c, t, s) {
             .join("");
           return `${b.intro ? `<p style="${P}margin-bottom:6px;">${esc(b.intro)}</p>` : ""}${table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`)}`;
         }
+        case "heading":
+          return `<p style="margin:30px 0 12px 0;padding-top:16px;border-top:1px solid ${t.line};font-family:${c.bodyFont};font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;line-height:1.4;color:${c.accent};">${esc(b.text)}</p>`;
+        case "table": {
+          // A real data table: header cells carry scope, the first column reads left, the rest right
+          // (figures line up), and `align` overrides per column. Sized for a phone at 600px max.
+          const al = (i) => b.align?.[i] ?? (i === 0 ? "left" : "right");
+          const cell = (i, head, strong) =>
+            `padding:${head ? "8px" : "11px"} ${i === b.columns.length - 1 ? 0 : 10}px ${head ? "8px" : "11px"} 0;text-align:${al(i)};vertical-align:top;border-bottom:1px solid ${head ? t.rule : t.line};font-family:${head ? c.bodyFont : s.font};font-size:${head ? 12 : s.size - 1}px;line-height:1.35;color:${head ? t.soft : c.ink};${head ? "font-weight:700;letter-spacing:.06em;text-transform:uppercase;" : ""}${strong ? "font-weight:700;" : ""}${i === 0 ? "" : "white-space:nowrap;"}`;
+          const head = `<tr>${b.columns.map((h, i) => `<th scope="col" style="${cell(i, true)}">${esc(h)}</th>`).join("")}</tr>`;
+          const rows = b.rows
+            .map((r, ri) => `<tr>${r.map((v, i) => (i === 0 ? `<th scope="row" style="${cell(i, false, true)}">${esc(v)}</th>` : `<td style="${cell(i, false, b.strongColumn === i)}">${esc(v)}</td>`)).join("")}</tr>`)
+            .join("");
+          const note = b.note ? `<p style="margin:-14px 0 24px 0;font-family:${c.bodyFont};font-size:14px;line-height:1.5;color:${t.soft};">${esc(b.note)}</p>` : "";
+          return `${b.intro ? `<p style="${P}margin-bottom:8px;">${esc(b.intro)}</p>` : ""}<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 24px 0;">${b.caption ? `<caption style="text-align:left;padding:0 0 6px 0;font-family:${c.bodyFont};font-size:13px;color:${t.soft};">${esc(b.caption)}</caption>` : ""}${head}${rows}</table>${note}`;
+        }
+        case "bars": {
+          // A horizontal bar chart built from table cells, so Gmail and Outlook draw it with no image
+          // or SVG. Each bar is scaled to the largest value; the printed figure is the accessible value.
+          const max = Math.max(...b.rows.map(([, v]) => v));
+          const rows = b.rows
+            .map(([label, v, shown]) => {
+              const pct = Math.max(1, Math.round((v / max) * 100));
+              const bar = table(
+                `<tr><td width="${pct}%" style="width:${pct}%;height:14px;background-color:${b.color ?? c.accent};font-size:0;line-height:0;">&nbsp;</td>${pct < 100 ? `<td style="font-size:0;line-height:0;">&nbsp;</td>` : ""}</tr>`,
+              );
+              const td = `padding:7px 0;border-bottom:1px solid ${t.line};vertical-align:middle;font-family:${s.font};font-size:${s.size - 2}px;line-height:1.3;color:${c.ink};`;
+              return `<tr><td style="${td}width:30%;padding-right:10px;">${esc(label)}</td><td aria-hidden="true" style="${td}">${bar}</td><td style="${td}width:1%;white-space:nowrap;text-align:right;padding-left:10px;font-weight:700;">${esc(shown ?? v)}</td></tr>`;
+            })
+            .join("");
+          const note = b.note ? `<p style="margin:-14px 0 24px 0;font-family:${c.bodyFont};font-size:14px;line-height:1.5;color:${t.soft};">${esc(b.note)}</p>` : "";
+          return `${b.intro ? `<p style="${P}margin-bottom:8px;">${esc(b.intro)}</p>` : ""}${table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`)}${note}`;
+        }
         case "link":
           return s.link(b);
         default:
@@ -418,6 +450,11 @@ export function letterheadPlainText(email, person) {
       return [b.intro, ...b.items.map((x, i) => `${i + 1}) ${x}`)].filter(Boolean).join("\n\n");
     if (b.type === "figures")
       return [b.intro, ...b.rows.map(([l, a]) => `${l} ${a}`)].filter(Boolean).join("\n");
+    if (b.type === "heading") return b.text.toUpperCase();
+    if (b.type === "table")
+      return [b.intro, b.columns.join(" | "), ...b.rows.map((r) => r.join(" | ")), b.note].filter(Boolean).join("\n");
+    if (b.type === "bars")
+      return [b.intro, ...b.rows.map(([l, v, shown]) => `${l}: ${shown ?? v}`), b.note].filter(Boolean).join("\n");
     return b.text;
   });
   const sig = [person.name, person.title, person.phone, person.email].filter(Boolean).join("\n");

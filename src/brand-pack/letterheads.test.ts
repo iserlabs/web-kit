@@ -295,3 +295,53 @@ describe("letterhead variants", () => {
     );
   });
 });
+
+describe("heading, table and bars blocks", () => {
+  const data = {
+    subject: "s",
+    blocks: [
+      { type: "heading", text: "Examples" },
+      {
+        type: "table",
+        intro: "Three sizes:",
+        columns: ["Homes", "Desk", "Setup"],
+        rows: [
+          ["5 homes", "$495", "$1,295"],
+          ["10 homes", "$990", "$2,290"],
+        ],
+        note: "Setup is waived with three months paid ahead.",
+      },
+      {
+        type: "bars",
+        intro: "Average setup per home:",
+        rows: [
+          ["3 homes", 299, "$299"],
+          ["60 homes", 122, "$122"],
+        ],
+      },
+    ],
+  };
+
+  it("prints every heading, cell, bar label and value in every layout", () => {
+    for (const id of LETTERHEAD_IDS) {
+      const text = parse(renderLetterhead(id, config, person, data)).textContent;
+      for (const s of ["Examples", "Homes", "5 homes", "$1,295", "$2,290", "Setup is waived", "60 homes", "$122"])
+        expect(text, `${id}: ${s}`).toContain(s);
+    }
+  });
+
+  it("marks table headers with scope and scales each bar to the largest value", () => {
+    const out = renderLetterhead("paper", config, person, data);
+    expect(out).toContain('<th scope="col"');
+    expect(out).toContain('<th scope="row"');
+    expect(out).toContain('width="100%"');
+    expect(out).toContain('width="41%"');
+  });
+
+  it("carries tables and bars into the plain-text part", () => {
+    const txt = letterheadPlainText(data, person);
+    expect(txt).toContain("EXAMPLES");
+    expect(txt).toContain("10 homes | $990 | $2,290");
+    expect(txt).toContain("60 homes: $122");
+  });
+});
