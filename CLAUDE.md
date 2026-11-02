@@ -23,7 +23,7 @@ or commit SHA in their `package.json` (`github:iserlabs/web-kit#<ref>`).
 ## Exports
 
 `@iserlabs/web-kit/{biome, tsconfig, tsconfig-next, tailwind, seo, schema, forms,
-env, utils, audits, brand-pack, artist, inquiry, owner-portal, observability, observability/env, observability/server}`. Notes:
+env, utils, audits, brand-pack, artist, inquiry, owner-portal, desk/*, observability, observability/env, observability/server}`. Notes:
 - `tsconfig` is **lib-oriented** (ES2022 / `noUncheckedIndexedAccess` /
   `verbatimModuleSyntax`) and breaks Next apps — Next sites extend
   `tsconfig-next` instead (the Next-safe preset).
@@ -32,6 +32,9 @@ env, utils, audits, brand-pack, artist, inquiry, owner-portal, observability, ob
 - `observability` provides error/event notification helpers (dedup, severity
   scrubbing, Discord notify); `observability/env` and `observability/server`
   are scoped sub-paths for env-var access and server-side transport.
+- `desk/*` is the back-office Desk's general engines, one path per file (see `docs/desk.md`).
+  Framework-free `.ts` except `unsaved` (React). A site's own facts are handed in, never written
+  here; this repo is public, so no client name, address or hosting ID goes in a file or a comment.
 - `artist` is the artist-site module (artwork record, availability, CV, shows,
   press kit, studio auth, studio store, studio route handlers), first used by
   julianpotulicki.com.

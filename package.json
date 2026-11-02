@@ -1,6 +1,6 @@
 {
   "name": "@iserlabs/web-kit",
-  "version": "0.14.1",
+  "version": "0.15.0",
   "private": false,
   "type": "module",
   "license": "MIT",
@@ -29,6 +29,17 @@
       "types": "./src/brand-pack/types.d.ts",
       "default": "./src/brand-pack/index.mjs"
     },
+    "./desk/fold-groups": "./src/desk/fold-groups.ts",
+    "./desk/ics": "./src/desk/ics.ts",
+    "./desk/intake-guard": "./src/desk/intake-guard.ts",
+    "./desk/list-search": "./src/desk/list-search.ts",
+    "./desk/dispatch-schedule": "./src/desk/dispatch-schedule.ts",
+    "./desk/dispatch-text": "./src/desk/dispatch-text.ts",
+    "./desk/session-age": "./src/desk/session-age.ts",
+    "./desk/shrink-photo": "./src/desk/shrink-photo.ts",
+    "./desk/trail": "./src/desk/trail.ts",
+    "./desk/unsaved": "./src/desk/unsaved.ts",
+    "./desk/visits": "./src/desk/visits.ts",
     "./observability": "./src/observability/index.ts",
     "./observability/env": "./src/observability/env.ts",
     "./observability/server": "./src/observability/server.ts"
