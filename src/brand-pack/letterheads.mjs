@@ -140,6 +140,45 @@ function body(email, c, t, s) {
           const note = b.note ? `<p style="margin:-14px 0 24px 0;font-family:${c.bodyFont};font-size:14px;line-height:1.5;color:${t.soft};">${esc(b.note)}</p>` : "";
           return `${b.intro ? `<p style="${P}margin-bottom:8px;">${esc(b.intro)}</p>` : ""}${table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`)}${note}`;
         }
+        case "kpis": {
+          // Owner statement tiles, two across so a phone holds them: big figure, plain label, the
+          // denominator under it. Table cells only, so Gmail and Outlook draw them the same.
+          const lastRow = Math.floor((b.tiles.length - 1) / 2);
+          const tile = (k, i) =>
+            `<td width="50%" style="width:50%;padding:14px 12px 14px 0;vertical-align:top;${Math.floor(i / 2) === lastRow ? "" : `border-bottom:1px solid ${t.line};`}">` +
+            `<div style="font-family:${c.bodyFont};font-size:13px;line-height:1.35;color:${t.soft};">${esc(k.label)}</div>` +
+            `<div style="font-family:${c.displayFont};font-size:30px;line-height:1.2;color:${c.ink};padding-top:3px;font-variant-numeric:tabular-nums;">${esc(k.value)}</div>` +
+            (k.note ? `<div style="font-family:${c.bodyFont};font-size:13px;line-height:1.4;color:${t.soft};padding-top:3px;">${esc(k.note)}</div>` : "") +
+            `</td>`;
+          const rows = [];
+          for (let i = 0; i < b.tiles.length; i += 2)
+            rows.push(`<tr>${tile(b.tiles[i], i)}${b.tiles[i + 1] ? tile(b.tiles[i + 1], i + 1) : "<td></td>"}</tr>`);
+          return table(rows.join(""), `margin:0 0 24px 0;border-top:1px solid ${t.line};`);
+        }
+        case "ledger": {
+          // One column of money that foots top to bottom: plain lines, a landing (sub), the total.
+          const rows = b.rows
+            .map((r) => {
+              const total = r.kind === "total";
+              const sub = r.kind === "sub";
+              const cell = `padding:${total ? "14px" : "10px"} 0;${total ? `border-top:2px solid ${t.rule};` : sub ? `border-top:1px solid ${t.rule};` : ""}${total ? "" : `border-bottom:1px solid ${t.line};`}font-family:${s.font};font-size:${total ? s.size + 1 : s.size}px;line-height:1.35;color:${c.ink};${total || sub ? "font-weight:700;" : ""}vertical-align:baseline;`;
+              const amount = total ? `font-size:${s.size + 8}px;` : "";
+              const note = r.note ? `<div style="font-family:${c.bodyFont};font-size:13px;line-height:1.4;font-weight:400;color:${t.soft};padding-top:2px;">${esc(r.note)}</div>` : "";
+              return `<tr><td style="${cell}">${esc(r.label)}${note}</td><td align="right" style="${cell}${amount}text-align:right;white-space:nowrap;padding-left:12px;width:1%;font-variant-numeric:tabular-nums;">${esc(r.value)}</td></tr>`;
+            })
+            .join("");
+          return table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`);
+        }
+        case "links": {
+          // Several links in one ruled panel, so they never stack two panels' rules.
+          const rows = b.rows
+            .map(
+              (r, i) =>
+                `<tr><td style="padding:14px 0;${i ? `border-top:1px solid ${t.line};` : ""}font-family:${s.font};font-size:${s.size}px;line-height:1.5;color:${c.ink};">${esc(r.label)}<br><a href="${esc(r.href)}" style="color:${t.link};text-decoration:underline;word-break:break-word;">${esc(r.href)}</a></td></tr>`,
+            )
+            .join("");
+          return table(rows, `margin:0 0 22px 0;border-top:1px solid ${t.rule};border-bottom:1px solid ${t.rule};`);
+        }
         case "link":
           return s.link(b);
         default:
@@ -451,6 +490,10 @@ export function letterheadPlainText(email, person) {
     if (b.type === "figures")
       return [b.intro, ...b.rows.map(([l, a]) => `${l} ${a}`)].filter(Boolean).join("\n");
     if (b.type === "heading") return b.text.toUpperCase();
+    if (b.type === "kpis")
+      return b.tiles.map((k) => `${k.label}: ${k.value}${k.note ? ` (${k.note})` : ""}`).join("\n");
+    if (b.type === "ledger") return b.rows.map((r) => `${r.label}: ${r.value}`).join("\n");
+    if (b.type === "links") return b.rows.map((r) => `${r.label}\n${r.href}`).join("\n\n");
     if (b.type === "table")
       return [b.intro, b.columns.join(" | "), ...b.rows.map((r) => r.join(" | ")), b.note].filter(Boolean).join("\n");
     if (b.type === "bars")
