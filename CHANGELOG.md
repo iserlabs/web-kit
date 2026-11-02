@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **Biome preset: Biome 2.6, Markdown and YAML formatting off.** `@iserlabs/web-kit/biome` now points at the 2.6.4 schema and sets `markdown.formatter.enabled` and `yaml.formatter.enabled` to `false`, the fleet policy hub adopted, so Biome 2.6 does not start reformatting docs and workflow files. Biome 2.5 rejects the `markdown` and `yaml` keys as unknown configuration, so a site must be on `@biomejs/biome` 2.6 or later before it moves to this tag.
 - **Accessibility audit covers WCAG 2.1 and 2.2.** The extended-tier axe check now runs the `wcag21a`, `wcag21aa` and `wcag22aa` rules alongside `wcag2a` and `wcag2aa` (exported as `DEFAULT_AXE_TAGS`). A site that sets its own `axe.tags` keeps exactly those tags. Expect new advisory findings on sites that passed before, such as touch target size (2.2) and autocomplete and text spacing (2.1).
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
