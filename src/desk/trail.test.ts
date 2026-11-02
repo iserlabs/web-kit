@@ -64,7 +64,7 @@ describe("the trail in words", () => {
   });
   it("calls a visit with no outside road typed or bookmarked", () => {
     const w = describeTrail(
-      cleanTrail({ ...good, visit: { t: T, land: "/", ref: "", utm: {} }, first: null }),,
+      cleanTrail({ ...good, visit: { t: T, land: "/", ref: "", utm: {} }, first: null }),
       sourceOf,
     );
     expect(w?.source).toBe("Typed or bookmarked");
@@ -75,7 +75,7 @@ describe("the trail in words", () => {
       cleanTrail({
         ...good,
         visit: { t: T, land: "/", ref: "", utm: { source: "newsletter", medium: "email" } },
-      }),,
+      }),
       sourceOf,
     );
     expect(w?.source).toBe("Newsletter");

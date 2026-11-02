@@ -145,11 +145,7 @@ function hostOf(url: unknown): string {
 
 /** A page address as one line: no ".html", no trailing slash, the home page as "/". */
 export function cleanPath(p: unknown): string {
-  let s =
-    String(p ?? "/")
-      .split("?")[0]
-      .split("#")[0]
-      .trim() || "/";
+  let s = ((String(p ?? "/").split("?")[0] as string).split("#")[0] as string).trim() || "/";
   if (s[0] !== "/") s = `/${s}`;
   s = s.replace(/\/index(\.html)?$/, "/").replace(/\.html$/, "");
   if (s.length > 1) s = s.replace(/\/+$/, "");
@@ -202,7 +198,7 @@ export function nyDay(ms: number | string): string {
 
 /** The day before or after a YYYY-MM-DD day, by calendar, with no clock involved. */
 export function shiftDay(day: string, n: number): string {
-  const [y, m, d] = String(day).split("-").map(Number);
+  const [y, m, d] = String(day).split("-").map(Number) as [number, number, number];
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 }
 
@@ -302,12 +298,9 @@ function sourceOfFor(referrer: unknown, queryParams: unknown, site: VisitSite): 
   if (ref) {
     host = hostOf(ref) || hostOf(`https://${ref.replace(/^[a-z-]+:\/\//i, "")}`);
     if (/^android-app:\/\//i.test(ref))
-      host = ref
-        .replace(/^android-app:\/\//i, "")
-        .split("/")[0]
-        .toLowerCase();
+      host = (ref.replace(/^android-app:\/\//i, "").split("/")[0] as string).toLowerCase();
   }
-  if (host && hosts.includes(host)) {
+  if (host && site.hosts.includes(host)) {
     if (utmSource)
       return {
         source: utmMedium === "email" ? "Newsletter" : "Other websites",
@@ -400,12 +393,12 @@ export function capMap(map: Counts, cap: number): Counts {
   if (keys.length <= cap) return map;
   const sorted = keys
     .filter((k) => k !== OTHER)
-    .sort((a, b) => map[b] - map[a] || a.localeCompare(b));
+    .sort((a, b) => (map[b] as number) - (map[a] as number) || a.localeCompare(b));
   const out: Counts = {};
   let rest = map[OTHER] || 0;
   sorted.forEach((k, i) => {
-    if (i < cap - 1) out[k] = map[k];
-    else rest += map[k];
+    if (i < cap - 1) out[k] = map[k] as number;
+    else rest += map[k] as number;
   });
   if (rest) out[OTHER] = rest;
   return out;
@@ -425,7 +418,7 @@ function foldDayFor(
 ): { record: DayRecord; folded: number; repeat: boolean } {
   const base: DayRecord = record
     ? JSON.parse(JSON.stringify(record))
-    : emptyDay(events.length ? nyDay(events[0].timestamp as number) : "");
+    : emptyDay(events.length ? nyDay((events[0] as VercelEvent).timestamp as number) : "");
   const day = base.day;
   if (batch && base.batches.includes(batch)) return { record: base, folded: 0, repeat: true };
   const ids = new Set(base.ids || []);
@@ -489,7 +482,7 @@ function foldDayFor(
     "browsers",
     "systems",
   ] as const)
-    base[k] = capMap(base[k], CAPS[k]);
+    base[k] = capMap(base[k], CAPS[k] as number);
   if (batch) base.batches = base.batches.concat([batch]).slice(-BATCH_MEMORY);
   return { record: base, folded, repeat: false };
 }
@@ -521,7 +514,7 @@ function sortBatchFor(events: VercelEvent[], site: VisitSite) {
 /* ------------------------------------------------------------------ the Desk's view */
 
 function addInto(into: Counts, map: Counts | undefined) {
-  for (const k of Object.keys(map || {})) into[k] = (into[k] || 0) + (map as Counts)[k];
+  for (const k of Object.keys(map || {})) into[k] = (into[k] || 0) + ((map as Counts)[k] as number);
 }
 
 export type Row = { name: string; n: number; share: number | null };
@@ -530,11 +523,11 @@ export type Ranked = { rows: Row[]; rest: number };
 function ranked(map: Counts, total: number, limit: number): Ranked {
   const rows = Object.keys(map || {})
     .filter((k) => k !== OTHER)
-    .sort((a, b) => map[b] - map[a] || a.localeCompare(b))
+    .sort((a, b) => (map[b] as number) - (map[a] as number) || a.localeCompare(b))
     .map((k) => ({
       name: k,
-      n: map[k],
-      share: total > 0 ? Math.round((map[k] / total) * 100) : null,
+      n: map[k] as number,
+      share: total > 0 ? Math.round(((map[k] as number) / total) * 100) : null,
     }));
   const shown = rows.slice(0, limit);
   const rest = rows.slice(limit).reduce((n, r) => n + r.n, 0) + (map[OTHER] || 0);
@@ -559,8 +552,7 @@ export function summarize(
   const from = shiftDay(today, -(days - 1));
   const span = daysBetween(from, today);
   const totals = { pageviews: 0, visitors: 0, arrivals: 0 };
-  const maps: Record<string, Counts> = {};
-  for (const k of [
+  const mapKeys = [
     "pages",
     "sources",
     "sites",
@@ -573,8 +565,9 @@ export function summarize(
     "entries",
     "browsers",
     "systems",
-  ])
-    maps[k] = {};
+  ] as const;
+  const maps = {} as Record<(typeof mapKeys)[number], Counts>;
+  for (const k of mapKeys) maps[k] = {};
   const byDay: Array<{ day: string; pageviews: number; visitors: number }> = [];
   const weekdayVisitors = [0, 0, 0, 0, 0, 0, 0];
   for (const d of span) {
@@ -585,9 +578,9 @@ export function summarize(
     totals.pageviews += r.pageviews;
     totals.visitors += r.visitors;
     totals.arrivals += r.arrivals;
-    weekdayVisitors[new Date(`${d}T12:00:00Z`).getUTCDay()] += r.visitors;
-    for (const k of Object.keys(maps))
-      addInto(maps[k], (r as unknown as Record<string, Counts>)[k]);
+    const weekday = new Date(`${d}T12:00:00Z`).getUTCDay();
+    weekdayVisitors[weekday] = (weekdayVisitors[weekday] as number) + r.visitors;
+    for (const k of mapKeys) addInto(maps[k], (r as unknown as Record<string, Counts>)[k]);
   }
   /* Averages use finished days only: today is still filling. */
   const done = byDay.filter((r) => r.day < today);
@@ -651,7 +644,7 @@ export function summarize(
       return { hour: h, n: maps.hours[h] || 0 };
     }),
     weekdays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(
-      (name, i) => ({ name, n: weekdayVisitors[i] }),
+      (name, i) => ({ name, n: weekdayVisitors[i] as number }),
     ),
     pagesPerVisitor: totals.visitors
       ? Math.round((totals.pageviews / totals.visitors) * 10) / 10

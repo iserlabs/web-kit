@@ -106,7 +106,7 @@ describe("keeping the open row visible", () => {
      with nothing selected next to it, which reads as a bug. */
   it("puts the open row on top when the cap would have hidden it", () => {
     const out = pinOpen(capped, rows, false, isOpen("r40"));
-    expect(out[0].id).toBe("r40");
+    expect(out[0]?.id).toBe("r40");
     expect(out).toHaveLength(TOP + 1);
   });
 

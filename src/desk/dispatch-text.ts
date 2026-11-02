@@ -96,8 +96,8 @@ export function wordsLinkProblems(words: unknown): string[] {
   const text = String(words == null ? "" : words);
   const out: string[] = [];
   for (const m of text.matchAll(LINK)) {
-    const label = m[1].trim();
-    const href = m[2];
+    const label = (m[1] as string).trim();
+    const href = m[2] as string;
     if (!label) {
       out.push(`A link in the words has an address but no words to click: ${href.slice(0, 60)}`);
       continue;
@@ -139,7 +139,7 @@ export function inline(words: unknown, look: Look): string {
     },
   );
   return marks(esc(held)).replace(new RegExp(`${OPEN}(\\d+)${CLOSE}`, "g"), (_m, n: string) => {
-    const l = found[Number(n)];
+    const l = found[Number(n)] as { label: string; href: string };
     const label = marks(esc(l.label.trim()));
     const href = safeHref(l.href, { mailto: true });
     return href

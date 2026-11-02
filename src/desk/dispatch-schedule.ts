@@ -33,7 +33,13 @@ export function nyParts(ms: number): { y: number; mo: number; d: number; h: numb
   for (const p of parts.formatToParts(new Date(ms))) {
     if (p.type !== "literal") get[p.type] = Number(p.value);
   }
-  return { y: get.year, mo: get.month, d: get.day, h: get.hour % 24, mi: get.minute };
+  return {
+    y: get.year as number,
+    mo: get.month as number,
+    d: get.day as number,
+    h: (get.hour as number) % 24,
+    mi: get.minute as number,
+  };
 }
 
 export type Resolved = { ok: true; at: Date; ambiguous: boolean } | { ok: false; error: string };
@@ -78,7 +84,7 @@ export function nyWallToInstant(date: string, hour24: number, minute: number): R
     };
   }
   found.sort((a, b) => a - b);
-  return { ok: true, at: new Date(found[0]), ambiguous: found.length > 1 };
+  return { ok: true, at: new Date(found[0] as number), ambiguous: found.length > 1 };
 }
 
 /** 12-hour clock to 24-hour. 12:00 AM is midnight, 12:00 PM is noon. */

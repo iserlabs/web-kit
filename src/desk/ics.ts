@@ -27,7 +27,13 @@ function nyOffsetMinutes(utcMs: number): number {
       .formatToParts(new Date(utcMs))
       .map((p) => [p.type, p.value]),
   );
-  const asUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute);
+  const asUtc = Date.UTC(
+    +(parts.year as string),
+    +(parts.month as string) - 1,
+    +(parts.day as string),
+    +(parts.hour as string),
+    +(parts.minute as string),
+  );
   return Math.round((utcMs - asUtc) / 60000);
 }
 
@@ -35,7 +41,7 @@ function nyOffsetMinutes(utcMs: number): number {
 export function nyWallToUtc(wall: string): Date | null {
   const m = String(wall ?? "").match(WALL);
   if (!m) return null;
-  const [y, mo, d, h, mi] = m.slice(1).map(Number);
+  const [y, mo, d, h, mi] = m.slice(1).map(Number) as [number, number, number, number, number];
   if (mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || mi > 59) return null;
   const naive = Date.UTC(y, mo - 1, d, h, mi);
   let t = naive + nyOffsetMinutes(naive) * 60000;
