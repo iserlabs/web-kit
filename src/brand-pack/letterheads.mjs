@@ -163,8 +163,9 @@ function body(email, c, t, s) {
               const sub = r.kind === "sub";
               const cell = `padding:${total ? "14px" : "10px"} 0;${total ? `border-top:2px solid ${t.rule};` : sub ? `border-top:1px solid ${t.rule};` : ""}${total ? "" : `border-bottom:1px solid ${t.line};`}font-family:${s.font};font-size:${total ? s.size + 1 : s.size}px;line-height:1.35;color:${c.ink};${total || sub ? "font-weight:700;" : ""}vertical-align:baseline;`;
               const amount = total ? `font-size:${s.size + 8}px;` : "";
-              const note = r.note ? `<div style="font-family:${c.bodyFont};font-size:13px;line-height:1.4;font-weight:400;color:${t.soft};padding-top:2px;">${esc(r.note)}</div>` : "";
-              return `<tr><td style="${cell}">${esc(r.label)}${note}</td><td align="right" style="${cell}${amount}text-align:right;white-space:nowrap;padding-left:12px;width:1%;font-variant-numeric:tabular-nums;">${esc(r.value)}</td></tr>`;
+              const note = r.note ? `<div style="font-family:${c.bodyFont};font-size:${b.noteSize ?? 13}px;line-height:1.4;font-weight:400;color:${t.soft};padding-top:2px;">${esc(r.note)}</div>` : "";
+              const link = r.href ? `<div style="font-family:${c.bodyFont};font-size:14px;line-height:1.4;font-weight:400;padding-top:4px;"><a href="${esc(r.href)}" style="color:${t.link};text-decoration:underline;">${esc(r.linkText ?? "View")}</a></div>` : "";
+              return `<tr><td style="${cell}">${esc(r.label)}${note}${link}</td><td align="right" style="${cell}${amount}text-align:right;white-space:nowrap;padding-left:12px;width:1%;font-variant-numeric:tabular-nums;">${esc(r.value)}</td></tr>`;
             })
             .join("");
           return table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`);
@@ -492,7 +493,8 @@ export function letterheadPlainText(email, person) {
     if (b.type === "heading") return b.text.toUpperCase();
     if (b.type === "kpis")
       return b.tiles.map((k) => `${k.label}: ${k.value}${k.note ? ` (${k.note})` : ""}`).join("\n");
-    if (b.type === "ledger") return b.rows.map((r) => `${r.label}: ${r.value}`).join("\n");
+    if (b.type === "ledger")
+      return b.rows.map((r) => [`${r.label}: ${r.value}`, r.note, r.href && `${r.linkText ?? "View"}: ${r.href}`].filter(Boolean).join("\n")).join(b.rows.some((r) => r.href) ? "\n\n" : "\n");
     if (b.type === "links") return b.rows.map((r) => `${r.label}\n${r.href}`).join("\n\n");
     if (b.type === "table")
       return [b.intro, b.columns.join(" | "), ...b.rows.map((r) => r.join(" | ")), b.note].filter(Boolean).join("\n");
