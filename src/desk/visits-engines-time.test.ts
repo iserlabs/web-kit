@@ -264,6 +264,16 @@ describe("time on page and time on site", () => {
     expect(record.siteSeconds).toBe(50);
     expect(record.timedVisitors).toBe(1);
   });
+  it("reads a continuation sent under its own event name, with only two properties", () => {
+    const more = timed(20, {
+      eventName: "page_time_more",
+      eventData: JSON.stringify({ seconds: 20, path: "/spaces" }),
+    });
+    const { record } = foldDay(fresh(), [timed(30), more], { hasher });
+    expect(record.pageSeconds).toEqual({ "/spaces": 50 });
+    expect(record.pageTimed).toEqual({ "/spaces": 1 });
+    expect(record.siteSeconds).toBe(50);
+  });
   it("keeps a continuation's seconds when its first timing never arrived and the list is full", () => {
     const events = [
       ...Array.from({ length: 70 }, (_, i) => timed(10, { path: `/p${i}`, deviceId: i })),

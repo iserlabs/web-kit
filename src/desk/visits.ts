@@ -77,6 +77,12 @@ export type VercelEvent = {
 
 /** The one custom event the Desk reads: how long a page was on screen, in whole seconds. */
 export const PAGE_TIME_EVENT = "page_time";
+/**
+ * More time on a page view already timed (the tab was hidden, then shown again). Its own name
+ * rather than a third property, because Vercel's Pro plan carries two properties per custom
+ * event (seconds and path). A `more: true` property is still honored for older senders.
+ */
+export const PAGE_TIME_MORE_EVENT = "page_time_more";
 /** One timing is clamped to this many seconds (30 minutes). */
 export const MAX_PAGE_SECONDS = 1800;
 /** One visitor's timings for one day stop adding at this many seconds (4 hours). */
@@ -196,7 +202,16 @@ function eventDataOf(e: VercelEvent): Record<string, unknown> {
 
 /** Whether an event is the page-time custom event, whatever else is wrong with it. */
 export function isPageTime(e: VercelEvent | null | undefined): boolean {
-  return !!e && e.eventType === "event" && e.eventName === PAGE_TIME_EVENT;
+  return (
+    !!e &&
+    e.eventType === "event" &&
+    (e.eventName === PAGE_TIME_EVENT || e.eventName === PAGE_TIME_MORE_EVENT)
+  );
+}
+
+/** Whether a page-time event adds to a page view already counted rather than starting one. */
+function isContinuation(e: VercelEvent): boolean {
+  return e.eventName === PAGE_TIME_MORE_EVENT || eventDataOf(e).more === true;
 }
 
 /**
@@ -591,7 +606,7 @@ function foldTiming(base: DayRecord, e: VercelEvent, hash: string) {
   base.pageTimed ??= {};
   bump(base.pageSeconds, path, seconds);
   /* A continuation (the page was hidden, then shown again) adds time to a page view already counted. */
-  bump(base.pageTimed, path, eventDataOf(e).more === true ? 0 : 1);
+  bump(base.pageTimed, path, isContinuation(e) ? 0 : 1);
 }
 
 /**
