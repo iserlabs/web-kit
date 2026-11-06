@@ -118,6 +118,16 @@ describe("letterhead variants", () => {
     }
   });
 
+  it("turns a web address in a sentence into an inline link, without the trailing period", () => {
+    const e = {
+      ...email,
+      blocks: [{ type: "p", text: "Schedule a call with me here: https://jakejjlee.com/meet." }],
+    };
+    const html = renderLetterhead("paper", config, person, e);
+    expect(html).toContain('<a href="https://jakejjlee.com/meet" style=');
+    expect(html).toContain(">https://jakejjlee.com/meet</a>.");
+  });
+
   it("shows a visible missing state when there is no header image yet", () => {
     const c = { ...config, letterhead: { ...config.letterhead, headerUrl: "__UNFILLED__" } };
     const html = renderLetterhead("paper", c, person, email);

@@ -78,11 +78,19 @@ const siteLabel = (c) => c.siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, ""
  */
 function body(email, c, t, s) {
   const P = `margin:0 0 18px 0;font-family:${s.font};font-size:${s.size}px;line-height:1.6;color:${c.ink};`;
+  // A web address written in a sentence stays in the sentence and becomes a
+  // plain underlined link, in the brand's link color. The "link" block is a
+  // button with its own rows; this is for "...a call with me here: <address>"
+  // where the sender wants one line, not a button (Jake, 2026-11-06).
+  const prose = (text) =>
+    esc(text).replace(/https?:\/\/[^\s<]+?(?=[.,;:!?)]*(?:\s|$))/g, (u) =>
+      `<a href="${u}" style="color:${t.link};text-decoration:underline;">${u}</a>`,
+    );
   return email.blocks
     .map((b) => {
       switch (b.type) {
         case "p":
-          return `<p style="${P}">${esc(b.text)}</p>`;
+          return `<p style="${P}">${prose(b.text)}</p>`;
         case "lead":
           return `<p style="${P}font-family:${s.leadFont ?? s.font};font-size:${s.leadSize}px;line-height:1.6;">${esc(b.text)}</p>`;
         case "close":
