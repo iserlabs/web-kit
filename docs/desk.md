@@ -4,7 +4,7 @@
 
 | Path | What it does | Site hands in |
 |---|---|---|
-| `desk/visits` | Daily visitor counts from Vercel's analytics drain, and how people found the site | `createVisits({ hosts, project, team, staffPrefixes?, listingHosts?, utmSources? })` |
+| `desk/visits` | Daily visitor counts from Vercel's analytics drain, how people found the site, which AI assistant sent them, and time on page and on site (from a `page_time` custom event the site sends) | `createVisits({ hosts, project, team, staffPrefixes?, listingHosts?, utmSources? })` |
 | `desk/trail` | How one person found the site, kept with their inquiry | `describeTrail(trail, sourceOf)`, with `sourceOf` from `createVisits` |
 | `desk/ics` | A one-event calendar file for "Add to calendar" | `icsFor({ calendar: { name, domain, product? }, title, start, ... })` |
 | `desk/intake-guard` | Body cap and rate limit for a public POST | nothing |
