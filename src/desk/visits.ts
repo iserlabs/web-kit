@@ -40,6 +40,7 @@ export const CAPS: Record<string, number> = {
   regions: 60,
   cities: 60,
   entries: 40,
+  engines: 20,
   browsers: 20,
   systems: 20,
 };
@@ -68,8 +69,18 @@ export type VercelEvent = {
   city?: string;
   clientName?: string;
   osName?: string;
+  /** A custom event's name, and its data: Vercel sends the data as a JSON string. */
+  eventName?: string;
+  eventData?: unknown;
   [key: string]: unknown;
 };
+
+/** The one custom event the Desk reads: how long a page was on screen, in whole seconds. */
+export const PAGE_TIME_EVENT = "page_time";
+/** One timing is clamped to this many seconds (30 minutes). */
+export const MAX_PAGE_SECONDS = 1800;
+/** One visitor's timings for one day stop adding at this many seconds (4 hours). */
+export const MAX_VISITOR_SECONDS = 4 * 3600;
 
 export type DayRecord = {
   day: string;
@@ -94,6 +105,20 @@ export type DayRecord = {
   batches: string[];
   firstAt: string | null;
   lastAt: string | null;
+  /*
+   * Added after the first records were stored, so every one is optional: a day written before
+   * these existed has none of them, and reading or folding into it must still work.
+   */
+  /** Arrivals from AI assistants, per engine (ChatGPT, Perplexity, ...). */
+  engines?: Counts;
+  /** Per page: total seconds on screen, and how many timings made that total. */
+  pageSeconds?: Counts;
+  pageTimed?: Counts;
+  /** Per visitor (salted hash, dropped when the day closes): seconds on the site that day. */
+  visitorSeconds?: Counts;
+  /** Seconds on the site across every visitor, and how many visitors sent a timing. */
+  siteSeconds?: number;
+  timedVisitors?: number;
 };
 
 /* ------------------------------------------------------------------ reading a delivery */
@@ -156,6 +181,44 @@ function isStaffPath(path: string, prefixes: readonly string[]): boolean {
   return prefixes.some((p) => path === p || path.startsWith(`${p}/`));
 }
 
+/** The data a custom event carries, as an object: Vercel sends a JSON string, an object is fine. */
+function eventDataOf(e: VercelEvent): Record<string, unknown> {
+  let d: unknown = e.eventData;
+  if (typeof d === "string") {
+    try {
+      d = JSON.parse(d);
+    } catch {
+      return {};
+    }
+  }
+  return d && typeof d === "object" && !Array.isArray(d) ? (d as Record<string, unknown>) : {};
+}
+
+/** Whether an event is the page-time custom event, whatever else is wrong with it. */
+export function isPageTime(e: VercelEvent | null | undefined): boolean {
+  return !!e && e.eventType === "event" && e.eventName === PAGE_TIME_EVENT;
+}
+
+/**
+ * The whole seconds a page_time event reports, clamped to 1..1800, or 0 when it reports none.
+ * Anything that is not a positive finite number is no timing at all.
+ */
+export function pageSecondsOf(e: VercelEvent): number {
+  const raw = eventDataOf(e).seconds;
+  const n = typeof raw === "number" ? raw : typeof raw === "string" ? Number(raw) : Number.NaN;
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(MAX_PAGE_SECONDS, Math.max(1, Math.round(n)));
+}
+
+/**
+ * The page a timing belongs to. The browser names it in the data because, when somebody moves to
+ * another page, the counter stamps the event with the page they arrived on, not the one they left.
+ */
+function timedPathOf(e: VercelEvent): string {
+  const named = eventDataOf(e).path;
+  return cleanPath(typeof named === "string" && named ? named : e.path);
+}
+
 /**
  * Whether one event is a page view on the production site, and if not, why not. "" keeps it.
  *
@@ -165,7 +228,9 @@ function isStaffPath(path: string, prefixes: readonly string[]): boolean {
  */
 function skipReasonFor(e: VercelEvent | null | undefined, site: VisitSite): string {
   if (!e || typeof e !== "object") return "unreadable";
-  if (e.eventType && e.eventType !== "pageview") return "custom-event";
+  const timing = isPageTime(e);
+  if (e.eventType && e.eventType !== "pageview" && !timing) return "custom-event";
+  if (timing && !pageSecondsOf(e)) return "bad-page-time";
   const p = String(e.projectId || "");
   const o = String(e.ownerId || "");
   if ((p || o) && p !== site.project && o !== site.team) return "other-project";
@@ -176,6 +241,7 @@ function skipReasonFor(e: VercelEvent | null | undefined, site: VisitSite): stri
   if (!Number.isFinite(Number(e.timestamp))) return "no-time";
   if (
     isStaffPath(cleanPath(e.path), site.staffPrefixes ?? STAFF_PREFIXES) ||
+    (timing && isStaffPath(timedPathOf(e), site.staffPrefixes ?? STAFF_PREFIXES)) ||
     /(^|&)edit=1(&|$)/.test(String(e.queryParams || ""))
   )
     return "desk";
@@ -236,8 +302,51 @@ export const SOURCES = [
 
 const SEARCH =
   /(^|\.)(bing\.com|duckduckgo\.com|yahoo\.com|ecosia\.org|baidu\.com|yandex\.[a-z.]+|search\.brave\.com|startpage\.com|kagi\.com|aol\.com|ask\.com|qwant\.com|naver\.com)$/;
-const AI =
-  /(^|\.)(chatgpt\.com|chat\.openai\.com|openai\.com|perplexity\.ai|claude\.ai|copilot\.microsoft\.com|gemini\.google\.com|bard\.google\.com|you\.com|phind\.com)$/;
+/**
+ * The AI assistants a visit can be traced to, by the address or app they came from. The group
+ * "AI assistants" stays the headline; the engine is the detail beneath it.
+ *
+ * WHAT CANNOT BE SEPARATED: Google's AI Overviews and AI Mode send people with the same referrer
+ * as ordinary Google search (google.com), so those visits are counted under "Google search" and
+ * never guessed into an AI group. The same holds for Grok inside x.com and Duck.ai when it is
+ * opened from duckduckgo.com: only an address that belongs to the assistant alone is counted.
+ *
+ * Android app ids (checked against the Play Store listing): ChatGPT com.openai.chatgpt, Gemini
+ * com.google.android.apps.bard, Claude com.anthropic.claude, Perplexity ai.perplexity.app.android,
+ * DeepSeek com.deepseek.chat, Grok ai.x.grok.
+ */
+const ENGINE_HOSTS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(^|\.)(chatgpt\.com|chat\.openai\.com|openai\.com)$|^com\.openai\.chatgpt$/, "ChatGPT"],
+  [/(^|\.)perplexity\.ai$|^ai\.perplexity\.app\.android$/, "Perplexity"],
+  [/(^|\.)claude\.ai$|^com\.anthropic\.claude$/, "Claude"],
+  [/(^|\.)(gemini\.google\.com|bard\.google\.com)$|^com\.google\.android\.apps\.bard$/, "Gemini"],
+  [/(^|\.)(copilot\.microsoft\.com|copilot\.cloud\.microsoft)$/, "Copilot"],
+  [/(^|\.)chat\.deepseek\.com$|^com\.deepseek\.chat$/, "DeepSeek"],
+  [/(^|\.)grok\.com$|^ai\.x\.grok$/, "Grok"],
+  [/(^|\.)meta\.ai$/, "Meta AI"],
+  [/(^|\.)poe\.com$/, "Poe"],
+  [/(^|\.)chat\.mistral\.ai$/, "Mistral"],
+  [/(^|\.)you\.com$/, "You.com"],
+  [/(^|\.)phind\.com$/, "Phind"],
+  [/(^|\.)duck\.ai$/, "Duck.ai"],
+];
+
+/** The engine names, in the order the Desk breaks ties. */
+export const AI_ENGINES: readonly string[] = ENGINE_HOSTS.map(([, name]) => name);
+
+/** The engine a link's own tag names (`utm_source=chatgpt.com`), or "". */
+const UTM_ENGINES: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^(chatgpt\.com|chatgpt|openai)$/, "ChatGPT"],
+  [/^(perplexity|perplexity\.ai)$/, "Perplexity"],
+  [/^(claude|claude\.ai)$/, "Claude"],
+  [/^gemini$/, "Gemini"],
+  [/^copilot$/, "Copilot"],
+];
+
+function engineOfHost(host: string): string {
+  for (const [re, name] of ENGINE_HOSTS) if (re.test(host)) return name;
+  return "";
+}
 const INSTAGRAM = /(^|\.)instagram\.com$/;
 const FACEBOOK = /(^|\.)(facebook\.com|fb\.com|fb\.me|messenger\.com)$/;
 const SOCIAL =
@@ -253,7 +362,6 @@ const UTM_SOURCES: Array<[RegExp, string]> = [
   [/^(fb|facebook|meta)$/, "Facebook"],
   [/^google$/, "Google search"],
   [/^(bing|duckduckgo|yahoo)$/, "Bing and other search engines"],
-  [/^(chatgpt\.com|chatgpt|openai|perplexity|claude)$/, "AI assistants"],
   [/^(eventbrite|allevents)$/, "Event and art listings"],
   [/^(email|mail)$/, "Other email"],
 ];
@@ -278,7 +386,8 @@ export function queryOf(qs: unknown): Record<string, string> {
   return out;
 }
 
-export type Source = { source: string; site: string };
+/** `engine` is set only for "AI assistants": which one. */
+export type Source = { source: string; site: string; engine?: string };
 
 /**
  * Where one page view came from, or null when it is a click inside the site (not an arrival).
@@ -290,6 +399,8 @@ function sourceOfFor(referrer: unknown, queryParams: unknown, site: VisitSite): 
   const utmSource = String(q.utm_source || "").toLowerCase();
   const utmMedium = String(q.utm_medium || "").toLowerCase();
   if (utmSource) {
+    for (const [re, engine] of UTM_ENGINES)
+      if (re.test(utmSource)) return { source: "AI assistants", site: "", engine };
     for (const [re, name] of [...(site.utmSources ?? []), ...UTM_SOURCES])
       if (re.test(utmSource)) return { source: name, site: "" };
   }
@@ -313,7 +424,8 @@ function sourceOfFor(referrer: unknown, queryParams: unknown, site: VisitSite): 
     if (utmSource) return { source: "Other websites", site: utmSource.slice(0, 60) };
     return { source: "Typed or bookmarked", site: "" };
   }
-  if (AI.test(host)) return { source: "AI assistants", site: "" };
+  const engine = engineOfHost(host);
+  if (engine) return { source: "AI assistants", site: "", engine };
   if (LISTINGS.test(host) || site.listingHosts?.test(host))
     return { source: "Event and art listings", site: host.replace(/^www\./, "") };
   if (MAIL.test(host)) return { source: "Other email", site: "" };
@@ -379,6 +491,12 @@ export function emptyDay(day: string): DayRecord {
     batches: [],
     firstAt: null,
     lastAt: null,
+    engines: {},
+    pageSeconds: {},
+    pageTimed: {},
+    visitorSeconds: {},
+    siteSeconds: 0,
+    timedVisitors: 0,
   };
 }
 
@@ -405,6 +523,77 @@ export function capMap(map: Counts, cap: number): Counts {
 }
 
 /**
+ * Cut a pair of maps that share their keys (seconds and how many timings made them) to the top
+ * `cap` keys by timings, folding the rest into one OTHER line in both, so the pair stays whole.
+ */
+export function capPairs(
+  seconds: Counts,
+  timed: Counts,
+  cap: number,
+): { seconds: Counts; timed: Counts } {
+  const keys = Object.keys(timed || {});
+  if (keys.length <= cap) return { seconds, timed };
+  const sorted = keys
+    .filter((k) => k !== OTHER)
+    .sort((a, b) => (timed[b] as number) - (timed[a] as number) || a.localeCompare(b));
+  const outS: Counts = {};
+  const outT: Counts = {};
+  let restS = seconds[OTHER] || 0;
+  let restT = timed[OTHER] || 0;
+  sorted.forEach((k, i) => {
+    if (i < cap - 1) {
+      outS[k] = seconds[k] || 0;
+      outT[k] = timed[k] as number;
+    } else {
+      restS += seconds[k] || 0;
+      restT += timed[k] as number;
+    }
+  });
+  if (restT) {
+    outS[OTHER] = restS;
+    outT[OTHER] = restT;
+  }
+  return { seconds: outS, timed: outT };
+}
+
+/**
+ * Add one page_time event to a day. The page gets its seconds; the visitor (by the same salted
+ * hash as the visit, never a raw id) gets the same seconds toward their time on the site, up to
+ * four hours a day so one script cannot lift the average. Mutates `base`, which is already a copy.
+ */
+function foldTiming(base: DayRecord, e: VercelEvent, hash: string) {
+  let seconds = pageSecondsOf(e);
+  if (!seconds) return;
+  base.visitorSeconds ??= {};
+  const perVisitor = base.visitorSeconds;
+  let counts = true;
+  if (hash && !base.closed) {
+    const have = perVisitor[hash] || 0;
+    if (have === 0 && Object.keys(perVisitor).length >= VISITOR_MEMORY) {
+      base.idsFull = true;
+      counts = false;
+    } else {
+      seconds = Math.min(seconds, MAX_VISITOR_SECONDS - have);
+      if (seconds <= 0) return;
+      if (have === 0) base.timedVisitors = (base.timedVisitors || 0) + 1;
+      perVisitor[hash] = have + seconds;
+    }
+  } else if (!hash) {
+    /* No device number: its own visitor, as a page view with no number is. */
+    base.timedVisitors = (base.timedVisitors || 0) + 1;
+  } else {
+    /* A closed day keeps no hashes, so this visitor cannot be told from one already counted. */
+    counts = false;
+  }
+  if (counts) base.siteSeconds = (base.siteSeconds || 0) + seconds;
+  const path = timedPathOf(e);
+  base.pageSeconds ??= {};
+  base.pageTimed ??= {};
+  bump(base.pageSeconds, path, seconds);
+  bump(base.pageTimed, path);
+}
+
+/**
  * Fold the accepted events of one day into that day's record. Returns a new record; the one
  * passed in is not changed. A delivery already folded into this day (same fingerprint) changes
  * nothing, so Vercel sending a batch again after a failure cannot count it twice.
@@ -425,6 +614,10 @@ function foldDayFor(
   let folded = 0;
   for (const e of events) {
     folded += 1;
+    if (isPageTime(e)) {
+      foldTiming(base, e, hasher(e.deviceId, day));
+      continue;
+    }
     base.pageviews += 1;
     const at = new Date(Number(e.timestamp)).toISOString();
     if (!base.firstAt || at < base.firstAt) base.firstAt = at;
@@ -445,6 +638,10 @@ function foldDayFor(
       base.arrivals += 1;
       bump(base.sources, src.source);
       if (src.site) bump(base.sites, src.site);
+      if (src.engine) {
+        base.engines ??= {};
+        bump(base.engines, src.engine);
+      }
       const q = queryOf(e.queryParams);
       if (q.utm_campaign) bump(base.campaigns, String(q.utm_campaign).slice(0, 80));
       const country = String(e.country || "")
@@ -483,13 +680,25 @@ function foldDayFor(
     "systems",
   ] as const)
     base[k] = capMap(base[k], CAPS[k] as number);
+  if (base.engines) base.engines = capMap(base.engines, CAPS.engines as number);
+  if (base.pageSeconds && base.pageTimed) {
+    const capped = capPairs(base.pageSeconds, base.pageTimed, CAPS.pages as number);
+    base.pageSeconds = capped.seconds;
+    base.pageTimed = capped.timed;
+  }
   if (batch) base.batches = base.batches.concat([batch]).slice(-BATCH_MEMORY);
   return { record: base, folded, repeat: false };
 }
 
 /** A day nobody can add to any more: its hashes and fingerprints go, its counts stay. */
 export function closeDay(record: DayRecord): DayRecord {
-  return { ...record, ids: [], batches: [], closed: true };
+  return {
+    ...record,
+    ids: [],
+    batches: [],
+    closed: true,
+    ...(record.visitorSeconds ? { visitorSeconds: {} } : {}),
+  };
 }
 
 /** Sort one delivery out by day: `{ byDay, skipped: {reason: n}, accepted }`. */
@@ -552,6 +761,7 @@ export function summarize(
   const from = shiftDay(today, -(days - 1));
   const span = daysBetween(from, today);
   const totals = { pageviews: 0, visitors: 0, arrivals: 0 };
+  const site = { seconds: 0, visitors: 0 };
   const mapKeys = [
     "pages",
     "sources",
@@ -565,6 +775,9 @@ export function summarize(
     "entries",
     "browsers",
     "systems",
+    "engines",
+    "pageSeconds",
+    "pageTimed",
   ] as const;
   const maps = {} as Record<(typeof mapKeys)[number], Counts>;
   for (const k of mapKeys) maps[k] = {};
@@ -578,6 +791,8 @@ export function summarize(
     totals.pageviews += r.pageviews;
     totals.visitors += r.visitors;
     totals.arrivals += r.arrivals;
+    site.seconds += r.siteSeconds || 0;
+    site.visitors += r.timedVisitors || 0;
     const weekday = new Date(`${d}T12:00:00Z`).getUTCDay();
     weekdayVisitors[weekday] = (weekdayVisitors[weekday] as number) + r.visitors;
     for (const k of mapKeys) addInto(maps[k], (r as unknown as Record<string, Counts>)[k]);
@@ -620,6 +835,20 @@ export function summarize(
       ...r,
       share: totals.arrivals ? Math.round((r.n / totals.arrivals) * 100) : null,
     }));
+  const aiArrivals = maps.sources["AI assistants"] || 0;
+  const named = Object.values(maps.engines).reduce((a, b) => a + b, 0);
+  const pages = ranked(maps.pages, totals.pageviews, 20);
+  const average1 = (secs: number, n: number) => (n > 0 ? Math.round(secs / n) : null);
+  const pageTimes: Record<string, { average: number; n: number }> = {};
+  const timedNames = new Set([
+    ...pages.rows.map((r) => r.name),
+    ...ranked(maps.pageTimed, 0, 30).rows.map((r) => r.name),
+  ]);
+  for (const name of timedNames) {
+    const n = maps.pageTimed[name] || 0;
+    const avg = average1(maps.pageSeconds[name] || 0, n);
+    if (avg != null) pageTimes[name] = { average: avg, n };
+  }
   return {
     connected: Boolean(first),
     firstDay: first,
@@ -633,8 +862,17 @@ export function summarize(
     byDay,
     sources: sourceRows,
     sites: ranked(maps.sites, totals.arrivals, 15),
-    pages: ranked(maps.pages, totals.pageviews, 20),
+    pages,
+    /** Average seconds on screen per page, for the listed pages; none until a timing arrives. */
+    pageTimes,
+    /** Average seconds on the site per visitor who sent a timing, and how many did. */
+    timeOnSite: { average: average1(site.seconds, site.visitors), visitors: site.visitors },
+    /** AI assistants: arrivals in the group, how many of them name the engine, and the engines. */
+    aiArrivals,
+    aiUnnamed: Math.max(0, aiArrivals - named),
+    aiEngines: ranked(maps.engines, aiArrivals, 13),
     countries: ranked(maps.countries, totals.arrivals, 12),
+    regions: ranked(maps.regions, totals.arrivals, 15),
     cities: ranked(maps.cities, totals.arrivals, 15),
     devices: ranked(maps.devices, totals.arrivals, 5),
     campaigns: ranked(maps.campaigns, totals.arrivals, 30),
