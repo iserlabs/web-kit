@@ -549,7 +549,7 @@ export function capPairs(
       restT += timed[k] as number;
     }
   });
-  if (restT) {
+  if (restT || restS) {
     outS[OTHER] = restS;
     outT[OTHER] = restT;
   }
@@ -590,7 +590,8 @@ function foldTiming(base: DayRecord, e: VercelEvent, hash: string) {
   base.pageSeconds ??= {};
   base.pageTimed ??= {};
   bump(base.pageSeconds, path, seconds);
-  bump(base.pageTimed, path);
+  /* A continuation (the page was hidden, then shown again) adds time to a page view already counted. */
+  bump(base.pageTimed, path, eventDataOf(e).more === true ? 0 : 1);
 }
 
 /**

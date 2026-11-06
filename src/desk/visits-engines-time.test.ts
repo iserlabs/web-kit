@@ -256,6 +256,26 @@ describe("time on page and time on site", () => {
     expect(record.timedVisitors).toBe(1);
     expect(Object.keys(record.visitorSeconds ?? {})).toEqual([`s:2026-11-03:${123456 * 7 + 3}`]);
   });
+  it("adds a continuation's seconds without counting the page view a second time", () => {
+    const more = JSON.stringify({ seconds: 20, path: "/spaces", more: true });
+    const { record } = foldDay(fresh(), [timed(30), timed(20, { eventData: more })], { hasher });
+    expect(record.pageSeconds).toEqual({ "/spaces": 50 });
+    expect(record.pageTimed).toEqual({ "/spaces": 1 });
+    expect(record.siteSeconds).toBe(50);
+    expect(record.timedVisitors).toBe(1);
+  });
+  it("keeps a continuation's seconds when its first timing never arrived and the list is full", () => {
+    const events = [
+      ...Array.from({ length: 70 }, (_, i) => timed(10, { path: `/p${i}`, deviceId: i })),
+      timed(40, {
+        deviceId: 99,
+        eventData: JSON.stringify({ seconds: 40, path: "/lost", more: true }),
+      }),
+    ];
+    const { record } = foldDay(fresh(), events, { hasher });
+    const secs = Object.values(record.pageSeconds ?? {}).reduce((a, b) => a + b, 0);
+    expect(secs).toBe(740);
+  });
   it("adds one person's pages together into one time on site", () => {
     const { record } = foldDay(
       fresh(),
