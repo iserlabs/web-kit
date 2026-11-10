@@ -167,8 +167,8 @@ function body(email, c, t, s) {
           const card = mix(t.paper, t.surround, 0.45);
           const gap = `<td width="2%" style="width:2%;min-width:12px;font-size:0;line-height:0;">&nbsp;</td>`;
           const tile = (k) =>
-            `<td width="49%" valign="top" style="width:49%;vertical-align:top;padding:18px 18px 18px 18px;background-color:${card};border:1px solid ${t.line};border-radius:10px;">` +
-            `<div style="width:22px;height:2px;background-color:${t.rule};font-size:0;line-height:0;margin:0 0 12px 0;">&nbsp;</div>` +
+            `<td width="49%" valign="top" align="center" style="width:49%;vertical-align:top;text-align:center;padding:18px 18px 18px 18px;background-color:${card};border:1px solid ${t.line};border-radius:10px;">` +
+            `<div style="width:22px;height:2px;background-color:${t.rule};font-size:0;line-height:0;margin:0 auto 12px auto;">&nbsp;</div>` +
             `<div style="font-family:${c.bodyFont};font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1.35;color:${t.soft};">${esc(k.label)}</div>` +
             `<div style="font-family:${c.displayFont};font-size:32px;line-height:1.1;color:${c.ink};padding-top:8px;font-variant-numeric:lining-nums tabular-nums;letter-spacing:-.01em;">${esc(k.value)}</div>` +
             (k.note ? `<div style="font-family:${c.bodyFont};font-size:13px;line-height:1.45;color:${t.soft};padding-top:6px;">${esc(k.note)}</div>` : "") +
