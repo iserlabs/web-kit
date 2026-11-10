@@ -37,6 +37,15 @@ const esc = (s) =>
 const table = (inner, style = "") =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;${style}">${inner}</table>`;
 
+/** A hex color `w` of the way from `a` to `b` (both #rrggbb); falls back to `a` on anything else. */
+const mix = (a, b, w) => {
+  const rgb = (h) => (/^#[0-9a-f]{6}$/i.test(h ?? "") ? [1, 3, 5].map((i) => Number.parseInt(h.slice(i, i + 2), 16)) : null);
+  const x = rgb(a);
+  const y = rgb(b);
+  if (!x || !y) return a;
+  return `#${x.map((v, i) => Math.round(v + (y[i] - v) * w).toString(16).padStart(2, "0")).join("")}`;
+};
+
 const BREAK = "overflow-wrap:break-word;word-break:normal;";
 /** An address printed as text, with a soft break after each slash so it wraps at a slash, not mid-word. */
 const url = (href) => esc(href).replace(/([^/])\/(?!\/)/g, "$1/<wbr>");
@@ -151,17 +160,25 @@ function body(email, c, t, s) {
         case "kpis": {
           // Owner statement tiles, two across so a phone holds them: big figure, plain label, the
           // denominator under it. Table cells only, so Gmail and Outlook draw them the same.
-          const lastRow = Math.floor((b.tiles.length - 1) / 2);
-          const tile = (k, i) =>
-            `<td width="50%" style="width:50%;padding:14px 12px 14px 0;vertical-align:top;${Math.floor(i / 2) === lastRow ? "" : `border-bottom:1px solid ${t.line};`}">` +
-            `<div style="font-family:${c.bodyFont};font-size:13px;line-height:1.35;color:${t.soft};">${esc(k.label)}</div>` +
-            `<div style="font-family:${c.displayFont};font-size:30px;line-height:1.2;color:${c.ink};padding-top:3px;font-variant-numeric:tabular-nums;">${esc(k.value)}</div>` +
-            (k.note ? `<div style="font-family:${c.bodyFont};font-size:13px;line-height:1.4;color:${t.soft};padding-top:3px;">${esc(k.note)}</div>` : "") +
+          // Each figure sits on its own card (Jake, 2026-11-10: "more elegant and aesthetically
+          // beautiful cards"): a tinted ground halfway between the paper and the surround, a hairline
+          // border, a short brand rule, a small spaced label, the figure in the display face. Cards in
+          // one row share a height because they are cells of the same row.
+          const card = mix(t.paper, t.surround, 0.45);
+          const gap = `<td width="2%" style="width:2%;min-width:12px;font-size:0;line-height:0;">&nbsp;</td>`;
+          const tile = (k) =>
+            `<td width="49%" valign="top" style="width:49%;vertical-align:top;padding:18px 18px 18px 18px;background-color:${card};border:1px solid ${t.line};border-radius:10px;">` +
+            `<div style="width:22px;height:2px;background-color:${t.rule};font-size:0;line-height:0;margin:0 0 12px 0;">&nbsp;</div>` +
+            `<div style="font-family:${c.bodyFont};font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1.35;color:${t.soft};">${esc(k.label)}</div>` +
+            `<div style="font-family:${c.displayFont};font-size:32px;line-height:1.1;color:${c.ink};padding-top:8px;font-variant-numeric:lining-nums tabular-nums;letter-spacing:-.01em;">${esc(k.value)}</div>` +
+            (k.note ? `<div style="font-family:${c.bodyFont};font-size:13px;line-height:1.45;color:${t.soft};padding-top:6px;">${esc(k.note)}</div>` : "") +
             `</td>`;
           const rows = [];
-          for (let i = 0; i < b.tiles.length; i += 2)
-            rows.push(`<tr>${tile(b.tiles[i], i)}${b.tiles[i + 1] ? tile(b.tiles[i + 1], i + 1) : "<td></td>"}</tr>`);
-          return table(rows.join(""), `margin:0 0 24px 0;border-top:1px solid ${t.line};`);
+          for (let i = 0; i < b.tiles.length; i += 2) {
+            if (i) rows.push(`<tr><td colspan="3" height="12" style="height:12px;font-size:0;line-height:0;">&nbsp;</td></tr>`);
+            rows.push(`<tr>${tile(b.tiles[i])}${gap}${b.tiles[i + 1] ? tile(b.tiles[i + 1]) : `<td width="49%" style="width:49%;"></td>`}</tr>`);
+          }
+          return table(rows.join(""), "margin:4px 0 26px 0;border-collapse:separate;");
         }
         case "ledger": {
           // One column of money that foots top to bottom: plain lines, a landing (sub), the total.
