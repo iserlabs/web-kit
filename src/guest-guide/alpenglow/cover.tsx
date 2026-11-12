@@ -74,7 +74,7 @@ function Row({ r }: { r: CoverRow }) {
   switch (r.kind) {
     case "times":
       dd = (
-        <dd className="tt__times">
+        <dd className="tt__times" style={{ "--out-ch": r.outLabel.length } as CSSProperties}>
           <Value v={r.inValue} />
           {r.outValue ? (
             <span>
@@ -119,20 +119,36 @@ function Row({ r }: { r: CoverRow }) {
   );
 }
 
+/** A door or parking row too long for its line: a jump link to its chapter, not a timetable row. */
+const isJump = (r: CoverRow) => r.kind === "link" && r.id !== "help";
+
 function Facts({ c, inline }: { c: CoverPlan; inline?: boolean }) {
   return (
     <>
       <p className="cover__addr" data-essential="">
         {inline ? (c.place ?? c.address) : c.address}{" "}
-        <a className="cover__link" href={c.appleMapUrl ?? c.mapUrl}>
-          {c.directions}
-          <span className="vh"> to {c.address}</span>
-        </a>
+        {/* Directions, then the jump links ("Getting in", "Parking") on the same line: one clear
+            link each and no row label, so the cover never reads "Parking: Parking". */}
+        <span className="cover__go">
+          <a className="cover__link" href={c.appleMapUrl ?? c.mapUrl}>
+            {c.directions}
+            <span className="vh"> to {c.address}</span>
+          </a>
+          {c.rows.filter(isJump).map((r) =>
+            r.kind === "link" ? (
+              <a key={r.id} className="cover__link" href={r.href}>
+                {r.text}
+              </a>
+            ) : null,
+          )}
+        </span>
       </p>
       <dl className="tt" style={{ "--lab": `${c.labelWidth}px` } as CSSProperties}>
-        {c.rows.map((r) => (
-          <Row key={r.id} r={r} />
-        ))}
+        {c.rows
+          .filter((r) => !isJump(r))
+          .map((r) => (
+            <Row key={r.id} r={r} />
+          ))}
       </dl>
     </>
   );

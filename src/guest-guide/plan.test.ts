@@ -1,4 +1,7 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { Cover } from "./alpenglow/cover";
 import { type Approval, resolveCopy } from "./copy";
 import {
   ALL_APPROVED,
@@ -231,6 +234,24 @@ describe("planGuide: the cover", () => {
     const door = live(m).cover.rows.find((r) => r.id === "door");
     expect(door?.kind).toBe("link");
     expect(door?.kind === "link" && door.href).toBe("#door");
+  });
+
+  it("a cover jump link sits on the Directions line, one link and no row label", () => {
+    const m = structuredClone(yaleFixture);
+    delete m.look.coverRows;
+    for (const c of [live(m).cover, full(m).cover]) {
+      const door = c.rows.find((r) => r.id === "door");
+      expect(door?.kind === "link" && door.text).toBe("Getting in");
+      const html = renderToStaticMarkup(
+        createElement(Cover, { cover: c, brand: sunMountainBrand, imageUrl: (s: string) => s }),
+      );
+      // The jump link rides with Directions; no timetable row links to #door or #park, so no
+      // label ever sits beside a link of its own words.
+      expect(html).toMatch(
+        /<span class="cover__go">.*<a class="cover__link" href="#door">Getting in<\/a>/,
+      );
+      expect(html).not.toMatch(/<dd><a class="cover__link" href="#(door|park)"/);
+    }
   });
 
   it("long-name steps: 80 to 12 characters, 64 to 18, 52 to 26, else 44", () => {

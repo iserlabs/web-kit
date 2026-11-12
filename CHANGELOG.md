@@ -3,6 +3,12 @@
 ## Unreleased
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
+## 0.17.0-alpenglow.4 (pre-release)
+- **guest-guide: the cover back to the approved board.**
+  1) Low covers keep the facts on the photograph at every window; the forced drop onto the arrival field on short phones and on laptops up to 820 px tall is gone. A desktop window 620 px tall or less takes the landscape-phone composition (photo and name left, timetable on the arrival field right), the one measured last resort.
+  2) A door or parking line too long for its row leaves the timetable and becomes one link in the live wording ("Getting in", "Parking") on the Directions line, with no row label beside it. Rows no longer read "Parking: Parking", and the desktop timetable is a balanced two by two (In, Wi-Fi, Door, Help) when parking jumps.
+  3) The In and Out times share one figure size, sized to their own column so both sit on one line down to 320 px.
+
 ## 0.17.0-alpenglow.3 (pre-release)
 - **guest-guide: layout, video and icon fixes from the Sun Mountain and Euclid ports.**
   1) Text rows and photo or video blocks render in separate boxes, so text always sits on the field and design-check measures it there (Cranbrook's "A Keurig coffee machine." was measured against its photo at iPad sizes).

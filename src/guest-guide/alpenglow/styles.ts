@@ -45,8 +45,8 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .tt__row{display:grid;grid-template-columns:var(--lab,60px) minmax(0,1fr);align-items:baseline}
 .gg .tt dt{font:var(--strong) 15px/1.35 var(--text)}
 .gg .tt dd{font:var(--text-w) 16px/1.38 var(--text);min-width:0}
-.gg .tt__times{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:18px;row-gap:2px}
-.gg .tt__times .fig{font-size:24px;line-height:1.1;font-weight:var(--fig-w)}
+.gg .tt__times{container-type:inline-size;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:18px;row-gap:2px}
+.gg .tt__times .fig{font-size:min(24px,calc((100cqi - 26px - var(--out-ch,3) * 9px) / 9));line-height:1.1;font-weight:var(--fig-w)}
 .gg .tt__times .lbl{font:var(--strong) 15px/1 var(--text);margin-right:8px}
 .gg .wifi{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px}
 .gg .wifi__vals{font:400 15px/1.4 var(--fig);overflow-wrap:anywhere;min-width:0}
@@ -59,8 +59,9 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .cover--high .tt dd{font-size:15px;line-height:1.36}
 .gg .cover--high .tt__times .fig{font-size:20px}
 .gg .cover--high .cover__addr{margin-top:6px}
-.gg .cover__addr .cover__link{display:flex;width:fit-content;font-weight:var(--text-w)}
-.gg .cover--high .cover__addr .cover__link{display:inline-flex;margin-left:6px}
+.gg .cover__addr .cover__link{font-weight:var(--text-w)}
+.gg .cover__go{display:flex;flex-wrap:wrap;column-gap:24px;width:fit-content}
+.gg .cover--high .cover__go{display:inline-flex;margin-left:6px}
 .gg .cover--type{background:var(--f-arrival);justify-content:space-between}
 .gg .cover--type .cover__name{--k:1;font-weight:var(--display-w)}
 .gg .type-title{margin-top:18px;font:var(--display-w) 30px/1.15 var(--display);font-optical-sizing:auto}
@@ -226,10 +227,10 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover{gap:12px}
   .gg .cover__sky{padding-top:12px}
   .gg .cover__name{margin-top:12px;font-size:min(calc(var(--name) * var(--k) * 0.8px),calc(var(--name) * var(--k) * 0.2051vw))}
-  .gg .cover__addr .cover__link{display:inline-flex;margin-left:6px}
+  .gg .cover__go{display:inline-flex;column-gap:16px}
   .gg .cover .tt{row-gap:4px}
   .gg .cover .tt dd{font-size:15px;line-height:1.3}
-  .gg .cover .tt__times .fig{font-size:20px}
+  .gg .cover .tt__times .fig{font-size:min(20px,calc((100cqi - 26px - var(--out-ch,3) * 9px) / 9))}
   .gg .cover .wifi__vals{line-height:1.3}
   .gg .cover__ground{padding-bottom:10px}
 }
@@ -242,10 +243,15 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover--high .tt{flex:1;align-content:start;margin:14px calc(-1 * var(--gut)) 0;padding:18px var(--gut) 20px;background:var(--f-arrival)}
 }
 
-/* Facts low, a short window: the facts climb into the brighter rock, where white fell under 4.5:1 with the shade at its
-   0.35 cap (measured), so they drop onto the arrival field under the photo's sky (the band fallback, per geometry) */
-@media (orientation: portrait) and (max-width: 699px) and (max-height: 700px),(min-width: 1001px) and (max-height: 820px){
-  .gg .cover--low[data-facts-ink] .cover__ground{background:var(--f-arrival);color:var(--ink);text-shadow:none;margin-top:0;padding-top:16px}
+/* Facts low on a short desktop window (620 px tall or less): the white facts would sit on the bright middle of the
+   photo with the shade at its 0.35 cap, so the cover takes the landscape-phone composition instead: the photo and
+   the name in its sky on the left, the timetable on the arrival field on the right (the measured last resort) */
+@media (min-width: 1001px) and (max-height: 620px){
+  .gg .cover--low{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:0;justify-content:stretch}
+  .gg .cover--low .cover__photo{inset:0 60% 0 0;width:auto;height:auto}
+  .gg .cover--low .cover__shade{display:none}
+  .gg .cover--low .cover__sky{grid-column:1;grid-row:1;padding:24px 32px 0}
+  .gg .cover--low[data-facts-ink] .cover__ground{grid-column:2;grid-row:1;display:flex;flex-direction:column;justify-content:center;margin:0;padding:24px var(--gut);background:var(--f-arrival);color:var(--ink);text-shadow:none}
   .gg .cover--low .copy{outline:2px solid var(--ink);outline-offset:0}
   .gg .cover--low .copy:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:none}
 }
@@ -276,7 +282,7 @@ export const ALPENGLOW_CSS = String.raw`
 @media (orientation: landscape) and (max-height: 460px) and (max-width: 1000px){
   .gg .cover__ground,.gg .cover--high .cover__sky{padding:8px 16px}
   .gg .cover__addr{display:inline;font-size:15px}
-  .gg .cover__addr+.cover__link{margin-left:8px}
+  .gg .cover__go{display:inline-flex;column-gap:12px}
   .gg .cover .tt{row-gap:2px;margin-top:0}
   .gg .cover .tt dd{font-size:15px;line-height:1.3}
   .gg .cover .tt__times .fig{font-size:20px}

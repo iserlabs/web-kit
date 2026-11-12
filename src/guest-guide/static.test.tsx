@@ -112,8 +112,8 @@ describe("renderGuideHtml", () => {
 
   it("marks every cover essential", () => {
     const html = render(yaleFixture);
-    // Address with its Directions link, times, Wi-Fi, password, door, parking, help.
-    expect((html.match(/data-essential=""/g) ?? []).length).toBe(7);
+    // Address with Directions and the parking jump link, times, Wi-Fi, password, door, help.
+    expect((html.match(/data-essential=""/g) ?? []).length).toBe(6);
   });
 
   it("Wi-Fi in a message: no Copy button and no QR", () => {

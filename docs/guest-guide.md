@@ -62,10 +62,16 @@ The v0.13 to v0.16 exports (`GuestGuide`, `validateGuide`, `factsTable`, `factsM
 ## Cover
 
 `look.cover` is a photo (`layout` low, high or band, from the zone measurement) or a type cover.
-Low covers set the facts on the photo's ground in white over a shade that rides behind the facts;
-high covers set the name in the sky and drop the timetable onto the arrival field on upright
-phones and short laptops; band covers shorten the photo to its sky. Cover rows: a live first
-sentence up to 90 characters, else a jump link; `look.coverRows` overrides per house. Every
+Low covers set the facts on the photo's ground in white over a shade that rides behind the facts,
+on every window but two: a landscape phone and a desktop window 620 px tall or less take the
+side-by-side composition (photo and name on the left, timetable on the arrival field on the
+right). High covers set the name in the sky and drop the timetable onto the arrival field on
+upright phones and short laptops; band covers shorten the photo to its sky and are the last
+resort for a photo whose zone fails. Cover rows: a live first sentence up to 90 characters, else
+the row leaves the timetable and becomes one link in the live wording ("Getting in", "Parking")
+on the Directions line, with no row label (a row never reads "Parking: Parking");
+`look.coverRows` overrides per house. The In and Out times share
+one figure size, sized to fit their column on one line. Every
 essential row carries `data-essential`; `web-kit guide-check` proves them inside the first window.
 
 ## Brand tokens

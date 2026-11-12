@@ -7,7 +7,7 @@
  * checkout, nearby, help.
  */
 import type { FieldId } from "./brand";
-import type { Copy, Line } from "./copy";
+import { type Copy, type Line, TEMPLATE_LABELS } from "./copy";
 import {
   CHAPTER_ORDER,
   type ChapterId,
@@ -881,12 +881,15 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
     text: string,
     href: string,
     mode: "lead" | "full" | "link" | undefined,
+    jumpText: string,
   ): CoverRow => {
     const lead = firstSentence(text);
     const pick = mode ?? (lead.length <= LEAD_MAX ? "lead" : "link");
     if (pick === "full") return { kind: "text", id: rowId, label: rowLabel, text };
     if (pick === "lead") return { kind: "text", id: rowId, label: rowLabel, text: lead };
-    return { kind: "link", id: rowId, label: rowLabel, text: rowLabel, href };
+    // One clear link in the live wording ("Getting in", "Parking"); the cover shows it without the
+    // row label, so a row never reads "Parking: Parking".
+    return { kind: "link", id: rowId, label: rowLabel, text: jumpText, href };
   };
   const doorLabel = label("coverDoor", "Getting in");
   if (copy.codeDelivery.from === "approved")
@@ -895,7 +898,14 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
     rows.push({ kind: "text", id: "door", label: doorLabel, text: copy.coverLines.door.text });
   else
     rows.push(
-      coverLine("door", doorLabel, copy.codeDelivery.text, "#door", m.look.coverRows?.door),
+      coverLine(
+        "door",
+        doorLabel,
+        copy.codeDelivery.text,
+        "#door",
+        m.look.coverRows?.door,
+        TEMPLATE_LABELS.coverDoor.live ?? "Getting in",
+      ),
     );
   const parkLabel = label("coverPark", "Parking");
   if (copy.coverLines.parking && parkingText)
@@ -909,7 +919,14 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
     rows.push(
       isUnknown(m.parking)
         ? { kind: "text", id: "parking", label: parkLabel, text: parkingText }
-        : coverLine("parking", parkLabel, parkingText, "#park", m.look.coverRows?.parking),
+        : coverLine(
+            "parking",
+            parkLabel,
+            parkingText,
+            "#park",
+            m.look.coverRows?.parking,
+            TEMPLATE_LABELS.coverPark.live ?? "Parking",
+          ),
     );
   rows.push({
     kind: "link",
