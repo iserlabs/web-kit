@@ -1,0 +1,452 @@
+{
+  "schema": "owner-statement/1",
+  "brand": "columbus",
+  "business": "The Columbus Hotel",
+  "month": "2026-10",
+  "monthLabel": "October 2026",
+  "monthShort": "October",
+  "status": "final",
+  "owner": {
+    "key": "sample-owner",
+    "name": "Pat Sample",
+    "greeting": "Pat"
+  },
+  "property": {
+    "label": "The Columbus Hotel",
+    "line": "52 and 89 Cottage Street, Middletown, New York"
+  },
+  "prepared": {
+    "by": "Jake Lee",
+    "date": "2026-11-03"
+  },
+  "moves": {
+    "direction": "from_owner",
+    "cents": 381242,
+    "headline": "Your management fee, October 2026",
+    "line": "from you, by check",
+    "method": "check",
+    "date": null,
+    "dateUnknown": "due date not set yet",
+    "sentence": "Your October total is $35,094.30, and our management fee is $3,812.42 by check, due date not set yet."
+  },
+  "summary": {
+    "title": "Statement summary",
+    "columns": {
+      "month": "October",
+      "ytd": "Year to date"
+    },
+    "ytd": {
+      "known": false,
+      "reason": "year to date is not in the October record yet",
+      "from": null
+    },
+    "rows": [
+      {
+        "label": "Money in: host payout, all channels",
+        "role": "in",
+        "month": 4619631,
+        "ytd": null
+      },
+      {
+        "label": "Set aside for you: hotel tax",
+        "role": "set_aside",
+        "month": -78250,
+        "ytd": null
+      },
+      {
+        "label": "Set aside: stayed, not collected",
+        "role": "set_aside",
+        "month": -59959,
+        "ytd": null
+      },
+      {
+        "label": "Costs: turnovers",
+        "role": "cost",
+        "month": -669000,
+        "ytd": null
+      },
+      {
+        "label": "Fees: management, 10%",
+        "role": "fee",
+        "month": -381242,
+        "ytd": null
+      },
+      {
+        "label": "Hotel tax returned to you",
+        "role": "in",
+        "month": 78250,
+        "ytd": null
+      },
+      {
+        "label": "Your October total, tax returned",
+        "role": "subtotal",
+        "month": 3509430,
+        "ytd": null
+      },
+      {
+        "label": "The money that moves: your fee check to us",
+        "role": "moves",
+        "month": -381242,
+        "ytd": null
+      }
+    ],
+    "foot": [
+      [
+        "in",
+        "cost",
+        "fee",
+        "set_aside"
+      ],
+      "subtotal"
+    ]
+  },
+  "groups": [
+    {
+      "title": "Every suite, by building",
+      "property": "52 Cottage Street: 9 suites with stays",
+      "columns": [
+        {
+          "key": "suite",
+          "label": "Suite",
+          "kind": "text"
+        },
+        {
+          "key": "stays",
+          "label": "Stays",
+          "kind": "int"
+        },
+        {
+          "key": "nights",
+          "label": "Nights",
+          "kind": "int"
+        },
+        {
+          "key": "net",
+          "label": "Host payout",
+          "kind": "money"
+        }
+      ],
+      "rows": [
+        {
+          "ref": "A-1",
+          "cells": {
+            "suite": "52-201 The Balcony Suite",
+            "stays": 6,
+            "nights": 10,
+            "net": 156853
+          }
+        },
+        {
+          "ref": "A-2",
+          "cells": {
+            "suite": "52-202 The Market Suite",
+            "stays": 7,
+            "nights": 11,
+            "net": 199324
+          }
+        },
+        {
+          "ref": "A-3",
+          "cells": {
+            "suite": "52-203 Four-Poster Suite",
+            "stays": 9,
+            "nights": 17,
+            "net": 285424
+          }
+        },
+        {
+          "ref": "A-4",
+          "cells": {
+            "suite": "52-204 The Weekender Suite",
+            "stays": 6,
+            "nights": 8,
+            "net": 170717
+          }
+        },
+        {
+          "ref": "A-5",
+          "cells": {
+            "suite": "52-301 The Canopy Studio",
+            "stays": 5,
+            "nights": 9,
+            "net": 190362
+          }
+        },
+        {
+          "ref": "A-6",
+          "cells": {
+            "suite": "52-302 The Sunny Studio",
+            "stays": 7,
+            "nights": 12,
+            "net": 204878
+          }
+        },
+        {
+          "ref": "A-7",
+          "cells": {
+            "suite": "52-304 The Reimagined Suite",
+            "stays": 10,
+            "nights": 17,
+            "net": 258642
+          }
+        },
+        {
+          "ref": "A-8",
+          "cells": {
+            "suite": "52-402 The Upper Studio",
+            "stays": 10,
+            "nights": 18,
+            "net": 256537
+          }
+        },
+        {
+          "ref": "A-9",
+          "cells": {
+            "suite": "52-406 The Wayfarer Suite",
+            "stays": 12,
+            "nights": 24,
+            "net": 283946
+          }
+        }
+      ],
+      "subtotal": {
+        "label": "Subtotal, 52 Cottage Street",
+        "cells": {
+          "stays": 72,
+          "nights": 126,
+          "net": 2006683
+        }
+      },
+      "note": "Turnovers are $45 a stay, and $25 in 52-406, set out once on the summary."
+    },
+    {
+      "title": "Every suite, by building",
+      "property": "89 Cottage Street: 13 suites with stays",
+      "columns": [
+        {
+          "key": "suite",
+          "label": "Suite",
+          "kind": "text"
+        },
+        {
+          "key": "stays",
+          "label": "Stays",
+          "kind": "int"
+        },
+        {
+          "key": "nights",
+          "label": "Nights",
+          "kind": "int"
+        },
+        {
+          "key": "net",
+          "label": "Host payout",
+          "kind": "money"
+        }
+      ],
+      "rows": [
+        {
+          "ref": "A-10",
+          "cells": {
+            "suite": "89-201 The City Suite",
+            "stays": 9,
+            "nights": 18,
+            "net": 244235
+          }
+        },
+        {
+          "ref": "A-11",
+          "cells": {
+            "suite": "89-202 The Downtown Studio",
+            "stays": 6,
+            "nights": 9,
+            "net": 176703
+          }
+        },
+        {
+          "ref": "A-12",
+          "cells": {
+            "suite": "89-203 The Galley Studio",
+            "stays": 6,
+            "nights": 16,
+            "net": 210007
+          }
+        },
+        {
+          "ref": "A-13",
+          "cells": {
+            "suite": "89-204 The District Studio",
+            "stays": 6,
+            "nights": 14,
+            "net": 208870
+          }
+        },
+        {
+          "ref": "A-14",
+          "cells": {
+            "suite": "89-205 The Upper Suite",
+            "stays": 7,
+            "nights": 16,
+            "net": 191949
+          }
+        },
+        {
+          "ref": "A-15",
+          "cells": {
+            "suite": "89-206 The Residence Studio",
+            "stays": 9,
+            "nights": 18,
+            "net": 254137
+          }
+        },
+        {
+          "ref": "A-16",
+          "cells": {
+            "suite": "89-207 The Gold Suite",
+            "stays": 5,
+            "nights": 7,
+            "net": 131974
+          }
+        },
+        {
+          "ref": "A-17",
+          "cells": {
+            "suite": "89-302 The Tailored Studio",
+            "stays": 3,
+            "nights": 4,
+            "net": 97341
+          }
+        },
+        {
+          "ref": "A-18",
+          "cells": {
+            "suite": "89-303 The Courtyard Suite",
+            "stays": 6,
+            "nights": 8,
+            "net": 133071
+          }
+        },
+        {
+          "ref": "A-19",
+          "cells": {
+            "suite": "89-304 The Revival Suite",
+            "stays": 8,
+            "nights": 13,
+            "net": 205947
+          }
+        },
+        {
+          "ref": "A-20",
+          "cells": {
+            "suite": "89-305 Golden Hour Studio",
+            "stays": 7,
+            "nights": 13,
+            "net": 204853
+          }
+        },
+        {
+          "ref": "A-21",
+          "cells": {
+            "suite": "89-306 The Sunrise Suite",
+            "stays": 4,
+            "nights": 29,
+            "net": 320220
+          }
+        },
+        {
+          "ref": "A-22",
+          "cells": {
+            "suite": "89-307 The Scholar Suite",
+            "stays": 6,
+            "nights": 10,
+            "net": 233641
+          }
+        }
+      ],
+      "subtotal": {
+        "label": "Subtotal, 89 Cottage Street",
+        "cells": {
+          "stays": 82,
+          "nights": 175,
+          "net": 2612948
+        }
+      }
+    }
+  ],
+  "costs": null,
+  "settlement": null,
+  "attention": [
+    "89-204, Oct 3 to 7: $568.00 was paid to us directly. We send it to you on its own, apart from your fee check.",
+    "52-301: a $302.05 Expedia charge is held, pending a refund decision."
+  ],
+  "stats": {
+    "stays": 154,
+    "nights": 301,
+    "occupancyPct": 50.8,
+    "last": {
+      "monthLabel": "September 2026",
+      "stays": 124,
+      "nights": 334,
+      "occupancyPct": null
+    }
+  },
+  "sources": [
+    {
+      "label": "Reservation pull, November 1 with November 3 corrections",
+      "file": null,
+      "href": null
+    },
+    {
+      "label": "Expedia reservations, 52 Cottage Street",
+      "file": null,
+      "href": null
+    },
+    {
+      "label": "Expedia reservations, 89 Cottage Street",
+      "file": null,
+      "href": null
+    },
+    {
+      "label": "Airbnb transaction history, October",
+      "file": null,
+      "href": null
+    },
+    {
+      "label": "Booking.com payout statements, 52 Cottage Street",
+      "file": null,
+      "href": null
+    }
+  ],
+  "email": {
+    "subject": "The Columbus Hotel | October 2026 owner statement",
+    "summary": [
+      {
+        "label": "Host payout",
+        "month": 4619631,
+        "last": 4531112
+      },
+      {
+        "label": "Management fee",
+        "month": 381242,
+        "last": null
+      },
+      {
+        "label": "Your total",
+        "month": 3509430,
+        "last": null
+      },
+      {
+        "label": "Occupancy",
+        "pct": 50.8,
+        "lastPct": null
+      }
+    ],
+    "button": "Open the October statement",
+    "password": "sample"
+  },
+  "links": {
+    "page": "https://example.com/owner/october-2026",
+    "pdf": "https://example.com/owner/october-2026/pdf"
+  },
+  "calls": "https://jakejjlee.com/meet"
+}
