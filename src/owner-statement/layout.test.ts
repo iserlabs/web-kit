@@ -83,10 +83,11 @@ describe.skipIf(!HAVE_CHROME)("layout in a real browser", () => {
   let browser: Browser;
   beforeAll(async () => {
     browser = await chromium.launch({ executablePath: CHROME });
-  });
+  }, 60_000);
   afterAll(async () => {
-    await browser?.close();
-  });
+    // A slow shutdown must not fail the measurements: wait up to 5s, then let the run end.
+    await Promise.race([browser?.close(), new Promise((done) => setTimeout(done, 5_000))]);
+  }, 30_000);
 
   async function readings(m: StatementModel, widths: number[]): Promise<Reading[]> {
     const p = await browser.newPage({ viewport: { width: widths[0] ?? 390, height: 900 } });
