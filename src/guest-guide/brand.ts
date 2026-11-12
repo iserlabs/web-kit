@@ -48,8 +48,13 @@ export type GuideBrand = {
     head: Face;
     /** Body 18/1.6; labels at the strong weight, 15 px. */
     text: Face & { strong: number };
-    /** Large answers 64 px and hanging numerals 36 px at `large`. */
-    figure: Face & { large: number };
+    /**
+     * Times, Wi-Fi, large answers 64 px and hanging numerals 36 px (at `large`).
+     * `numeric` is the CSS font-variant-numeric for every figure (default
+     * "tabular-nums"); a serif whose default figures are old-style sets
+     * "lining-nums tabular-nums".
+     */
+    figure: Face & { large: number; numeric?: string };
     /** Cinzel, Sun Mountain only. */
     wordmark?: Face;
   };
@@ -249,6 +254,7 @@ export function brandCss(b: GuideBrand): string {
     ["fig", fam(b.faces.figure)],
     ["fig-w", b.faces.figure.weight],
     ["fig-large", b.faces.figure.large],
+    ["fig-num", b.faces.figure.numeric ?? "tabular-nums"],
     ["wordmark", fam(wordmark)],
     ["wordmark-w", wordmark.weight],
   ];

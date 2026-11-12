@@ -41,6 +41,7 @@ export {
 export type {
   ChapterId,
   ContactV2,
+  CoverGroup,
   CoverV2,
   DisplayFact,
   GuideModel,

@@ -18,7 +18,7 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 .gg .skip{position:absolute;left:12px;top:-80px;z-index:10;background:var(--paper);color:var(--ink);padding:12px 16px;min-height:44px;display:inline-flex;align-items:center}
 .gg .skip:focus{top:12px}
-.gg .fig{font-family:var(--fig);font-weight:var(--fig-w);font-variant-numeric:tabular-nums}
+.gg .fig{font-family:var(--fig);font-weight:var(--fig-w);font-variant-numeric:var(--fig-num,tabular-nums)}
 
 /* Cover: the photograph is the page */
 .gg .cover{position:relative;isolation:isolate;overflow:hidden;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:space-between;gap:32px}
@@ -49,7 +49,7 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .tt__times .fig{font-size:min(24px,calc((100cqi - 26px - var(--out-ch,3) * 9px) / 9));line-height:1.1;font-weight:var(--fig-w)}
 .gg .tt__times .lbl{font:var(--strong) 15px/1 var(--text);margin-right:8px}
 .gg .wifi{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px}
-.gg .wifi__vals{font:400 15px/1.4 var(--fig);overflow-wrap:anywhere;min-width:0}
+.gg .wifi__vals{font:400 15px/1.4 var(--fig);font-variant-numeric:var(--fig-num,tabular-nums);overflow-wrap:anywhere;min-width:0}
 .gg .copy{flex:none;min-height:44px;min-width:44px;padding:0 12px;border:0;border-radius:0;background:var(--btn);color:var(--btn-ink);font:var(--strong) 15px/1 var(--text);text-shadow:none;cursor:pointer;transition:background-color 300ms var(--ease),color 300ms var(--ease)}
 .gg .copy[data-done]{background:var(--btn-done);color:var(--btn-done-ink)}
 .gg .cover .copy:focus-visible{outline:3px solid var(--paper);outline-offset:2px;box-shadow:0 0 0 5px var(--ink)}
@@ -78,7 +78,7 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .find__h{font:var(--head-w) 30px/1.15 var(--head);font-optical-sizing:auto}
 .gg .find__list{list-style:none;margin:28px 0 0;padding:0;display:grid;row-gap:24px}
 .gg .find__item{display:grid;grid-template-columns:44px minmax(0,1fr)}
-.gg .find__n{font:400 15px/1 var(--fig);color:var(--accent-text);padding-top:9px}
+.gg .find__n{font:400 15px/1 var(--fig);font-variant-numeric:var(--fig-num,tabular-nums);color:var(--accent-text);padding-top:9px}
 .gg .find__q{font:var(--head-w) 22px/1.25 var(--head);font-optical-sizing:auto}
 .gg .find__q a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;text-decoration-thickness:1px}
 .gg .find__a{margin-top:2px;font:var(--text-w) 16px/1.45 var(--text);color:var(--sec)}
@@ -103,10 +103,10 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .q{margin:0 0 20px;font:var(--head-w) 30px/1.15 var(--head);font-optical-sizing:auto;text-wrap:balance}
 .gg .chap p,.gg .help p{margin:0 0 18px}
 .gg .sub{margin:48px 0 12px;font:var(--strong) 17px/1.35 var(--text)}
-.gg .big{margin:4px 0 14px;font:var(--fig-large) 64px/1 var(--fig);letter-spacing:-0.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.gg .big{margin:4px 0 14px;font:var(--fig-large) 64px/1 var(--fig);letter-spacing:-0.02em;font-variant-numeric:var(--fig-num,tabular-nums);overflow-wrap:anywhere}
 .gg .steps{list-style:none;margin:8px 0 18px;padding:0}
 .gg .steps li{display:grid;grid-template-columns:48px minmax(0,1fr);margin:0 0 18px}
-.gg .steps .n{font:var(--fig-large) 36px/1 var(--fig);color:var(--accent)}
+.gg .steps .n{font:var(--fig-large) 36px/1 var(--fig);font-variant-numeric:var(--fig-num,tabular-nums);color:var(--accent)}
 .gg .steps .t{padding-top:5px;line-height:1.5;min-width:0}
 .gg .steps .t b,.gg .fact__label{display:block;font:var(--strong) 15px/1.3 var(--text)}
 .gg .where,.gg .until{display:block;color:var(--sec);font-size:16px}
@@ -131,7 +131,7 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .price{width:100%;border-collapse:collapse;margin:0 0 12px}
 .gg .price caption{text-align:left;font:var(--strong) 17px/1.35 var(--text);margin:40px 0 10px}
 .gg .price th,.gg .price td{text-align:left;vertical-align:baseline;padding:6px 16px 6px 0;font-weight:var(--text-w)}
-.gg .price td{font-family:var(--fig);font-size:16px;white-space:nowrap}
+.gg .price td{font-family:var(--fig);font-variant-numeric:var(--fig-num,tabular-nums);font-size:16px;white-space:nowrap}
 .gg .price .note-cell{display:block;color:var(--sec);font-size:16px;font-family:var(--text)}
 .gg .terms{color:var(--sec);font-size:16px}
 .gg .picks{list-style:none;padding:0;margin:0 0 12px}
@@ -254,6 +254,31 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover--low[data-facts-ink] .cover__ground{grid-column:2;grid-row:1;display:flex;flex-direction:column;justify-content:center;margin:0;padding:24px var(--gut);background:var(--f-arrival);color:var(--ink);text-shadow:none}
   .gg .cover--low .copy{outline:2px solid var(--ink);outline-offset:0}
   .gg .cover--low .copy:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:none}
+}
+
+/* The measured last resort, per window group (cover.fieldOn): where the photo's ground cannot carry the white
+   facts at 4.5:1 behind the 0.35 shade, the facts move onto the arrival field, as the board's own fallback. Upright
+   windows keep the full photo and the name in its sky above the field; a landscape window takes the side-by-side
+   composition the short desktop window and the landscape phone already use */
+@media (max-width: 699px) and (orientation: portrait){
+  .gg .cover--low[data-field-on~=phone] .cover__ground{background:var(--f-arrival);color:var(--ink);text-shadow:none;margin-top:0;padding-top:18px}
+  .gg .cover--low[data-field-on~=phone] .copy{outline:2px solid var(--ink);outline-offset:0}
+  .gg .cover--low[data-field-on~=phone] .copy:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:none}
+}
+@media (min-width: 700px) and (orientation: portrait){
+  .gg .cover--low[data-field-on~=tablet] .cover__ground{background:var(--f-arrival);color:var(--ink);text-shadow:none;margin-top:0;padding-top:18px}
+  .gg .cover--low[data-field-on~=tablet] .copy{outline:2px solid var(--ink);outline-offset:0}
+  .gg .cover--low[data-field-on~=tablet] .copy:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:none}
+}
+@media (min-width: 700px) and (orientation: landscape) and (min-height: 501px){
+  .gg .cover--low[data-field-on~=desktop]{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:0;justify-content:stretch}
+  .gg .cover--low[data-field-on~=desktop] .cover__photo{inset:0 60% 0 0;width:auto;height:auto}
+  .gg .cover--low[data-field-on~=desktop] .cover__shade{display:none}
+  .gg .cover--low[data-field-on~=desktop] .cover__sky{grid-column:1;grid-row:1;padding:24px 32px 0}
+  .gg .cover--low[data-field-on~=desktop] .cover__name{font-size:min(calc(var(--name) * 1px),calc(var(--name) * 0.09vw))}
+  .gg .cover--low[data-field-on~=desktop] .cover__ground{grid-column:2;grid-row:1;display:flex;flex-direction:column;justify-content:center;margin:0;padding:24px var(--gut);background:var(--f-arrival);color:var(--ink);text-shadow:none}
+  .gg .cover--low[data-field-on~=desktop] .copy{outline:2px solid var(--ink);outline-offset:0}
+  .gg .cover--low[data-field-on~=desktop] .copy:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:none}
 }
 
 /* Landscape phone: photo left, facts right on the arrival field */

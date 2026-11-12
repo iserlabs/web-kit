@@ -11,6 +11,7 @@ import { type Copy, type Line, TEMPLATE_LABELS } from "./copy";
 import {
   CHAPTER_ORDER,
   type ChapterId,
+  type CoverGroup,
   type GuideModel,
   type ItemV2,
   isUnknown,
@@ -132,6 +133,7 @@ export type CoverPlan = {
     shade?: { from: number; max: number };
     nameInk: "ink" | "onPhoto";
     factsInk: "ink" | "onPhoto";
+    fieldOn?: CoverGroup[];
   };
   typeTitle?: string[];
   feature?: string;
@@ -387,6 +389,7 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
         shade: cover.shade,
         nameInk: cover.nameInk,
         factsInk: cover.factsInk,
+        ...(cover.fieldOn?.length ? { fieldOn: cover.fieldOn } : {}),
       };
     }
   }

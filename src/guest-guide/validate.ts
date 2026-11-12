@@ -376,6 +376,11 @@ export function validateModel(m: GuideModel, opts: ValidateModelOptions): string
       problems.push(`cover: shade max ${cover.shade.max} is above 0.35`);
     if (cover.shade && (cover.shade.from < 0 || cover.shade.from > 1))
       problems.push(`cover: shade from ${cover.shade.from} is outside 0 to 1`);
+    for (const g of cover.fieldOn ?? [])
+      if (!["phone", "tablet", "desktop"].includes(g))
+        problems.push(`cover: fieldOn "${g}" is not phone, tablet or desktop`);
+    if (cover.fieldOn?.length && cover.layout !== "low")
+      problems.push(`cover: fieldOn is for a low cover, not ${cover.layout}`);
     if (cover.portrait.width < minCover && !cover.portrait.refined)
       problems.push(
         `cover: portrait crop is ${cover.portrait.width} px wide, under ${minCover} px, with no refine record`,

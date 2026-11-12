@@ -170,6 +170,9 @@ export type PickV2 = LocalPick & { validThrough?: string; mapUrl?: string };
 
 export type DisplayFact = { label: string; value: string };
 
+/** A window group a low cover can move its facts onto the arrival field for (CoverV2 fieldOn). */
+export type CoverGroup = "phone" | "tablet" | "desktop";
+
 export type CoverV2 =
   | {
       kind: "photo";
@@ -183,6 +186,14 @@ export type CoverV2 =
       factsInk: "ink" | "onPhoto";
       /** A neutral shade over the bottom of the photo, from `from` (0 to 1 of the height) to `max` opacity at the bottom edge. Never above 0.35. */
       shade?: { from: number; max: number };
+      /**
+       * The measured last resort, low covers only: the window groups where the photo's ground cannot
+       * carry the facts behind the 0.35 shade, so they sit on the arrival field there (the board's own
+       * fallback). phone = upright under 700 px, tablet = upright 700 px and up, desktop = landscape
+       * 700 px and up and over 500 px tall. Landscape phones and desktop windows 620 px tall or less
+       * always take the side-by-side composition.
+       */
+      fieldOn?: CoverGroup[];
       measured: { on: string; worstName: number; worstFacts: number; tool: "design-check" };
       /** The portrait crop. Under 1170 px wide it must carry `refined`. */
       portrait: {

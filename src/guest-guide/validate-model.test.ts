@@ -92,6 +92,17 @@ describe("validateModel refuses", () => {
     has(validateModel(m, { today }), "shade max 0.5 is above 0.35");
   });
 
+  it("a field fallback on a window group that does not exist, or on a cover that is not low", () => {
+    const m = clone();
+    if (m.look.cover.kind === "photo") {
+      m.look.cover.layout = "band";
+      m.look.cover.fieldOn = ["phone", "watch" as "phone"];
+    }
+    const p = validateModel(m, { today });
+    has(p, 'cover: fieldOn "watch" is not phone, tablet or desktop');
+    has(p, "cover: fieldOn is for a low cover, not band");
+  });
+
   it("a cover photo that may not be placed", () => {
     const m = clone(columbus52Fixture);
     if (m.look.cover.kind === "photo") m.look.cover.src = "img/hero-1.jpg";

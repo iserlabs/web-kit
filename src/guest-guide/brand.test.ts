@@ -242,6 +242,23 @@ describe("brandCss", () => {
     expect(css.match(/\{/g)).toHaveLength(1);
   });
 
+  it("writes the figure numeric setting, tabular by default", () => {
+    expect(brandCss(sunMountainBrand)).toContain("--fig-num:tabular-nums;");
+    const serifFigures = brand({
+      faces: {
+        ...sunMountainBrand.faces,
+        figure: {
+          family: "Newsreader",
+          fallback: "Georgia, serif",
+          weight: 400,
+          large: 300,
+          numeric: "lining-nums tabular-nums",
+        },
+      },
+    });
+    expect(brandCss(serifFigures)).toContain("--fig-num:lining-nums tabular-nums;");
+  });
+
   it("refuses to write a value that could break out of the rule", () => {
     expect(() => brandCss(brand({ ink: "#000;}body{display:none" }))).toThrow();
     expect(() =>

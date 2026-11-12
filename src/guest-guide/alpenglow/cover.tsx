@@ -179,6 +179,7 @@ export function Cover({
       data-hero=""
       data-name-ink={p?.nameInk ?? "ink"}
       data-facts-ink={p?.factsInk ?? "ink"}
+      data-field-on={c.layout === "low" && p?.fieldOn?.length ? p.fieldOn.join(" ") : undefined}
       style={style}
     >
       {p ? (
