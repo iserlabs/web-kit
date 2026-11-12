@@ -38,7 +38,7 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .cover__name span{display:block}
 .gg .cover__ground{padding:0 var(--gut) max(14px,env(safe-area-inset-bottom));color:var(--on-photo)}
 .gg .cover[data-facts-ink=ink] .cover__ground{color:var(--ink)}
-.gg .cover[data-facts-ink=onPhoto] .cover__ground,.gg .cover[data-name-ink=onPhoto] .cover__name{text-shadow:0 1px 2px rgba(0,0,0,0.55),0 0 14px rgba(0,0,0,0.35)}
+.gg .cover[data-facts-ink=onPhoto] .cover__ground,.gg .cover[data-name-ink=onPhoto] .cover__name{text-shadow:0 1px 2px rgba(0,0,0,0.6),0 0 6px rgba(0,0,0,0.45),0 0 16px rgba(0,0,0,0.3)}
 .gg .cover__addr{font:var(--strong) 17px/1.3 var(--text);max-width:22em}
 .gg .cover__link{display:inline-flex;align-items:center;min-height:44px;font:var(--text-w) 16px/1.2 var(--text)}
 .gg .tt{margin:2px 0 0;display:grid;grid-template-columns:minmax(0,1fr);row-gap:10px}
