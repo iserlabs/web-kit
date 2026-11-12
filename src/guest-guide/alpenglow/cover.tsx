@@ -77,7 +77,7 @@ function Row({ r }: { r: CoverRow }) {
       break;
     case "wifi":
       dd = (
-        <dd className="wifi">
+        <dd className="wifi" data-long={r.password && r.password.length > 24 ? "" : undefined}>
           <span className="wifi__vals">
             {r.network}
             {r.network && r.password ? <br /> : null}
@@ -109,16 +109,16 @@ function Row({ r }: { r: CoverRow }) {
   );
 }
 
-function Facts({ c }: { c: CoverPlan }) {
+function Facts({ c, inline }: { c: CoverPlan; inline?: boolean }) {
   return (
     <>
       <p className="cover__addr" data-essential="">
-        {c.address}
+        {inline ? (c.place ?? c.address) : c.address}{" "}
+        <a className="cover__link" href={c.appleMapUrl ?? c.mapUrl}>
+          {c.directions}
+          <span className="vh"> to {c.address}</span>
+        </a>
       </p>
-      <a className="cover__link" href={c.appleMapUrl ?? c.mapUrl} data-essential="">
-        {c.directions}
-        <span className="vh"> to {c.address}</span>
-      </a>
       <dl className="tt" style={{ "--lab": `${c.labelWidth}px` } as CSSProperties}>
         {c.rows.map((r) => (
           <Row key={r.id} r={r} />
@@ -207,7 +207,7 @@ export function Cover({
           )}
         </h1>
         {c.feature ? <p className="type-feature">{c.feature}</p> : null}
-        {high ? <Facts c={c} /> : null}
+        {high ? <Facts c={c} inline /> : null}
       </div>
       {high ? null : (
         <div className="cover__ground">

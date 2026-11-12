@@ -126,6 +126,8 @@ export type CoverPlan = {
   typeTitle?: string[];
   feature?: string;
   address: string;
+  /** The address without its street, when the house's name already is the street (the sky line on a high cover). */
+  place?: string;
   mapUrl: string;
   appleMapUrl?: string;
   directions: string;
@@ -872,7 +874,7 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
   });
 
   const labelChars = Math.max(...rows.map((r) => r.label.length));
-  const labelWidth = copy.alpenglowLabels ? 60 : Math.min(104, Math.ceil(labelChars * 8.4) + 16);
+  const labelWidth = copy.alpenglowLabels ? 60 : Math.min(104, Math.ceil(labelChars * 7.8) + 12);
 
   const a = m.address.value;
   const addressLine = `${a.street}, ${a.city}, ${a.state} ${a.zip}`;
@@ -886,6 +888,7 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
     typeTitle: cover.kind === "type" ? cover.title : undefined,
     feature: cover.kind === "type" ? cover.feature : undefined,
     address: addressLine,
+    place: m.name.trim() === a.street.trim() ? `${a.city}, ${a.state} ${a.zip}` : undefined,
     mapUrl: m.address.mapUrl,
     appleMapUrl: m.address.appleMapUrl,
     directions: label("directions", "Directions"),

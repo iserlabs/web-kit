@@ -41,7 +41,7 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .cover__addr{font:var(--strong) 17px/1.3 var(--text);max-width:22em}
 .gg .cover__link{display:inline-flex;align-items:center;min-height:44px;font:var(--text-w) 16px/1.2 var(--text)}
 .gg .tt{margin:2px 0 0;display:grid;grid-template-columns:minmax(0,1fr);row-gap:10px}
-.gg .tt__row{display:grid;grid-template-columns:var(--lab,60px) minmax(0,1fr);align-items:baseline;column-gap:8px}
+.gg .tt__row{display:grid;grid-template-columns:var(--lab,60px) minmax(0,1fr);align-items:baseline}
 .gg .tt dt{font:var(--strong) 15px/1.35 var(--text)}
 .gg .tt dd{font:var(--text-w) 16px/1.38 var(--text);min-width:0}
 .gg .tt__times{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:18px;row-gap:2px}
@@ -57,7 +57,9 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .cover--high .tt{margin-top:10px;row-gap:4px}
 .gg .cover--high .tt dd{font-size:15px;line-height:1.36}
 .gg .cover--high .tt__times .fig{font-size:20px}
-.gg .cover--high .cover__addr{margin-top:10px}
+.gg .cover--high .cover__addr{margin-top:6px}
+.gg .cover__addr .cover__link{display:flex;width:fit-content;font-weight:var(--text-w)}
+.gg .cover--high .cover__addr .cover__link{display:inline-flex;margin-left:6px}
 .gg .cover--type{background:var(--f-arrival);justify-content:space-between}
 .gg .cover--type .cover__name{--k:1;font-weight:var(--display-w)}
 .gg .type-title{margin-top:18px;font:var(--display-w) 30px/1.15 var(--display);font-optical-sizing:auto}
@@ -214,6 +216,19 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover__name{font-size:calc(var(--name) * 0.65px)}
 }
 
+/* Short phones, portrait: everything on the first screen steps closer together */
+@media (max-width: 699px) and (max-height: 700px){
+  .gg .cover{gap:12px}
+  .gg .cover__sky{padding-top:12px}
+  .gg .cover__name{margin-top:12px;font-size:min(calc(var(--name) * var(--k) * 0.8px),calc(var(--name) * var(--k) * 0.2051vw))}
+  .gg .cover__addr .cover__link{display:inline-flex;margin-left:6px}
+  .gg .cover .tt{row-gap:4px}
+  .gg .cover .tt dd{font-size:15px;line-height:1.3}
+  .gg .cover .tt__times .fig{font-size:20px}
+  .gg .cover .wifi__vals{line-height:1.3}
+  .gg .cover__ground{padding-bottom:10px}
+}
+
 /* Facts high, a short portrait window: the photo shortens to the sky and the facts drop onto the arrival field */
 @media (orientation: portrait) and (max-height: 760px),(min-width: 1001px) and (max-height: 620px){
   .gg .cover--high .cover__sky{flex:1;display:flex;flex-direction:column}
@@ -222,8 +237,8 @@ export const ALPENGLOW_CSS = String.raw`
 
 /* Landscape phone: photo left, facts right on the arrival field */
 @media (orientation: landscape) and (max-height: 500px) and (max-width: 1000px){
-  .gg .cover{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;gap:0;justify-content:stretch}
-  .gg .cover__photo{position:absolute;inset:0 50% 0 0;width:auto;height:auto;min-height:0}
+  .gg .cover{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);grid-template-rows:auto 1fr;gap:0;justify-content:stretch}
+  .gg .cover__photo{position:absolute;inset:0 60% 0 0;width:auto;height:auto;min-height:0}
   .gg .cover__shade{display:none}
   .gg .cover__sky,.gg .cover__ground{grid-column:2;background:var(--f-arrival);color:var(--ink);text-shadow:none !important}
   .gg .cover[data-name-ink=onPhoto] .cover__sky{color:var(--ink)}
@@ -232,13 +247,17 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover__name,.gg .cover--high .cover__name{font-size:min(44px,calc(var(--name) * 0.5px));margin-top:8px}
   .gg .cover__ground{grid-row:2;padding:8px 24px 14px}
   .gg .cover--high .cover__sky{grid-row:1/-1;padding:14px 24px}
+  .gg .cover--low .cover__sky,.gg .cover--band .cover__sky{grid-column:1;grid-row:1;background:none;padding:12px 20px 0}
+  .gg .cover--low .cover__ground,.gg .cover--band .cover__ground{grid-column:2;grid-row:1/-1;padding-top:14px}
+  .gg .cover--band .cover__sky{position:static}
   .gg .cover--high .tt{margin:8px 0 0;padding:0;background:none}
   .gg .tt{grid-template-columns:1fr;row-gap:6px}
   .gg .cover .copy{outline:2px solid var(--ink);outline-offset:0}
   .gg .cover .copy:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:none}
-  .gg .cover--type{background:var(--f-arrival)}
-  .gg .cover--type .cover__sky,.gg .cover--type .cover__ground{grid-column:auto}
-  .gg .cover--type{display:flex}
+  .gg .cover--type .cover__sky{grid-column:1;grid-row:1/-1}
+  .gg .cover--type .cover__ground{grid-column:2;grid-row:1/-1;padding-top:14px}
+  .gg .wifi[data-long]{flex-wrap:nowrap;align-items:flex-start}
+  .gg .wifi[data-long] .wifi__vals{flex:1 1 0;line-height:1.3}
   .gg .cover--band .cover__photo{min-height:0}
 }
 @media (orientation: landscape) and (max-height: 460px) and (max-width: 1000px){
@@ -250,8 +269,7 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover .tt__times .fig{font-size:20px}
   .gg .cover .tt__times{column-gap:10px}
   .gg .cover .copy{padding:0 8px}
-  .gg .cover .wifi{flex-wrap:nowrap;gap:8px}
-  .gg .cover--high .cover__name,.gg .cover__name{font-size:min(34px,calc(var(--name) * 0.4px))}
+  .gg .cover--high .cover__name,.gg .cover__name{font-size:min(34px,calc(var(--name) * 0.5px))}
   .gg .lockup{height:32px}
 }
 

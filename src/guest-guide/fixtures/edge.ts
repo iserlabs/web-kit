@@ -27,8 +27,9 @@ export const longNameFixture = from("long-name", (m) => {
   m.name = "616 Bonfoy Main House and Cottage";
 });
 
-/** A 63-character Wi-Fi password, the WPA maximum. */
+/** A 63-character Wi-Fi password, the WPA maximum. The door row takes the default (a jump link), the release valve for a crowded cover. */
 export const longPasswordFixture = from("long-password", (m) => {
+  delete m.look.coverRows;
   if (m.wifi.kind === "printed")
     m.wifi.password.value = "Fx7kQ2mN9pL4vR8sT1wY6zB3cD5eG0hJ2kM4nP6qR8sT1vW3xZ5aC7eG9iK1mOq";
 });

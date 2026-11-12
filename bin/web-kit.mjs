@@ -83,7 +83,17 @@ if (cmd === "inquiry") {
   process.exit(0);
 }
 
+if (cmd === "guide-leaks" || cmd === "guide-check") {
+  const cli = await import("../src/guest-guide/cli.mjs");
+  const { lines, code } =
+    cmd === "guide-leaks"
+      ? await cli.runGuideLeaks(argv.slice(1))
+      : await cli.runGuideCheck(argv.slice(1));
+  for (const l of lines) console.log(l);
+  process.exit(code);
+}
+
 console.log(
-  "Usage: web-kit <doctor|audit|brand-pack|inquiry> [--tier required|extended] [siteDir]",
+  "Usage: web-kit <doctor|audit|brand-pack|inquiry|guide-leaks|guide-check> [--tier required|extended] [siteDir]",
 );
 process.exit(cmd ? 1 : 0);
