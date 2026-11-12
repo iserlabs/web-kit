@@ -67,10 +67,7 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .type-title span{display:block}
 .gg .type-feature{margin-top:12px;font:var(--text-w) 17px/1.4 var(--text);color:var(--sec)}
 .gg .cover--type .cover__ground{color:var(--ink)}
-.gg .cover--band .cover__photo{position:relative;inset:auto;height:auto;flex:1 1 auto;min-height:38vh;min-height:38dvh}
-.gg .cover--band .cover__photo img{position:absolute}
-.gg .cover--band{gap:0;justify-content:flex-start}
-.gg .cover--band .cover__sky{position:absolute;inset:0 0 auto 0}
+/* Band: the photo shows between the name and the facts, which sit on the arrival field (the fallback for a cover whose zone fails) */
 .gg .cover--band .cover__ground{background:var(--f-arrival);color:var(--ink);padding-top:18px;text-shadow:none}
 .gg .cover--band .copy{outline:2px solid var(--ink);outline-offset:0}
 .gg .cover--band .copy:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:none}
@@ -266,7 +263,6 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover--high .cover__sky{grid-row:1/-1;padding:14px 24px}
   .gg .cover--low .cover__sky,.gg .cover--band .cover__sky{grid-column:1;grid-row:1;background:none;padding:12px 20px 0}
   .gg .cover--low .cover__ground,.gg .cover--band .cover__ground{grid-column:2;grid-row:1/-1;padding-top:14px;margin-top:0;background:var(--f-arrival)}
-  .gg .cover--band .cover__sky{position:static}
   .gg .cover--high .tt{margin:8px 0 0;padding:0;background:none}
   .gg .tt{grid-template-columns:1fr;row-gap:6px}
   .gg .cover .copy{outline:2px solid var(--ink);outline-offset:0}
@@ -275,7 +271,6 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover--type .cover__ground{grid-column:2;grid-row:1/-1;padding-top:14px}
   .gg .wifi[data-long]{flex-wrap:nowrap;align-items:flex-start}
   .gg .wifi[data-long] .wifi__vals{flex:1 1 0;line-height:1.3}
-  .gg .cover--band .cover__photo{position:absolute;inset:0 60% 0 0;height:auto;min-height:0}
 }
 @media (orientation: landscape) and (max-height: 460px) and (max-width: 1000px){
   .gg .cover__ground,.gg .cover--high .cover__sky{padding:8px 16px}
