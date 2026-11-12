@@ -54,7 +54,8 @@ env, utils, audits, brand-pack, artist, inquiry, owner-portal, owner-statement, 
   `docs/owner-portal.md`.
 
 - `owner-statement` renders one engine-written `owner-statement/1` model as the owner's monthly
-  statement page and print PDF (`renderStatement`, `validate`, `formatCents`, `BRANDS`). `.mjs` plus
+  statement page and print PDF (`renderStatement`, `validate`, `formatCents`, `BRANDS`), plus its link
+  preview (`statementShareMeta`, `renderStatementShareCard`; see `src/owner-statement/README.md`). `.mjs` plus
   `index.d.ts`, framework free; every rule scoped under `.os`. Fixtures carry real figures but
   stand-in names (public repo). The sites keep their own model files and logos.
 

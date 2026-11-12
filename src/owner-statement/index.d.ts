@@ -213,9 +213,102 @@ export interface BrandTokens {
   /** Use tabular figures. Off where the face's tabular digits look mechanical. */
   tabular: boolean;
   fontsHref: string;
+  /** The link preview card (option 1, photo and seal). */
+  card: ShareCardTokens;
+}
+
+/** The link preview card's per-brand tokens (option 1, photo and seal). */
+export interface ShareCardTokens {
+  /** Scrim and ground color as an "r,g,b" triple. */
+  scrim: string;
+  /** Darkest scrim alpha, at the bottom edge. */
+  scrimMax: number;
+  /** The light ink printed over the photo. */
+  light: string;
+  /** The accent for the "Owner statement" line. */
+  accent: string;
+  monthFont: string;
+  monthWeight: number;
+  monthSize: number;
+  subFont: string;
+  subWeight: number;
+  subSize: number;
+  subUpper: boolean;
+  labelFont: string;
+  seal: {
+    radius: number;
+    ground: string | null;
+    ring: string | null;
+    mark: { width: number; height: number };
+  };
+}
+
+/** One node of a share card: a plain tree a Next.js route turns into elements for `next/og`. */
+export interface ShareCardTree {
+  tag: string;
+  style: Record<string, string | number>;
+  children: (ShareCardTree | string)[];
+  src?: string;
+  alt?: string;
+  /** What the node is (photo, scrim, stripe, seal, mark, text, month, label, sub, no-photo). */
+  role?: string;
+}
+
+export interface StatementShareOptions {
+  /** "{city, state}" as the brand writes it, for example "Englewood, New Jersey". */
+  place: string;
+  /** The street, required when the property is the brand itself (the hotel). */
+  street?: string;
+  /** The card's public address; when given, `image` comes back ready for page metadata. */
+  imageUrl?: string;
+}
+
+export interface StatementShareMeta {
+  /** "{Month YYYY} owner statement · {property}" */
+  title: string;
+  /** "{brand} · {city, state}", or "{street} · {city, state}" when the property is the brand. */
+  description: string;
+  siteName: string;
+  imageAlt: string;
+  imageWidth: 1200;
+  imageHeight: 630;
+  image?: { url: string; width: 1200; height: 630; alt: string };
+}
+
+export interface StatementShareCardOptions {
+  /** The owner's home photo, an absolute address or data URI. Missing renders "No photo supplied". */
+  photoUrl?: string;
+  /** The brand's mark for the seal. Missing renders "No mark supplied". */
+  markUrl?: string;
+  /** Required when the property is the brand: it fills the address slot. */
+  place?: string;
+  /** Places the photo at an explicit size and offset; otherwise it covers the card. */
+  photoCrop?: { width: number; height: number; left?: number; top?: number };
+  /** Family names the route loaded the faces under, when they differ from the brand tokens. */
+  fonts?: { display?: string; text?: string };
 }
 
 export const BRANDS: Record<StatementBrand, BrandTokens>;
+
+export const SHARE_CARD_SIZE: { width: 1200; height: 630 };
+/** The center box (x 315 to 885) every word and the seal stay inside, so square crops keep them. */
+export const SHARE_CARD_SAFE: { left: 315; width: 570 };
+
+/**
+ * The link preview tags for a statement page. Never carries a figure, the owner's name or a stay
+ * count; throws when the model does not validate or a handed-in string would carry money or the
+ * owner's name.
+ */
+export function statementShareMeta(
+  model: StatementModel,
+  options: StatementShareOptions,
+): StatementShareMeta;
+
+/** The option-1 share card (photo and seal) for one statement, as a Satori-safe tree. */
+export function renderStatementShareCard(
+  model: StatementModel,
+  options?: StatementShareCardOptions,
+): ShareCardTree;
 
 export function validate(model: unknown): string[];
 export function formatCents(cents: number, opts?: { parens?: boolean }): string;
