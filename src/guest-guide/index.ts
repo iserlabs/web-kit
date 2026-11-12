@@ -1,5 +1,14 @@
 export type { BrandId, Face, FieldId, GuideBrand } from "./brand";
-export { FIELD_IDS } from "./brand";
+export {
+  BANNED_FACES,
+  brandCss,
+  contrast,
+  FIELD_IDS,
+  lch,
+  luminance,
+  validateBrand,
+  worstContrast,
+} from "./brand";
 export type {
   Approval,
   ApprovalSection,
@@ -11,7 +20,14 @@ export type {
   ResolveOptions,
   TemplateLabelId,
 } from "./copy";
-export { TEMPLATE_LABELS } from "./copy";
+export {
+  approved,
+  draftTable,
+  heldStrings,
+  resolveCopy,
+  sectionOf,
+  TEMPLATE_LABELS,
+} from "./copy";
 export { type FactRow, factsMarkdown, factsTable } from "./facts";
 export { findLeaks } from "./leaks";
 export type {
@@ -33,6 +49,28 @@ export type {
   WifiV2,
 } from "./model";
 export { CHAPTER_ORDER, isUnknown, itemKey, kebab, RESERVED_REFS } from "./model";
+export {
+  type Block,
+  type ChapterPlan,
+  COVER_WIDTH,
+  type CoverPlan,
+  type CoverRow,
+  captionOf,
+  firstSentence,
+  formatDay,
+  KIND_LABEL,
+  monthYear,
+  nameStep,
+  PHONE_WIDTH,
+  type PickPlan,
+  type PlacedPhoto,
+  type Plan,
+  type PlanOptions,
+  placedPhotos,
+  planGuide,
+  type QuickRow,
+  restatesHelpBox,
+} from "./plan";
 export type {
   GuestAddress,
   GuestGuide,
@@ -44,4 +82,10 @@ export type {
   LocalPickKind,
   Sourced,
 } from "./types";
-export { type ValidateOptions, validateGuide } from "./validate";
+export {
+  unplaceable,
+  type ValidateModelOptions,
+  type ValidateOptions,
+  validateGuide,
+  validateModel,
+} from "./validate";
