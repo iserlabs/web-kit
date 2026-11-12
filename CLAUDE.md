@@ -48,6 +48,13 @@ env, utils, audits, brand-pack, artist, inquiry, owner-portal, desk/*, observabi
   `.ts` with no brand names; the visible UI is scaffolded into each site by
   `web-kit inquiry init` and art-directed there. See `docs/inquiry.md`.
 
+- `guest-guide` (plus `guest-guide/alpenglow`, `/static`, `/sw`, `/manifest`, `/robots`) is the
+  one guest guide template, brand-switched by tokens. Model, checks and planner are framework-free
+  `.ts`; the components are React server components with no client code; `static` renders them
+  under `tsx` for plain-HTML sites. Every `.tsx` carries the automatic JSX runtime pragma, because
+  tsx compiles kit files in node_modules with no tsconfig. Fixtures use stand-in Wi-Fi values and
+  no photos (public repo). See `docs/guest-guide.md`.
+
 - `owner-portal` is the owner statements module (`StatementTabs`, `groupStatements`,
   `portalTotals`, `validateModel`): statements by year, then month, as accessible tabs.
   Figures come from the statement itself; the kit holds no client name or number. See

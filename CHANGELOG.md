@@ -3,6 +3,22 @@
 ## Unreleased
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
+## 0.17.0-alpenglow.1 (pre-release)
+- **guest-guide v2, the "Alpenglow" template.** Additive: every 0.16 export still works.
+  1) `model.ts`: `GuideModel` and parts (`Unknown`/`Slot` for facts not on record, `WifiV2`, `PriceTable`, `LookV2`, `CoverV2`).
+  2) `copy.ts`: `TEMPLATE_LABELS` (live v1 wording beside held Alpenglow wording), `resolveCopy`, `HeldLine`, `Approval`, `heldStrings`, `draftTable`. Zero approvals prints live copy only; door timing needs a Guesty confirmation and a door-timing approval.
+  3) `brand.ts`: `GuideBrand`, `validateBrand` (contrast, light fields, banned faces, noBlue), `brandCss`. The noBlue hue window runs 190 to 290 degrees: navy measures 266 to 270 in LCh, outside the spec's 260.
+  4) `validate.ts`: `validateModel(model, { today })`.
+  5) `plan.ts`: `planGuide`, ported from the Sun Mountain v1 book.
+  6) `./guest-guide/alpenglow`: `AlpenglowGuide` and parts (server components, one inline stylesheet, one inline script with a CSP nonce), `guideHead`, `guideMetadata`.
+  7) `./guest-guide/static`: `renderGuideHtml` for static sites, under `tsx`.
+  8) `./guest-guide/sw`, `./guest-guide/manifest`, `./guest-guide/robots`: the offline worker, the Home Screen manifest and icon, `AI_CRAWLERS`, `aiGuideRules`, `robotsTxt`.
+  9) CLI: `web-kit guide-leaks` (the Sun Mountain leak script's exit contract) and `web-kit guide-check` (first-window essentials at 18 geometries).
+  10) `react-dom` is an optional peer; `qrcode-generator` (MIT) draws the printed Wi-Fi code. See `docs/guest-guide.md`.
+
+## 0.17.0-alpenglow.0 (pre-release)
+- **guest-guide v2 types only** (`model.ts`, `copy.ts`, `brand.ts`), so the site ports could start.
+
 ## 0.16.0
 - **`desk/visits`: AI assistants named per engine, time on page and on site, regions in the summary.** Additive; records stored by 0.15.0 still read and fold.
   1) Each AI visit now names its engine (ChatGPT, Perplexity, Claude, Gemini, Copilot, DeepSeek, Grok, Meta AI, Poe, Mistral, You.com, Phind, Duck.ai) in a new `engines` count on the day record, beside the unchanged "AI assistants" group. New hosts: chat.deepseek.com, grok.com, meta.ai, poe.com, chat.mistral.ai, copilot.cloud.microsoft, duck.ai; Android app referrers for ChatGPT, Gemini, Claude, Perplexity, DeepSeek and Grok; link tags `gemini`, `copilot`, `perplexity.ai`, `claude.ai`. Google AI Overviews and AI Mode arrive as plain google.com and cannot be told apart, so they stay in "Google search". `sourceOf` returns `engine` for an AI visit; `AI_ENGINES` lists the names.
