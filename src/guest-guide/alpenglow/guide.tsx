@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 import type { GuideBrand } from "../brand";
 import { brandCss } from "../brand";
 import type { Plan } from "../plan";

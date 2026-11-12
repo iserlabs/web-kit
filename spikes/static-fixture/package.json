@@ -1,0 +1,11 @@
+{
+  "name": "spike-static-fixture",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@iserlabs/web-kit": "file:../..",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tsx": "^4.19.0"
+  }
+}

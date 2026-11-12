@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 import type { CSSProperties, ReactNode } from "react";
 import type { GuideBrand } from "../brand";
 import { type CoverPlan, type CoverRow, nameStep } from "../plan";
@@ -12,22 +14,30 @@ function hexRgb(hex: string): string {
 }
 
 /**
- * The measured shade, never above 0.35. Over the bottom `from` of the photo in
- * near-black for white facts; over the top `from` in the paper tint for ink
- * facts set in the sky. It ramps in over the first 40 percent of its zone.
+ * The measured shade on a high cover, never above 0.35: the paper tint over
+ * the top `from` of the photo, under ink facts set in the sky.
  */
 export function shadeOf(c: CoverPlan, paper: string): string {
   const s = c.photo?.shade;
-  if (!s || s.max <= 0) return "none";
-  const max = Math.min(0.35, s.max);
+  if (!s || s.max <= 0 || c.layout !== "high") return "none";
+  const top = Math.min(0.35, s.max);
   const from = Math.min(1, Math.max(0, s.from));
   const pct = (x: number) => `${Math.round(x * 1000) / 10}%`;
-  if (c.layout === "high") {
-    const tint = hexRgb(paper);
-    return `linear-gradient(to bottom, rgba(${tint},${max}) 0%, rgba(${tint},${max}) ${pct(from * 0.6)}, rgba(${tint},0) ${pct(from)})`;
-  }
-  const start = 1 - from;
-  return `linear-gradient(to bottom, rgba(12,14,18,0) ${pct(start)}, rgba(12,14,18,${max}) ${pct(start + from * 0.4)}, rgba(12,14,18,${max}) 100%)`;
+  const tint = hexRgb(paper);
+  return `linear-gradient(to bottom, rgba(${tint},${top}) 0%, rgba(${tint},${top}) ${pct(from * 0.6)}, rgba(${tint},0) ${pct(from)})`;
+}
+
+/**
+ * Low and band covers: the shade rides behind the facts themselves, so it is
+ * under them at every window height (on a short phone the facts start above
+ * the photo's bottom 45 percent). It fades in over the 96 px above the address
+ * and holds, never above 0.35.
+ */
+export function groundShadeOf(c: CoverPlan): string {
+  const s = c.photo?.shade;
+  if (!s || s.max <= 0 || c.layout === "high" || c.photo?.factsInk !== "onPhoto") return "none";
+  const top = Math.min(0.35, s.max);
+  return `linear-gradient(to bottom, rgba(12,14,18,0) 0, rgba(12,14,18,${top}) 96px, rgba(12,14,18,${top}) 100%)`;
 }
 
 export function Wordmark({ brand, small }: { brand: GuideBrand; small?: boolean }) {
@@ -144,6 +154,7 @@ export function Cover({
     "--focus": p?.focus.portrait,
     "--focus-wide": p?.focus.landscape,
     "--shade": shadeOf(c, brand.fields.paper),
+    "--ground-shade": groundShadeOf(c),
   } as CSSProperties;
   const high = c.layout === "high";
   return (

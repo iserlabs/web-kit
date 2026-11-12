@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 import type { Plan } from "../plan";
 import { CopyButton } from "./blocks";
 

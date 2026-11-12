@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 import type { ReactNode } from "react";
 import type { Block, PlacedPhoto, StepItem } from "../plan";
 import type { RenderImage } from "./image";

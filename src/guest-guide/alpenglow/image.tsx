@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 import type { ReactNode } from "react";
 import { COVER_WIDTH, PHONE_WIDTH } from "../plan";
 

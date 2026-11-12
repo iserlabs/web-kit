@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 import { draftTable } from "../copy";
 import type { GuideModel } from "../model";
 

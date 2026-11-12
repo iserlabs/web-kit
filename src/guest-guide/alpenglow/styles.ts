@@ -26,6 +26,7 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .cover__photo img{object-fit:cover;object-position:var(--focus,50% 50%)}
 .gg .cover__shade{position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--shade,none)}
 .gg .cover__sky{padding:18px var(--gut) 0;color:var(--ink)}
+.gg .cover--low .cover__ground{background:var(--ground-shade,none);padding-top:96px;margin-top:-96px}
 .gg .cover[data-name-ink=onPhoto] .cover__sky{color:var(--on-photo)}
 .gg .brand{display:flex;align-items:center;gap:10px;font:var(--wordmark-w) 13px/1 var(--wordmark);letter-spacing:0.06em}
 .gg .brand img{width:28px;height:28px}
@@ -229,8 +230,9 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover__ground{padding-bottom:10px}
 }
 
-/* Facts high, a short portrait window: the photo shortens to the sky and the facts drop onto the arrival field */
-@media (orientation: portrait) and (max-height: 760px),(min-width: 1001px) and (max-height: 620px){
+/* Facts high: the sky holds the name; the timetable drops onto the arrival field below it (the band fallback), on
+   every phone held upright and on short laptops, where the facts would otherwise run into the busy part of the photo */
+@media (orientation: portrait) and (max-width: 699px),(orientation: portrait) and (max-height: 760px),(min-width: 1001px) and (max-height: 820px){
   .gg .cover--high .cover__sky{flex:1;display:flex;flex-direction:column}
   .gg .cover--high .tt{flex:1;align-content:start;margin:14px calc(-1 * var(--gut)) 0;padding:18px var(--gut) 20px;background:var(--f-arrival)}
 }
@@ -248,7 +250,7 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover__ground{grid-row:2;padding:8px 24px 14px}
   .gg .cover--high .cover__sky{grid-row:1/-1;padding:14px 24px}
   .gg .cover--low .cover__sky,.gg .cover--band .cover__sky{grid-column:1;grid-row:1;background:none;padding:12px 20px 0}
-  .gg .cover--low .cover__ground,.gg .cover--band .cover__ground{grid-column:2;grid-row:1/-1;padding-top:14px}
+  .gg .cover--low .cover__ground,.gg .cover--band .cover__ground{grid-column:2;grid-row:1/-1;padding-top:14px;margin-top:0;background:var(--f-arrival)}
   .gg .cover--band .cover__sky{position:static}
   .gg .cover--high .tt{margin:8px 0 0;padding:0;background:none}
   .gg .tt{grid-template-columns:1fr;row-gap:6px}

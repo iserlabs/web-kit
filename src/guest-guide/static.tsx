@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 /**
  * The static renderer: the same Alpenglow components through react-dom/server,
  * for the sites that publish plain HTML (Euclid, Grand Colorado). Run it under
