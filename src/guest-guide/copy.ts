@@ -7,7 +7,7 @@
  * The kit owns the template labels (live defaults and Alpenglow drafts). Each
  * house owns its own drafts in `model.drafts`. Approvals live per site.
  */
-import type { ChapterId } from "./model";
+import type { ChapterId, GuideModel } from "./model";
 
 export type TemplateLabelId =
   | "quickFindHead"
@@ -149,3 +149,187 @@ export type ResolveOptions = {
   /** The drafts preview: every held line printed in place. Never on a production build. */
   drafts?: "hide" | "show";
 };
+
+const SECTION_OF_CHAPTER: Record<ChapterId, ApprovalSection> = {
+  arrival: "arrival",
+  "first-hour": "first-hour",
+  house: "house",
+  "good-to-know": "good-to-know",
+  rules: "rules",
+  checkout: "checkout",
+  nearby: "nearby",
+  help: "help",
+};
+
+/** The approval section a held line belongs to. */
+export function sectionOf(t: DraftTarget, model?: Pick<GuideModel, "tables">): ApprovalSection {
+  switch (t.kind) {
+    case "chapter-head":
+    case "subhead":
+      return SECTION_OF_CHAPTER[t.chapter];
+    case "quick-find":
+      return "quick-find";
+    case "cover-line":
+      return "cover";
+    case "if-code-fails":
+    case "landmark":
+      return "arrival";
+    case "price-cell": {
+      const table = model?.tables.find((x) => x.title === t.table);
+      return table ? SECTION_OF_CHAPTER[table.chapter] : "rules";
+    }
+  }
+}
+
+/** Whether an approval for `section` covers this house. */
+export function approved(
+  approvals: readonly Approval[],
+  section: ApprovalSection,
+  slug: string,
+): boolean {
+  return approvals.some(
+    (a) => a.section === section && (a.scope === "brand" || a.scope === `house:${slug}`),
+  );
+}
+
+/** The template labels that belong to an approval section other than "template-labels". */
+const LABEL_SECTION: Partial<Record<TemplateLabelId, ApprovalSection>> = {
+  unknownLine: "unknowns",
+};
+
+/**
+ * Every printed label and line for one house, live by default, each held line
+ * only where its section is approved for this house. Pure: no clock, no I/O.
+ */
+export function resolveCopy(model: GuideModel, opts: ResolveOptions): Copy {
+  const show = opts.drafts === "show";
+  const ok = (s: ApprovalSection) => show || approved(opts.approvals, s, model.slug);
+
+  const labels = {} as Record<TemplateLabelId, Line | null>;
+  for (const [id, l] of Object.entries(TEMPLATE_LABELS) as [
+    TemplateLabelId,
+    (typeof TEMPLATE_LABELS)[TemplateLabelId],
+  ][]) {
+    const live = opts.brandLabels?.[id] ?? l.live;
+    const section = LABEL_SECTION[id] ?? "template-labels";
+    if (ok(section))
+      labels[id] = { text: l.alpenglow, from: live === l.alpenglow ? "live" : "approved" };
+    else labels[id] = live === null ? null : { text: live, from: "live" };
+  }
+
+  const copy: Copy = {
+    drafts: show ? "show" : "hide",
+    labels,
+    alpenglowLabels: ok("template-labels"),
+    chapterHeads: {},
+    subheads: {},
+    quickFind: {},
+    coverLines: {},
+    priceCells: {},
+    unknownLine: ok("unknowns") ? labels.unknownLine : null,
+    unknownsOn: ok("unknowns"),
+    codeDelivery: { text: model.entry.codeDelivery.value, from: "live" },
+  };
+
+  if (
+    model.entry.codeDeliveryNext?.guestyConfirmed &&
+    (show || approved(opts.approvals, "door-timing", model.slug))
+  ) {
+    copy.codeDelivery = { text: model.entry.codeDeliveryNext.text, from: "approved" };
+  }
+
+  if (model.entry.ifCodeFails)
+    copy.ifCodeFails = { steps: model.entry.ifCodeFails.value, from: "live" };
+  const landmark = model.entry.landmark;
+  if (landmark && !("unknown" in landmark)) copy.landmark = { text: landmark.value, from: "live" };
+
+  for (const d of model.drafts ?? []) {
+    if (!ok(sectionOf(d.at, model))) continue;
+    const line: Line = { text: d.text, from: "approved" };
+    const t = d.at;
+    switch (t.kind) {
+      case "chapter-head":
+        copy.chapterHeads[t.chapter] = line;
+        break;
+      case "subhead":
+        copy.subheads[`${t.chapter}|${t.group}`] = line;
+        break;
+      case "quick-find":
+        copy.quickFind[t.ref] = {
+          question: { text: t.question, from: "approved" },
+          ...(t.answer ? { answer: { text: t.answer, from: "approved" as From } } : {}),
+        };
+        break;
+      case "cover-line":
+        copy.coverLines[t.row] = line;
+        break;
+      case "if-code-fails":
+        // A live ladder outranks a draft one: drafts never replace live steps.
+        if (!copy.ifCodeFails) copy.ifCodeFails = { steps: t.steps, from: "approved" };
+        break;
+      case "landmark":
+        if (!copy.landmark) copy.landmark = { text: t.text, from: "approved" };
+        break;
+      case "price-cell":
+        copy.priceCells[`${t.table}|${t.item}`] = line;
+        break;
+    }
+  }
+  return copy;
+}
+
+/** Every held string for a house and the kit labels: what must never appear with zero approvals. */
+export function heldStrings(
+  model: GuideModel,
+  brandLabels?: Partial<Record<TemplateLabelId, string>>,
+): string[] {
+  const out = new Set<string>();
+  for (const [id, l] of Object.entries(TEMPLATE_LABELS) as [
+    TemplateLabelId,
+    (typeof TEMPLATE_LABELS)[TemplateLabelId],
+  ][]) {
+    const live = brandLabels?.[id] ?? l.live;
+    // Short or shared words ("In", "Wi-Fi") are not distinctive; only a label that differs from its live value and is long enough to grep for counts.
+    if (l.alpenglow && l.alpenglow !== live && l.alpenglow.length >= 6) out.add(l.alpenglow);
+  }
+  for (const d of model.drafts ?? []) {
+    if (d.at.kind === "quick-find") {
+      out.add(d.at.question);
+      if (d.at.answer) out.add(d.at.answer);
+    } else if (d.at.kind === "if-code-fails") for (const s of d.at.steps) out.add(s);
+    else if (d.at.kind === "landmark") out.add(d.at.text);
+    if (d.text && d.at.kind !== "if-code-fails") out.add(d.text);
+  }
+  if (model.entry.codeDeliveryNext) out.add(model.entry.codeDeliveryNext.text);
+  return [...out];
+}
+
+/** One row per held line, beside the live wording it replaces, for the drafts preview table. */
+export function draftTable(model: GuideModel): {
+  section: ApprovalSection;
+  held: string;
+  live: string;
+  why: string;
+}[] {
+  const rows = (model.drafts ?? []).map((d) => ({
+    section: sectionOf(d.at, model),
+    held:
+      d.at.kind === "quick-find"
+        ? [d.at.question, d.at.answer].filter(Boolean).join(" / ")
+        : d.at.kind === "if-code-fails"
+          ? d.at.steps.join(" / ")
+          : d.text,
+    live: d.replaces ?? "(none)",
+    why: d.why,
+  }));
+  if (model.entry.codeDeliveryNext)
+    rows.push({
+      section: "door-timing",
+      held: model.entry.codeDeliveryNext.text,
+      live: model.entry.codeDelivery.value,
+      why: model.entry.codeDeliveryNext.guestyConfirmed
+        ? `Guesty check-in-day message confirmed ${model.entry.codeDeliveryNext.guestyConfirmed.on}`
+        : "Waiting on Guesty check-in-day confirmation",
+    });
+  return rows;
+}
