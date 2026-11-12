@@ -137,6 +137,8 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .terms{color:var(--sec);font-size:16px}
 .gg .picks{list-style:none;padding:0;margin:0 0 12px}
 .gg .picks li{margin:0 0 22px}
+.gg .row-link{margin:0 0 6px}
+.gg .row-link a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;font-weight:var(--strong)}
 .gg .picks a{display:inline-flex;align-items:center;min-height:44px;font-weight:var(--strong)}
 .gg .picks span{display:block;color:var(--sec);font-size:16px}
 .gg .picks .pick-note{color:var(--ink);font-size:18px}

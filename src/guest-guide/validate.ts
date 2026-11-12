@@ -262,11 +262,12 @@ export function validateModel(m: GuideModel, opts: ValidateModelOptions): string
   // Keys: every item and unknown row, unique across the guide.
   const items = new Map<string, { section: string; body: string; group?: string }>();
   const unknownKeys = new Set<string>();
+  const linkKeys = new Set<string>();
   const ids = new Set<string>();
   m.sections.forEach((sec, i) => {
     if (ids.has(sec.id)) problems.push(`sections: duplicate id "${sec.id}"`);
     ids.add(sec.id);
-    if (sec.items.length === 0 && !sec.unknowns?.length)
+    if (sec.items.length === 0 && !sec.unknowns?.length && !sec.links?.length)
       problems.push(`sections.${i} (${sec.id}): has no rows`);
     for (const it of sec.items) {
       const key = itemKey(sec.id, it);
@@ -293,9 +294,21 @@ export function validateModel(m: GuideModel, opts: ValidateModelOptions): string
         problems.push(`sections.${sec.id}: duplicate item key "${key}"`);
       unknownKeys.add(key);
     }
+    for (const l of sec.links ?? []) {
+      const key = itemKey(sec.id, l);
+      if (items.has(key) || unknownKeys.has(key) || linkKeys.has(key))
+        problems.push(`sections.${sec.id}: duplicate item key "${key}"`);
+      linkKeys.add(key);
+      if (!l.label.trim()) problems.push(`${key}: link has no label`);
+      if (!/^https:\/\//.test(l.href) && !/^\/(?!\/)/.test(l.href))
+        problems.push(`${key}: link "${l.href}" must be https:// or a path starting with /`);
+    }
   });
   const isRef = (r: string) =>
-    (RESERVED_REFS as readonly string[]).includes(r) || items.has(r) || unknownKeys.has(r);
+    (RESERVED_REFS as readonly string[]).includes(r) ||
+    items.has(r) ||
+    unknownKeys.has(r) ||
+    linkKeys.has(r);
 
   function checkThrough(where: string, day: string) {
     if (!ISO.test(day) || !isRealDate(day)) problems.push(`${where}: "${day}" is not a real date`);

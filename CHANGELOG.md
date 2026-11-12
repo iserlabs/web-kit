@@ -14,7 +14,8 @@
   7) `./guest-guide/static`: `renderGuideHtml` for static sites, under `tsx`.
   8) `./guest-guide/sw`, `./guest-guide/manifest`, `./guest-guide/robots`: the offline worker, the Home Screen manifest and icon, `AI_CRAWLERS`, `aiGuideRules`, `robotsTxt`.
   9) CLI: `web-kit guide-leaks` (the Sun Mountain leak script's exit contract) and `web-kit guide-check` (first-window essentials at 18 geometries).
-  10) `react-dom` is an optional peer; `qrcode-generator` (MIT) draws the printed Wi-Fi code. See `docs/guest-guide.md`.
+  10) Rows beyond text: `ItemV2.video` (0 KB until tapped), `SectionV2.links` (link rows), `PhotoV2.credit` (colophon attributions), and the `item-body` held-line target for short answers.
+  11) `react-dom` is an optional peer; `qrcode-generator` (MIT) draws the printed Wi-Fi code. See `docs/guest-guide.md`.
 
 ## 0.17.0-alpenglow.0 (pre-release)
 - **guest-guide v2 types only** (`model.ts`, `copy.ts`, `brand.ts`), so the site ports could start.

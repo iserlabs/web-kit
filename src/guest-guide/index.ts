@@ -38,6 +38,7 @@ export type {
   DisplayFact,
   GuideModel,
   ItemV2,
+  LinkItem,
   LookV2,
   PhotoV2,
   PickV2,

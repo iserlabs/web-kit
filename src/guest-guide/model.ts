@@ -112,6 +112,20 @@ export type SectionV2 = {
   items: ItemV2[];
   /** Rows not on record. Shown only as their liveLine, or with the approved unknown line. */
   unknowns?: UnknownItem[];
+  /** Rows that are a link and nothing else (a snow report, the webcams, a lost-item form). */
+  links?: LinkItem[];
+};
+
+/** A row that is one link: printed as a plain 44 px row, an external link marked as one. */
+export type LinkItem = {
+  /** Default: `${sectionId}.${kebab(label)}`. */
+  key?: string;
+  /** The live link text, verbatim. */
+  label: string;
+  /** https://, or a path on the same site starting with "/". */
+  href: string;
+  source: string;
+  checked: string;
 };
 
 export type PhotoV2 = GuidePhoto & {
@@ -121,6 +135,8 @@ export type PhotoV2 = GuidePhoto & {
   rights?: "confirmed" | "unconfirmed";
   /** What a camera sees that a guide may not show. Any entry means never placed. */
   shows?: ("door" | "garage-door" | "code" | "neighbor-number" | "defect")[];
+  /** The attribution the photo's license requires, verbatim ("Photo: Jane Doe"). Printed in the colophon when the photo is placed. */
+  credit?: string;
 };
 
 export type WifiV2 =

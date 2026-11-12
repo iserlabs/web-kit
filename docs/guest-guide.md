@@ -47,6 +47,17 @@ The v0.13 to v0.16 exports (`GuestGuide`, `validateGuide`, `factsTable`, `factsM
 | Time-bound rows fail the build after their day; a guide unchecked for 60 days fails | `validateModel` |
 | 911 once, no phone where the brand says never | `planGuide`, render test |
 
+## Rows beyond text
+
+- **Video** (`ItemV2.video`, `VideoV2`): `<video preload="none">`, the poster set only as the row nears
+  the window, so it adds 0 KB to the first load; never saved offline; the photo never-place rules apply.
+- **Link rows** (`SectionV2.links`, `LinkItem`): a plain 44 px row link (https:// or a same-site path),
+  an external one marked with an arrow and a hidden "(another site)". Quick find may point at one.
+- **Photo credits** (`PhotoV2.credit`): printed verbatim in the colophon for each placed photo, once.
+- **Short answers** (`DraftTarget` `{ kind: "item-body", key }`, key = an item key, `"parking"` or
+  `"contact"`): replace a live body only under that chapter's approval for the house. A figure that
+  is not in the short answer is dropped.
+
 ## Cover
 
 `look.cover` is a photo (`layout` low, high or band, from the zone measurement) or a type cover.

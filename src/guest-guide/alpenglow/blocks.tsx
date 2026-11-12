@@ -207,6 +207,20 @@ export function Blocks({ blocks, render }: { blocks: Block[]; render: RenderImag
             {b.terms ? <p className="terms">{b.terms}</p> : null}
           </div>
         );
+      case "link":
+        return (
+          <p key={k} className="row-link" id={b.id}>
+            <a href={b.href}>
+              {b.label}
+              {b.external ? (
+                <>
+                  <span aria-hidden="true"> &#8599;</span>
+                  <span className="vh"> (another site)</span>
+                </>
+              ) : null}
+            </a>
+          </p>
+        );
       case "picks":
         return b.groups.map((g) => (
           <div key={`${k}-${g.label}`}>

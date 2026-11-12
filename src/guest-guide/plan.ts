@@ -63,7 +63,8 @@ export type Block =
       rows: { item: string; price: string; note?: string }[];
       terms?: string;
     }
-  | { kind: "picks"; groups: { label: string; picks: PickPlan[] }[] };
+  | { kind: "picks"; groups: { label: string; picks: PickPlan[] }[] }
+  | { kind: "link"; key: string; id: string; label: string; href: string; external: boolean };
 
 export type PickPlan = {
   name: string;
@@ -156,7 +157,13 @@ export type Plan = {
   quickFind: { head: Line; rows: QuickRow[] };
   chapters: ChapterPlan[];
   help: ChapterPlan & { contact: string; phone?: string; sms?: boolean; emergencies: string };
-  colophon: { address: string; checked: string; saved: string };
+  colophon: {
+    address: string;
+    checked: string;
+    saved: string;
+    /** The attributions placed photos require, verbatim, in page order, each once. */
+    credits: string[];
+  };
   print: { wifiQr?: string };
   /** Every element id the page carries, so a test can prove each link lands. */
   ids: string[];
@@ -544,6 +551,17 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
       }
     }
     out.push(...unknownBlocks(chapter));
+    for (const l of sec.links ?? []) {
+      const key = itemKey(chapter, l);
+      out.push({
+        kind: "link",
+        key,
+        id: id(anchor(key)),
+        label: l.label,
+        href: l.href,
+        external: /^https?:\/\//.test(l.href),
+      });
+    }
     return out;
   };
 
@@ -726,6 +744,9 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
   const qfRows: Omit<QuickRow, "n">[] = [];
   const itemsByKey = new Map<string, ItemV2>();
   for (const s of m.sections) for (const it of s.items) itemsByKey.set(itemKey(s.id, it), it);
+  const linkByKey = new Map(
+    m.sections.flatMap((s) => (s.links ?? []).map((l) => [itemKey(s.id, l), l] as const)),
+  );
   const unknownByKey = new Map(
     m.sections.flatMap((s) => (s.unknowns ?? []).map((u) => [itemKey(s.id, u), u] as const)),
   );
@@ -777,6 +798,8 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
       } else if (itemsByKey.has(ref)) {
         const it = itemsByKey.get(ref) as ItemV2;
         qfRows.push(row(`#${anchor(ref)}`, it.label, short(it.body)));
+      } else if (linkByKey.has(ref)) {
+        qfRows.push(row(`#${anchor(ref)}`, linkByKey.get(ref)?.label ?? ref));
       } else if (unknownByKey.has(ref) && ids.includes(anchor(ref))) {
         const u = unknownByKey.get(ref);
         const text = copy.unknownsOn ? copy.unknownLine?.text : u?.fact.liveLine;
@@ -922,7 +945,12 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
     quickFind: { head: L.quickFindHead ?? { text: "Quick find", from: "live" }, rows: quickRows },
     chapters,
     help,
-    colophon: { address: addressLine, checked, saved: label("savedLine") },
+    colophon: {
+      address: addressLine,
+      checked,
+      saved: label("savedLine"),
+      credits: [...new Set([...used].flatMap((src) => bySrc.get(src)?.credit ?? []))],
+    },
     print: { wifiQr: wifiPayload(m) },
     ids,
     offlineUrls: [],

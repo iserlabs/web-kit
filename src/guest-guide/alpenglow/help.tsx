@@ -52,6 +52,9 @@ export function Help({
         <Wordmark brand={brand} small />
         <span>{plan.colophon.address}</span>
         <span>{plan.colophon.checked}</span>
+        {plan.colophon.credits.map((c) => (
+          <span key={c}>{c}</span>
+        ))}
         <span className="saved" data-saved="">
           {plan.colophon.saved}
         </span>
