@@ -223,6 +223,23 @@ describe("words and marks", () => {
   }
 });
 
+/** Split a selector list on the commas that are not inside parentheses (`:where(a, b)`). */
+function topLevelCommas(list: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let from = 0;
+  for (let i = 0; i < list.length; i++) {
+    if (list[i] === "(") depth++;
+    if (list[i] === ")") depth--;
+    if (list[i] === "," && depth === 0) {
+      parts.push(list.slice(from, i));
+      from = i + 1;
+    }
+  }
+  parts.push(list.slice(from));
+  return parts;
+}
+
 /** Every top-level selector must start with the root class. */
 function unscoped(css: string): string[] {
   const out: string[] = [];
@@ -244,7 +261,7 @@ function unscoped(css: string): string[] {
       else if (head.startsWith("@page") || head.startsWith("@font-face")) {
         // page rules cannot be scoped; they are the print sheet itself
       } else {
-        for (const sel of head.split(",")) {
+        for (const sel of topLevelCommas(head)) {
           if (!sel.trim().startsWith(".os")) out.push(sel.trim());
         }
       }

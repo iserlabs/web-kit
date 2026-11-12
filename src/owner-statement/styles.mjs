@@ -24,8 +24,8 @@ export function statementCss(tokens, stacks, { footer }) {
 .os *,.os *::before,.os *::after{box-sizing:border-box}
 .os a{color:var(--os-accent);text-underline-offset:.15em}
 .os a:focus-visible,.os summary:focus-visible{outline:3px solid var(--os-accent);outline-offset:2px}
-.os p,.os h1,.os h2,.os h3,.os ol,.os ul{margin:0;padding:0}
-.os ol,.os ul{list-style:none}
+.os :where(p,h1,h2,h3,ol,ul){margin:0;padding:0}
+.os :where(ol,ul){list-style:none}
 .os__sheet{position:relative;background:var(--os-paper);max-width:760px;margin:0 auto;padding:28px 18px 32px}${stripe}
 .os__mast{text-align:center;border-bottom:1px solid var(--os-rule);padding-bottom:18px}
 .os__logo{display:block;margin:0 auto;height:var(--os-logo-h);width:auto;max-width:100%}
@@ -41,7 +41,7 @@ export function statementCss(tokens, stacks, { footer }) {
 .os__btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;background:var(--os-ink);color:var(--os-paper);font-weight:600;text-decoration:none}
 .os a.os__btn{color:var(--os-paper)}
 .os__h{margin:30px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--os-rule)}
-.os__num{font-family:var(--os-figures);font-variant-numeric:tabular-nums lining-nums;text-align:right;white-space:nowrap}
+.os__num{font-family:var(--os-figures);font-variant-numeric:${tokens.tabular ? "tabular-nums " : ""}lining-nums;text-align:right;white-space:nowrap}
 .os--palisade .os__num{font-size:.92em}
 .os__colhead{display:grid;grid-template-columns:minmax(0,1fr) 5.6rem;column-gap:10px;font-size:.875rem;color:var(--os-soft);padding:0 0 4px}
 .os__colhead span{text-align:right}
@@ -79,7 +79,7 @@ export function statementCss(tokens, stacks, { footer }) {
 .os__ssub{padding:10px 0;border-top:2px solid var(--os-ink);font-weight:700}
 .os__ssub .os__ref{color:inherit}
 .os__cref{color:var(--os-soft)}
-.os__costs li{display:grid;grid-template-columns:3.2rem minmax(0,1fr) auto;column-gap:10px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--os-rule)}
+.os__costs li{display:grid;grid-template-columns:3rem minmax(0,1fr) auto;column-gap:10px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--os-rule)}
 .os__costs li.os__ssub{border-bottom:0}
 .os__small{display:block;font-size:.9rem;color:var(--os-soft)}
 .os__att{counter-reset:att}
@@ -95,21 +95,30 @@ export function statementCss(tokens, stacks, { footer }) {
 .os__thead,.os__srow{grid-template-columns:var(--os-cols-wide);column-gap:10px}
 .os__c--minor{display:block}
 }
-@page os{size:letter;margin:.75in .75in .85in;
+@page os{size:letter;margin:.7in .75in .8in;
 @bottom-left{content:"${cssString(footer)}";font:9pt "Instrument Sans","Helvetica Neue",Arial,sans-serif;color:#4a4a4a}
 @bottom-right{content: "Page " counter(page) " of " counter(pages);font:9pt "Instrument Sans","Helvetica Neue",Arial,sans-serif;color:#4a4a4a}}
 @media print{
 .os{background:none;padding:0;font-size:10.5pt;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.os__sheet{max-width:none;margin:0;padding:0;box-shadow:none}
+.os__sheet{max-width:none;margin:0;padding:0;box-shadow:none;background:none}
 .os__actions{display:none}
 .os__thead,.os__srow{grid-template-columns:var(--os-cols-wide)}
 .os__c--minor{display:block}
 .os details:not([open])::details-content{content-visibility:visible}
 .os__stay > summary{cursor:auto}
-.os__stay,.os__rows li,.os__costs li,.os__ssub,.os__gnote,.os__att li{break-inside:avoid}
-.os__h,.os__prop-h{break-after:avoid}
-.os__thead{break-after:avoid}
-.os__big{font-size:34pt}
+.os__stay .os__rows,.os__rows li,.os__costs li,.os__ssub,.os__gnote,.os__att li{break-inside:avoid}
+.os__stay > summary{break-after:avoid}
+.os__h,.os__prop-h,.os__thead{break-after:avoid}
+.os__mast{padding-bottom:10px}
+.os__lead{padding:14px 0 12px}
+.os__big{font-size:30pt}
+.os__h{margin:18px 0 6px}
+.os__rows li{padding:5px 0}
+.os__stay > summary,.os__stay > .os__srow{padding:6px 0;min-height:0}
+.os__stay .os__rows{padding-bottom:6px}
+.os__stay .os__rows li{padding:2px 0}
+.os__costs li{padding:5px 0}
+.os__sign{margin-top:16px;break-inside:avoid}
 .os p,.os li{orphans:3;widows:3}
 }
 `;

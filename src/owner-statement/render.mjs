@@ -60,8 +60,8 @@ function trackFor(column, wide) {
 }
 
 function gridVars(columns, keep) {
-  const phone = ["3.2rem"];
-  const wide = ["3.2rem"];
+  const phone = ["3rem"];
+  const wide = ["3rem"];
   columns.forEach((c, i) => {
     const first = i === 0;
     wide.push(first ? "minmax(0,1.3fr)" : trackFor(c, true));

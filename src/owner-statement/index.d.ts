@@ -206,6 +206,8 @@ export interface BrandTokens {
   stripe: string | null;
   /** Height of the masthead logo in CSS pixels. */
   logoHeight: number;
+  /** Use tabular figures. Off where the face's tabular digits look mechanical. */
+  tabular: boolean;
   fontsHref: string;
 }
 

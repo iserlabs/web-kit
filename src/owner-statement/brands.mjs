@@ -35,6 +35,7 @@ export const BRANDS = {
     tint: "#f1ead9",
     stripe: null,
     logoHeight: 40,
+    tabular: true,
     fontsHref: `${GF}${NEWSREADER_Q}&${INSTRUMENT_Q}&display=swap`,
   },
   palisade: {
@@ -51,6 +52,7 @@ export const BRANDS = {
     tint: "#f6f2ea",
     stripe: "#b5975a",
     logoHeight: 44,
+    tabular: true,
     fontsHref: `${GF}family=EB+Garamond:wght@400;500;600&${INSTRUMENT_Q}&family=Geist+Mono:wght@400;500&display=swap`,
   },
   columbus: {
@@ -67,6 +69,7 @@ export const BRANDS = {
     tint: "#f2ebdc",
     stripe: null,
     logoHeight: 50,
+    tabular: false,
     fontsHref: `${GF}family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Schibsted+Grotesk:wght@400;500;600&display=swap`,
   },
   xenia: {
@@ -83,6 +86,7 @@ export const BRANDS = {
     tint: "#efe9db",
     stripe: null,
     logoHeight: 36,
+    tabular: true,
     fontsHref: `${GF}${NEWSREADER_Q}&${INSTRUMENT_Q}&display=swap`,
   },
 };

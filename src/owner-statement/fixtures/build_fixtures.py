@@ -187,7 +187,7 @@ def palisade():
         "prepared": {"by": S(b, "preparer"), "date": "2026-11-01"},
         "moves": {"direction": "none", "cents": 0,
                   "headline": f"Between us, {S(b, 'month')}",
-                  "line": "nothing moves; our fee came out of the co-host payout",
+                  "line": "our fee came out of the co-host payout",
                   "method": None, "date": None, "dateUnknown": None,
                   "sentence": (f"Nothing moves between us for October: our {S(b, 'fee_rate')} fee, {S(b, 'fee')}, "
                                "came out of Airbnb's co-host payout.")},
