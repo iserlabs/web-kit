@@ -110,7 +110,13 @@ describe("one planted break per rule gives a named error", () => {
     expect(errs.some((e) => e.startsWith("zero-row:"))).toBe(true);
   });
 
-  for (const word of ["approximate", "variance", "estimate", "You earned", "Not a final statement"]) {
+  for (const word of [
+    "approximate",
+    "variance",
+    "estimate",
+    "You earned",
+    "Not a final statement",
+  ]) {
     it(`the word "${word}" is named`, () => {
       const errs = planted("palisade", (m) => {
         m.attention.push(`This is an ${word} line`);

@@ -83,7 +83,15 @@ if (cmd === "inquiry") {
   process.exit(0);
 }
 
-console.log(
-  "Usage: web-kit <doctor|audit|brand-pack|inquiry> [--tier required|extended] [siteDir]",
-);
-process.exit(cmd ? 1 : 0);
+if (cmd === "owner-statement") {
+  const { runOwnerStatement } = await import("../src/owner-statement/cli.mjs");
+  const code = await runOwnerStatement(argv.slice(1));
+  // Not process.exit: let Chrome's pipe and the logo download finish flushing first.
+  process.exitCode = code;
+  if (code) process.exit(code);
+} else {
+  console.log(
+    "Usage: web-kit <doctor|audit|brand-pack|inquiry|owner-statement> [--tier required|extended] [siteDir]",
+  );
+  process.exit(cmd ? 1 : 0);
+}

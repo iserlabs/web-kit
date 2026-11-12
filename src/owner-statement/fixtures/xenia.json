@@ -78,22 +78,7 @@
         "ytd": -996618
       }
     ],
-    "foot": [
-      [
-        [
-          "in",
-          "cost"
-        ],
-        "subtotal"
-      ],
-      [
-        [
-          "balance",
-          "share"
-        ],
-        "moves"
-      ]
-    ]
+    "foot": [[["in", "cost"], "subtotal"], [["balance", "share"], "moves"]]
   },
   "groups": [
     {

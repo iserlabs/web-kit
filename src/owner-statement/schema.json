@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "owner-statement/1",
+  "title": "owner-statement/1",
+  "description": "One owner's monthly statement. All money is integer cents. Structure only: the rules that need arithmetic (the moves row, the feet, the subtotals, the ref runs, zero rows, the banned words) live in validate().",
+  "type": "object",
+  "required": [
+    "schema",
+    "brand",
+    "business",
+    "month",
+    "monthLabel",
+    "monthShort",
+    "status",
+    "owner",
+    "property",
+    "prepared",
+    "moves",
+    "summary",
+    "groups",
+    "costs",
+    "settlement",
+    "attention",
+    "stats",
+    "sources",
+    "email",
+    "links",
+    "calls"
+  ],
+  "properties": {
+    "schema": { "const": "owner-statement/1" },
+    "brand": { "enum": ["sun-mountain", "palisade", "columbus", "xenia"] },
+    "business": { "type": "string", "minLength": 1 },
+    "month": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" },
+    "monthLabel": { "type": "string", "minLength": 1 },
+    "monthShort": { "type": "string", "minLength": 1 },
+    "status": { "const": "final" },
+    "owner": {
+      "type": "object",
+      "required": ["key", "name", "greeting"],
+      "properties": {
+        "key": { "type": "string" },
+        "name": { "type": "string" },
+        "greeting": { "type": "string" }
+      }
+    },
+    "property": {
+      "type": "object",
+      "required": ["label", "line"],
+      "properties": { "label": { "type": "string" }, "line": { "type": "string" } }
+    },
+    "prepared": {
+      "type": "object",
+      "required": ["by", "date"],
+      "properties": {
+        "by": { "type": "string" },
+        "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+      }
+    },
+    "moves": {
+      "type": "object",
+      "required": [
+        "direction",
+        "cents",
+        "headline",
+        "line",
+        "method",
+        "date",
+        "dateUnknown",
+        "sentence"
+      ],
+      "properties": {
+        "direction": { "enum": ["to_owner", "from_owner", "to_partner", "none"] },
+        "cents": { "type": "integer", "minimum": 0 },
+        "headline": { "type": "string" },
+        "line": { "type": "string" },
+        "method": { "type": ["string", "null"] },
+        "date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "dateUnknown": { "type": ["string", "null"] },
+        "sentence": { "type": "string" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["title", "columns", "ytd", "rows"],
+      "properties": {
+        "title": { "type": "string" },
+        "columns": {
+          "type": "object",
+          "required": ["month", "ytd"],
+          "properties": { "month": { "type": "string" }, "ytd": { "type": "string" } }
+        },
+        "ytd": {
+          "type": "object",
+          "required": ["known", "reason", "from"],
+          "properties": {
+            "known": { "type": "boolean" },
+            "reason": { "type": ["string", "null"] },
+            "from": { "type": ["string", "null"] }
+          }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "role", "month", "ytd"],
+            "properties": {
+              "label": { "type": "string" },
+              "role": {
+                "enum": ["in", "cost", "fee", "set_aside", "subtotal", "moves", "balance", "share"]
+              },
+              "month": { "type": "integer" },
+              "ytd": { "type": ["integer", "null"] }
+            }
+          }
+        },
+        "foot": { "type": "array" }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "property", "columns", "rows", "subtotal"],
+        "properties": {
+          "title": { "type": "string" },
+          "property": { "type": "string" },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["key", "label", "kind"],
+              "properties": {
+                "key": { "type": "string" },
+                "label": { "type": "string" },
+                "kind": { "enum": ["text", "money", "int"] }
+              }
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["ref", "cells"],
+              "properties": {
+                "ref": { "type": "string", "pattern": "^A-\\d+$" },
+                "cells": { "type": "object" },
+                "detail": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["label", "cents"],
+                    "properties": {
+                      "label": { "type": "string" },
+                      "cents": { "type": "integer" },
+                      "strong": { "type": "boolean" }
+                    }
+                  }
+                },
+                "note": { "type": "string" }
+              }
+            }
+          },
+          "subtotal": {
+            "type": "object",
+            "required": ["label", "cells"],
+            "properties": { "label": { "type": "string" }, "cells": { "type": "object" } }
+          },
+          "note": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "costs": {
+      "type": ["object", "null"],
+      "required": ["title", "rows"],
+      "properties": {
+        "title": { "type": "string" },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["ref", "label", "date", "cents", "href"],
+            "properties": {
+              "ref": { "type": "string", "pattern": "^B-\\d+$" },
+              "label": { "type": "string" },
+              "payee": { "type": ["string", "null"] },
+              "number": { "type": ["string", "null"] },
+              "date": { "type": ["string", "null"] },
+              "note": { "type": ["string", "null"] },
+              "cents": { "type": "integer" },
+              "href": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "subtotal": {
+          "type": "object",
+          "required": ["label", "cents"],
+          "properties": { "label": { "type": "string" }, "cents": { "type": "integer" } }
+        }
+      }
+    },
+    "settlement": {
+      "type": ["object", "null"],
+      "required": ["title", "rows"],
+      "properties": {
+        "title": { "type": "string" },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["ref", "label", "cents", "role"],
+            "properties": {
+              "ref": { "type": "string", "pattern": "^C-\\d+$" },
+              "label": { "type": "string" },
+              "cents": { "type": "integer" },
+              "role": { "enum": ["balance", null] }
+            }
+          }
+        }
+      }
+    },
+    "attention": { "type": "array", "items": { "type": "string" } },
+    "stats": {
+      "type": "object",
+      "required": ["stays", "nights", "occupancyPct", "last"],
+      "properties": {
+        "stays": { "type": "integer" },
+        "nights": { "type": "integer" },
+        "occupancyPct": { "type": ["number", "null"] },
+        "last": {
+          "type": ["object", "null"],
+          "required": ["monthLabel", "stays", "nights", "occupancyPct"],
+          "properties": {
+            "monthLabel": { "type": "string" },
+            "stays": { "type": "integer" },
+            "nights": { "type": "integer" },
+            "occupancyPct": { "type": ["number", "null"] }
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "file", "href"],
+        "properties": {
+          "label": { "type": "string" },
+          "file": { "type": ["string", "null"] },
+          "href": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "email": {
+      "type": "object",
+      "required": ["subject", "summary", "button", "password"],
+      "properties": {
+        "subject": { "type": "string" },
+        "summary": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "required": ["label"],
+            "properties": {
+              "label": { "type": "string" },
+              "month": { "type": ["integer", "null"] },
+              "last": { "type": ["integer", "null"] },
+              "pct": { "type": ["number", "null"] },
+              "lastPct": { "type": ["number", "null"] }
+            }
+          }
+        },
+        "button": { "type": "string" },
+        "password": { "type": "string" }
+      }
+    },
+    "links": {
+      "type": "object",
+      "required": ["page", "pdf"],
+      "properties": { "page": { "type": "string" }, "pdf": { "type": "string" } }
+    },
+    "calls": { "type": "string", "pattern": "^https?://" }
+  }
+}

@@ -44,8 +44,7 @@ const cell = (column, value) => {
 
 /** Which columns stay on a phone: the first, plus the last two figure columns (money before count). */
 function phoneColumns(columns) {
-  const indexes = (kind) =>
-    columns.flatMap((c, i) => (i > 0 && c.kind === kind ? [i] : []));
+  const indexes = (kind) => columns.flatMap((c, i) => (i > 0 && c.kind === kind ? [i] : []));
   const money = indexes("money");
   const counts = indexes("int");
   const keep = new Set([0, ...money.slice(-2)]);
@@ -137,8 +136,10 @@ function renderCosts(c) {
     .map((r) => {
       const bits = [];
       if (r.number) bits.push(esc(`Invoice ${r.number}`));
-      if (r.note) bits.push(r.date ? `<time datetime="${esc(r.date)}">${esc(r.note)}</time>` : esc(r.note));
-      else if (r.date) bits.push(`<time datetime="${esc(r.date)}">${esc(shortDate(r.date))}</time>`);
+      if (r.note)
+        bits.push(r.date ? `<time datetime="${esc(r.date)}">${esc(r.note)}</time>` : esc(r.note));
+      else if (r.date)
+        bits.push(`<time datetime="${esc(r.date)}">${esc(shortDate(r.date))}</time>`);
       const small = bits.length ? `<span class="os__small">${bits.join(". ")}</span>` : "";
       return `<li><span class="os__cref">${esc(r.ref)}</span><span>${link(r.href, r.label)}${small}</span><span class="os__num">${fmt(r.cents)}</span></li>`;
     })

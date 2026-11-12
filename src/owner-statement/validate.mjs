@@ -61,7 +61,9 @@ function checkTop(m, errors) {
     errors.push(`schema: must read "${STATEMENT_SCHEMA}", got ${JSON.stringify(m.schema)}`);
   }
   if (m.status !== "final") {
-    errors.push(`status: only a final statement is ever shown, this one says ${JSON.stringify(m.status)}`);
+    errors.push(
+      `status: only a final statement is ever shown, this one says ${JSON.stringify(m.status)}`,
+    );
   }
   if (!BRAND_IDS.includes(m.brand)) {
     errors.push(`brand: must be one of ${BRAND_IDS.join(", ")}, got ${JSON.stringify(m.brand)}`);
@@ -69,7 +71,16 @@ function checkTop(m, errors) {
   for (const key of ["business", "month", "monthLabel", "monthShort", "calls"]) {
     if (!isStr(m[key])) errors.push(`shape: "${key}" is missing or empty`);
   }
-  for (const key of ["owner", "property", "prepared", "moves", "summary", "stats", "email", "links"]) {
+  for (const key of [
+    "owner",
+    "property",
+    "prepared",
+    "moves",
+    "summary",
+    "stats",
+    "email",
+    "links",
+  ]) {
     if (!isObj(m[key])) errors.push(`shape: "${key}" is missing`);
   }
   for (const key of ["groups", "attention", "sources"]) {
@@ -91,18 +102,23 @@ function checkMoves(m, errors) {
   const mv = m.moves;
   if (!isObj(mv)) return;
   if (!DIRECTIONS.includes(mv.direction)) {
-    errors.push(`moves: direction must be one of ${DIRECTIONS.join(", ")}, got ${JSON.stringify(mv.direction)}`);
+    errors.push(
+      `moves: direction must be one of ${DIRECTIONS.join(", ")}, got ${JSON.stringify(mv.direction)}`,
+    );
     return;
   }
   for (const f of ["headline", "line", "sentence"]) {
     if (!isStr(mv[f])) errors.push(`shape: "moves.${f}" is missing or empty`);
   }
   if (!checkCents(mv.cents, "moves.cents", errors)) return;
-  if (mv.cents < 0) errors.push("moves: moves.cents is the size of the move and cannot be negative");
+  if (mv.cents < 0)
+    errors.push("moves: moves.cents is the size of the move and cannot be negative");
 
   if (mv.date === null || mv.date === undefined) {
     if (mv.direction !== "none" && !isStr(mv.dateUnknown)) {
-      errors.push("date: no date is set, so moves.dateUnknown must say why (for example \"due date not set yet\")");
+      errors.push(
+        'date: no date is set, so moves.dateUnknown must say why (for example "due date not set yet")',
+      );
     }
   } else if (!/^\d{4}-\d{2}-\d{2}$/.test(mv.date)) {
     errors.push(`date: moves.date must read YYYY-MM-DD, got ${JSON.stringify(mv.date)}`);
@@ -112,11 +128,12 @@ function checkMoves(m, errors) {
   if (!Array.isArray(rows)) return;
   let target = rows.findLast((r) => r?.role === "moves");
   target ??= rows.findLast((r) => r?.role === "balance");
-  const expected =
-    mv.direction === "to_owner" ? mv.cents : mv.direction === "none" ? 0 : -mv.cents;
+  const expected = mv.direction === "to_owner" ? mv.cents : mv.direction === "none" ? 0 : -mv.cents;
   if (!target) {
     if (mv.direction !== "none") {
-      errors.push("moves: the summary has no row with role \"moves\" (or \"balance\") for the money that moves");
+      errors.push(
+        'moves: the summary has no row with role "moves" (or "balance") for the money that moves',
+      );
     }
     return;
   }
@@ -129,7 +146,12 @@ function checkMoves(m, errors) {
 
 function footPairs(foot) {
   if (foot === undefined || foot === null) return [];
-  if (Array.isArray(foot) && foot.length === 2 && Array.isArray(foot[0]) && typeof foot[1] === "string") {
+  if (
+    Array.isArray(foot) &&
+    foot.length === 2 &&
+    Array.isArray(foot[0]) &&
+    typeof foot[1] === "string"
+  ) {
     return [foot];
   }
   return Array.isArray(foot) ? foot : [];
@@ -160,15 +182,20 @@ function checkSummary(m, errors) {
     }
     if (!checkCents(r.month, `${at}.month`, errors)) rowsOk = false;
     else if (r.month === 0 && !["moves", "balance", "subtotal"].includes(r.role)) {
-      errors.push(`zero-row: "${r.label}" is zero this month, and a zero row is dropped by the writer`);
+      errors.push(
+        `zero-row: "${r.label}" is zero this month, and a zero row is dropped by the writer`,
+      );
     }
-    if (r.ytd !== null && r.ytd !== undefined && !checkCents(r.ytd, `${at}.ytd`, errors)) rowsOk = false;
+    if (r.ytd !== null && r.ytd !== undefined && !checkCents(r.ytd, `${at}.ytd`, errors))
+      rowsOk = false;
   });
 
   // Invariant 9: year to date.
   if (s.ytd.known === false) {
     if (!isStr(s.ytd.reason)) {
-      errors.push("ytd: year to date is unknown, so summary.ytd.reason must say why in one short line");
+      errors.push(
+        "ytd: year to date is unknown, so summary.ytd.reason must say why in one short line",
+      );
     }
     s.rows.forEach((r, i) => {
       if (isObj(r) && r.ytd !== null && r.ytd !== undefined) {
@@ -225,11 +252,14 @@ function checkGroups(m, errors) {
       errors.push(`shape: ${at} needs columns, rows and a subtotal`);
       return;
     }
-    if (!isStr(g.title) || !isStr(g.property)) errors.push(`shape: ${at} needs a title and a property`);
+    if (!isStr(g.title) || !isStr(g.property))
+      errors.push(`shape: ${at} needs a title and a property`);
     const kinds = {};
     for (const c of g.columns) {
       if (!isObj(c) || !isStr(c.key) || !isStr(c.label) || !KINDS.includes(c.kind)) {
-        errors.push(`shape: every column in ${at} needs a key, a label and a kind (${KINDS.join(", ")})`);
+        errors.push(
+          `shape: every column in ${at} needs a key, a label and a kind (${KINDS.join(", ")})`,
+        );
       } else kinds[c.key] = c.kind;
     }
     for (const r of g.rows) {
@@ -239,7 +269,9 @@ function checkGroups(m, errors) {
       }
       const wanted = `A-${next}`;
       if (r.ref !== wanted) {
-        errors.push(`refs: expected ${wanted} in ${at}, found ${JSON.stringify(r.ref)} (A-1 onward, no gaps, no repeats)`);
+        errors.push(
+          `refs: expected ${wanted} in ${at}, found ${JSON.stringify(r.ref)} (A-1 onward, no gaps, no repeats)`,
+        );
       }
       next++;
       let hasFigure = false;
@@ -252,11 +284,14 @@ function checkGroups(m, errors) {
         if (v !== 0) allZero = false;
       }
       if (hasFigure && allZero) {
-        errors.push(`zero-row: ${r.ref} is zero in every figure column, and a zero row is dropped by the writer`);
+        errors.push(
+          `zero-row: ${r.ref} is zero in every figure column, and a zero row is dropped by the writer`,
+        );
       }
       if (Array.isArray(r.detail)) {
         r.detail.forEach((d, di) => {
-          if (!isObj(d) || !isStr(d.label)) errors.push(`shape: ${r.ref} detail line ${di + 1} needs a label`);
+          if (!isObj(d) || !isStr(d.label))
+            errors.push(`shape: ${r.ref} detail line ${di + 1} needs a label`);
           else checkCents(d.cents, `${r.ref} detail "${d.label}"`, errors);
         });
       }
@@ -265,7 +300,9 @@ function checkGroups(m, errors) {
     for (const [key, value] of Object.entries(g.subtotal.cells ?? {})) {
       const kind = kinds[key];
       if (kind !== "money" && kind !== "int") {
-        errors.push(`subtotal: ${at} has a subtotal for "${key}", which is not a money or number column`);
+        errors.push(
+          `subtotal: ${at} has a subtotal for "${key}", which is not a money or number column`,
+        );
         continue;
       }
       if (!isInt(value)) {
@@ -287,7 +324,9 @@ function checkRefRun(rows, letter, label, errors) {
   rows.forEach((r, i) => {
     const wanted = `${letter}-${i + 1}`;
     if (!isObj(r) || r.ref !== wanted) {
-      errors.push(`refs: expected ${wanted} in ${label}, found ${JSON.stringify(r?.ref)} (${letter}-1 onward, no gaps, no repeats)`);
+      errors.push(
+        `refs: expected ${wanted} in ${label}, found ${JSON.stringify(r?.ref)} (${letter}-1 onward, no gaps, no repeats)`,
+      );
     }
   });
 }
@@ -314,7 +353,9 @@ function checkCosts(m, errors) {
   if (c.subtotal !== undefined && c.subtotal !== null) {
     if (!isInt(c.subtotal.cents)) errors.push("cents: costs.subtotal.cents must be a whole number");
     else if (c.subtotal.cents !== sum) {
-      errors.push(`subtotal: the cost rows add up to ${money(sum)}, but the costs subtotal says ${money(c.subtotal.cents)}`);
+      errors.push(
+        `subtotal: the cost rows add up to ${money(sum)}, but the costs subtotal says ${money(c.subtotal.cents)}`,
+      );
     }
   }
 }

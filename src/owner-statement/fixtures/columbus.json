@@ -90,15 +90,7 @@
         "ytd": null
       }
     ],
-    "foot": [
-      [
-        "in",
-        "cost",
-        "fee",
-        "set_aside"
-      ],
-      "subtotal"
-    ]
+    "foot": [["in", "cost", "fee", "set_aside"], "subtotal"]
   },
   "groups": [
     {

@@ -66,14 +66,7 @@
         "ytd": null
       }
     ],
-    "foot": [
-      [
-        "in",
-        "cost",
-        "fee"
-      ],
-      "moves"
-    ]
+    "foot": [["in", "cost", "fee"], "moves"]
   },
   "groups": [
     {

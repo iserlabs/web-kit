@@ -7,11 +7,14 @@
  */
 
 const NEWSREADER = 'var(--font-newsreader, "Newsreader"), Georgia, serif';
-const INSTRUMENT = 'var(--font-instrument-sans, "Instrument Sans"), "Helvetica Neue", Arial, sans-serif';
+const INSTRUMENT =
+  'var(--font-instrument-sans, "Instrument Sans"), "Helvetica Neue", Arial, sans-serif';
 const GARAMOND = 'var(--font-eb-garamond, "EB Garamond"), Georgia, serif';
-const GEIST_MONO = 'var(--font-geist-mono, "Geist Mono"), ui-monospace, "SF Mono", Menlo, monospace';
+const GEIST_MONO =
+  'var(--font-geist-mono, "Geist Mono"), ui-monospace, "SF Mono", Menlo, monospace';
 const LITERATA = 'var(--font-literata, "Literata"), Georgia, serif';
-const SCHIBSTED = 'var(--font-schibsted-grotesk, "Schibsted Grotesk"), "Helvetica Neue", Arial, sans-serif';
+const SCHIBSTED =
+  'var(--font-schibsted-grotesk, "Schibsted Grotesk"), "Helvetica Neue", Arial, sans-serif';
 
 const GF = "https://fonts.googleapis.com/css2?";
 const NEWSREADER_Q = "family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600";

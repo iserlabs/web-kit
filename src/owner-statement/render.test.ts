@@ -165,7 +165,8 @@ describe("escaping", () => {
   it("text from the model never becomes markup", () => {
     const m = load("sun-mountain");
     m.attention.push(evil);
-    m.summary.rows[0] && (m.summary.rows[0].label = `Money in: ${evil}`);
+    const first = m.summary.rows[0];
+    if (first) first.label = `Money in: ${evil}`;
     const row = m.groups[0]?.rows[0];
     if (row?.detail?.[0]) row.detail[0].label = evil;
     if (m.groups[0]) m.groups[0].note = evil;
@@ -264,7 +265,9 @@ describe("css", () => {
     expect(css).toMatch(/@page[^{]*\{[^}]*size:\s*letter/);
     expect(css).toContain('content: "Page " counter(page) " of " counter(pages)');
     expect(css).toContain("@bottom-right");
-    expect(css).toMatch(/@media print[\s\S]*details:not\(\[open\]\)::details-content[\s\S]*content-visibility:\s*visible/);
+    expect(css).toMatch(
+      /@media print[\s\S]*details:not\(\[open\]\)::details-content[\s\S]*content-visibility:\s*visible/,
+    );
     expect(css).toMatch(/@media print[\s\S]*\.os__actions[\s\S]*display:\s*none/);
   });
 
