@@ -18,6 +18,7 @@ import {
   type PhotoV2,
   type PickV2,
   type Slot,
+  type VideoV2,
 } from "./model";
 import type { LocalPickKind } from "./types";
 import { unplaceable } from "./validate";
@@ -43,6 +44,7 @@ export type Block =
       where?: string;
       until?: string;
       photos?: PlacedPhoto[];
+      video?: VideoV2;
     }
   | { kind: "unknown"; key: string; id: string; label: string; text: string }
   | { kind: "note"; key: string; id: string; label: string; text: string }
@@ -390,6 +392,8 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
   }
 
   const figureOf = new Map((m.look.figures ?? []).map((f) => [f.key, f.value]));
+  /** The printed body: an approved short answer, else the live body verbatim. */
+  const bodyOf = (key: string, item: ItemV2) => copy.bodies[key]?.text ?? item.body;
   const groupOrder = m.look.order ?? {};
 
   const itemBlock = (
@@ -401,15 +405,18 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
     const head = copy.subheads[`${chapter}|${key}`];
     const out: Block[] = [];
     const bid = id(anchor(key));
-    const figure = figureOf.get(key);
+    const body = bodyOf(key, item);
+    // A figure is a verbatim piece of the printed sentence; an approved short answer without it drops the figure.
+    const figure = body.includes(figureOf.get(key) ?? "\u0000") ? figureOf.get(key) : undefined;
     const until = item.validThrough ? `Until ${formatDay(item.validThrough)}` : undefined;
-    if (figure) {
+    const video = item.video && !unplaceable(item.video) ? item.video : undefined;
+    if (figure && !video) {
       // An approved head is a sub-head; the live label stays small above the figure.
       if (head) out.push({ kind: "sub", text: head.text });
       out.push({
         kind: "figure",
         value: figure,
-        text: item.body,
+        text: body,
         key,
         id: bid,
         label: head ? undefined : item.label,
@@ -423,10 +430,11 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
       id: bid,
       label: head?.text ?? item.label,
       asHead: Boolean(head) || Boolean(item.room),
-      body: item.body,
+      body,
       where: item.where,
       until,
       photos: photos?.length ? photos : undefined,
+      video,
     });
     return out;
   };
@@ -451,7 +459,7 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
             key,
             id: id(anchor(key)),
             label: item.label,
-            text: item.body,
+            text: bodyOf(key, item),
             where: item.where,
           })),
         },
@@ -504,7 +512,7 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
             key,
             id: id(anchor(key)),
             label: item.label,
-            text: item.body,
+            text: bodyOf(key, item),
             where: item.where,
           })),
         });
@@ -581,7 +589,7 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
       key: readFirst.key,
       id: id(anchor(readFirst.key)),
       label: label("readFirst", "Read this first"),
-      text: readFirst.item.body,
+      text: bodyOf(readFirst.key, readFirst.item),
     });
   const parkingText = unknownText(m.parking, copy);
   if (parkingText) {
@@ -590,7 +598,11 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
       text: copy.subheads["arrival|parking"]?.text ?? label("arrivalParking", "Parking"),
       id: id("park"),
     });
-    arrival.push({ kind: "p", text: parkingText, tone: isUnknown(m.parking) ? "sec" : undefined });
+    arrival.push({
+      kind: "p",
+      text: isUnknown(m.parking) ? parkingText : (copy.bodies.parking?.text ?? parkingText),
+      tone: isUnknown(m.parking) ? "sec" : undefined,
+    });
   }
   const wifiRows = wifiItems.flatMap(({ key, item }) => itemBlock("arrival", key, item));
   const wifiHead = copy.subheads["arrival|wifi"]?.text ?? label("arrivalWifi", "Wi-Fi");
@@ -703,7 +715,7 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
     field: "paper" as const,
     prevField: prev,
     blocks: helpBlocks,
-    contact: m.contact.label,
+    contact: copy.bodies.contact?.text ?? m.contact.label,
     phone: opts.phone === "allowed" ? m.contact.phone : undefined,
     sms: opts.phone === "allowed" && m.contact.phone ? m.contact.sms : undefined,
     emergencies: label("emergencies", "Emergencies"),

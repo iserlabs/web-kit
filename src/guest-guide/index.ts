@@ -47,6 +47,7 @@ export type {
   Slot,
   Unknown,
   UnknownItem,
+  VideoV2,
   WifiV2,
 } from "./model";
 export { CHAPTER_ORDER, isUnknown, itemKey, kebab, RESERVED_REFS } from "./model";

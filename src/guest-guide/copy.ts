@@ -7,7 +7,7 @@
  * The kit owns the template labels (live defaults and Alpenglow drafts). Each
  * house owns its own drafts in `model.drafts`. Approvals live per site.
  */
-import type { ChapterId, GuideModel } from "./model";
+import { type ChapterId, type GuideModel, itemKey } from "./model";
 
 export type TemplateLabelId =
   | "quickFindHead"
@@ -75,7 +75,13 @@ export type DraftTarget =
   | { kind: "cover-line"; row: "door" | "parking" }
   | { kind: "if-code-fails"; steps: string[] }
   | { kind: "landmark"; text: string }
-  | { kind: "price-cell"; table: string; item: string };
+  | { kind: "price-cell"; table: string; item: string }
+  /**
+   * A short answer in place of a live body. `key` is an item key, or the
+   * reserved "parking" (the Arrival parking paragraph) or "contact" (the Help
+   * line). `replaces` carries the live body verbatim for the approval board.
+   */
+  | { kind: "item-body"; key: string };
 
 export type HeldLine = {
   at: DraftTarget;
@@ -134,6 +140,8 @@ export type Copy = {
   landmark?: Line;
   /** Keyed `${table}|${item}`. */
   priceCells: Record<string, Line>;
+  /** Short answers in place of live bodies, keyed by item key, "parking" or "contact". */
+  bodies: Record<string, Line>;
   /** The line printed for an Unknown: approved unknown line, or null (then each Unknown's liveLine or nothing). */
   unknownLine: Line | null;
   /** The door-code timing sentence: live verbatim, or the confirmed and approved next wording. */
@@ -161,9 +169,31 @@ const SECTION_OF_CHAPTER: Record<ChapterId, ApprovalSection> = {
   help: "help",
 };
 
+/**
+ * The chapter an item-body key lands in: "parking" is Arrival, "contact" is
+ * Help, an item key is its section (an item moved into Arrival, as the Wi-Fi
+ * and Read-this-first rows are, still answers to its own section's approval).
+ */
+function chapterOfKey(key: string, model?: Pick<GuideModel, "sections">): ChapterId | undefined {
+  if (key === "parking") return "arrival";
+  if (key === "contact") return "help";
+  for (const s of model?.sections ?? [])
+    if (s.items.some((i) => itemKey(s.id, i) === key)) return s.id;
+  const prefix = key.split(".")[0] as ChapterId;
+  return prefix in SECTION_OF_CHAPTER ? prefix : undefined;
+}
+
 /** The approval section a held line belongs to. */
-export function sectionOf(t: DraftTarget, model?: Pick<GuideModel, "tables">): ApprovalSection {
+export function sectionOf(
+  t: DraftTarget,
+  model?: Pick<GuideModel, "tables" | "sections">,
+): ApprovalSection {
   switch (t.kind) {
+    case "item-body": {
+      const chapter = chapterOfKey(t.key, model);
+      // An unresolvable key gets a section no approval names, so it never prints.
+      return chapter ? SECTION_OF_CHAPTER[chapter] : ("unresolved" as ApprovalSection);
+    }
     case "chapter-head":
     case "subhead":
       return SECTION_OF_CHAPTER[t.chapter];
@@ -226,6 +256,7 @@ export function resolveCopy(model: GuideModel, opts: ResolveOptions): Copy {
     quickFind: {},
     coverLines: {},
     priceCells: {},
+    bodies: {},
     unknownLine: ok("unknowns") ? labels.unknownLine : null,
     unknownsOn: ok("unknowns"),
     codeDelivery: { text: model.entry.codeDelivery.value, from: "live" },
@@ -273,6 +304,9 @@ export function resolveCopy(model: GuideModel, opts: ResolveOptions): Copy {
       case "price-cell":
         copy.priceCells[`${t.table}|${t.item}`] = line;
         break;
+      case "item-body":
+        copy.bodies[t.key] = line;
+        break;
     }
   }
   return copy;
@@ -304,6 +338,16 @@ export function heldStrings(
   return [...out];
 }
 
+/** The live text an item-body draft replaces, read from the model so the board never drifts from it. */
+function liveBody(t: DraftTarget, model: GuideModel): string | undefined {
+  if (t.kind !== "item-body") return undefined;
+  if (t.key === "contact") return model.contact.label;
+  if (t.key === "parking") return "value" in model.parking ? model.parking.value : undefined;
+  for (const s of model.sections)
+    for (const i of s.items) if (itemKey(s.id, i) === t.key) return i.body;
+  return undefined;
+}
+
 /** One row per held line, beside the live wording it replaces, for the drafts preview table. */
 export function draftTable(model: GuideModel): {
   section: ApprovalSection;
@@ -319,7 +363,7 @@ export function draftTable(model: GuideModel): {
         : d.at.kind === "if-code-fails"
           ? d.at.steps.join(" / ")
           : d.text,
-    live: d.replaces ?? "(none)",
+    live: d.replaces ?? liveBody(d.at, model) ?? "(none)",
     why: d.why,
   }));
   if (model.entry.codeDeliveryNext)

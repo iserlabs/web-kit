@@ -75,6 +75,31 @@ export type ItemV2 = GuideItem & {
   room?: boolean;
   /** Last day this is true (YYYY-MM-DD). The build fails after it; the page prints "Until <day>". */
   validThrough?: string;
+  /** A short how-to video for this row (Euclid's KeyCafe pickup). Loads nothing until tapped. */
+  video?: VideoV2;
+};
+
+/**
+ * A video placed on a row. `preload="none"` and a poster set only when the
+ * row nears the window, so it adds 0 KB to the first load. The same never-place
+ * rules as a photo apply.
+ */
+export type VideoV2 = {
+  src: string;
+  /** MIME type of `src`, e.g. "video/mp4". */
+  type: string;
+  poster: string;
+  /** What the video shows, for its accessible name. */
+  alt: string;
+  width: number;
+  height: number;
+  /** A WebVTT captions file, when there is speech. */
+  captions?: string;
+  ai?: boolean;
+  rights?: "confirmed" | "unconfirmed";
+  shows?: ("door" | "garage-door" | "code" | "neighbor-number" | "defect")[];
+  source: string;
+  checked: string;
 };
 
 /** A row whose fact is not on record (blankets, a door landmark). */

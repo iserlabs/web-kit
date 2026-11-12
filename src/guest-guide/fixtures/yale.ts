@@ -24,6 +24,35 @@ const it = (label: string, body: string, extra: Partial<ItemV2> = {}): ItemV2 =>
 const drafts: HeldLine[] = [
   ...(
     [
+      [
+        "good-to-know.wildlife",
+        "Bears, deer and foxes pass through here. Food, pet bowls, coolers and trash stay indoors, and trash never spends a night outside. Do not feed or approach them. Scrape every scrap off the grill when you finish: food outside draws bears, and the fines are high.",
+      ],
+      [
+        "parking",
+        "Two cars fit in the garage and two in the driveway. One more can take the street spot right in front; the neighborhood allows only that one. No cars on the yard.",
+      ],
+      [
+        "first-hour.cooler-upstairs",
+        "Shut the lower-level vents, fully or halfway, to send cool air up.",
+      ],
+      [
+        "first-hour.whole-house-fan",
+        "Run the whole-house fan at the top of the stairs. Switch: linen closet.",
+      ],
+      ["contact", "Message us in your booking app. Day or night, we answer."],
+    ] as const
+  ).map(
+    ([key, text]): HeldLine => ({
+      at: { kind: "item-body", key },
+      text,
+      why: "A short answer in place of the live paragraph (board d2)",
+      writtenBy: "guide v2 board",
+      writtenOn: "2026-11-11",
+    }),
+  ),
+  ...(
+    [
       ["arrival", "Front door and keypad"],
       ["first-hour", "Too warm upstairs, too cold?"],
       ["house", "Who sleeps in which bedroom?"],

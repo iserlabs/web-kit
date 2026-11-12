@@ -40,7 +40,7 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .cover[data-facts-ink=ink] .cover__ground{color:var(--ink)}
 .gg .cover[data-facts-ink=onPhoto] .cover__ground,.gg .cover[data-name-ink=onPhoto] .cover__name{text-shadow:0 1px 2px rgba(0,0,0,0.6),0 0 6px rgba(0,0,0,0.45),0 0 16px rgba(0,0,0,0.3)}
 .gg .cover__addr{font:var(--strong) 17px/1.3 var(--text);max-width:22em}
-.gg .cover__link{display:inline-flex;align-items:center;min-height:44px;font:var(--text-w) 16px/1.2 var(--text)}
+.gg .cover__link{display:inline-flex;align-items:center;min-height:44px;min-width:44px;font:var(--text-w) 16px/1.2 var(--text)}
 .gg .tt{margin:2px 0 0;display:grid;grid-template-columns:minmax(0,1fr);row-gap:10px}
 .gg .tt__row{display:grid;grid-template-columns:var(--lab,60px) minmax(0,1fr);align-items:baseline}
 .gg .tt dt{font:var(--strong) 15px/1.35 var(--text)}
@@ -72,6 +72,8 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .cover--band{gap:0;justify-content:flex-start}
 .gg .cover--band .cover__sky{position:absolute;inset:0 0 auto 0}
 .gg .cover--band .cover__ground{background:var(--f-arrival);color:var(--ink);padding-top:18px;text-shadow:none}
+.gg .cover--band .copy{outline:2px solid var(--ink);outline-offset:0}
+.gg .cover--band .copy:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:none}
 
 /* Quick find: a typographic index on the arrival field */
 .gg .find{background:var(--f-arrival);padding:56px var(--gut) 72px}
@@ -120,6 +122,8 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .room{margin:12px 0 24px}
 .gg .room--two{display:grid;grid-template-columns:1fr 1fr;gap:2px}
 .gg .room img{width:100%;height:auto;aspect-ratio:3/4;object-fit:cover}
+.gg .video{margin:12px 0 24px}
+.gg .video video{display:block;width:100%;height:auto;background:var(--paper)}
 .gg .room figcaption{padding:8px 0 0}
 .gg .wifi-block{margin-top:48px}
 .gg .wifi-block .wifi{justify-content:flex-start;margin:0 0 18px}
@@ -231,15 +235,16 @@ export const ALPENGLOW_CSS = String.raw`
 }
 
 /* Facts high: the sky holds the name; the timetable drops onto the arrival field below it (the band fallback), on
-   every phone held upright and on short laptops, where the facts would otherwise run into the busy part of the photo */
-@media (orientation: portrait) and (max-width: 699px),(orientation: portrait) and (max-height: 760px),(min-width: 1001px) and (max-height: 820px){
+   every upright window (phone or tablet) and on laptops up to 820 px tall, where the facts would otherwise run into
+   the busy part of the photo (measured: navy on the trees at 1.74:1 on a phone, 4.29:1 on an iPad) */
+@media (orientation: portrait),(min-width: 1001px) and (max-height: 820px){
   .gg .cover--high .cover__sky{flex:1;display:flex;flex-direction:column}
   .gg .cover--high .tt{flex:1;align-content:start;margin:14px calc(-1 * var(--gut)) 0;padding:18px var(--gut) 20px;background:var(--f-arrival)}
 }
 
 /* Facts low, a short window: the facts climb into the brighter rock, where white fell under 4.5:1 with the shade at its
    0.35 cap (measured), so they drop onto the arrival field under the photo's sky (the band fallback, per geometry) */
-@media (orientation: portrait) and (max-width: 699px) and (max-height: 700px),(min-width: 1001px) and (max-height: 620px){
+@media (orientation: portrait) and (max-width: 699px) and (max-height: 700px),(min-width: 1001px) and (max-height: 820px){
   .gg .cover--low[data-facts-ink] .cover__ground{background:var(--f-arrival);color:var(--ink);text-shadow:none;margin-top:0;padding-top:16px}
   .gg .cover--low .copy{outline:2px solid var(--ink);outline-offset:0}
   .gg .cover--low .copy:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:none}
@@ -268,7 +273,7 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover--type .cover__ground{grid-column:2;grid-row:1/-1;padding-top:14px}
   .gg .wifi[data-long]{flex-wrap:nowrap;align-items:flex-start}
   .gg .wifi[data-long] .wifi__vals{flex:1 1 0;line-height:1.3}
-  .gg .cover--band .cover__photo{min-height:0}
+  .gg .cover--band .cover__photo{position:absolute;inset:0 60% 0 0;height:auto;min-height:0}
 }
 @media (orientation: landscape) and (max-height: 460px) and (max-width: 1000px){
   .gg .cover__ground,.gg .cover--high .cover__sky{padding:8px 16px}

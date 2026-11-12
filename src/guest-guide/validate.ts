@@ -160,7 +160,7 @@ function daysBetween(a: string, b: string): number {
 }
 
 /** Why a photo may never be placed, or undefined when it may be. */
-export function unplaceable(p: PhotoV2): string | undefined {
+export function unplaceable(p: Pick<PhotoV2, "ai" | "rights" | "shows">): string | undefined {
   if (p.ai) return "AI imagery";
   if (p.rights === "unconfirmed") return "rights unconfirmed";
   if (p.shows?.length) return `shows ${p.shows.join(", ")}`;
@@ -274,6 +274,18 @@ export function validateModel(m: GuideModel, opts: ValidateModelOptions): string
         problems.push(`sections.${sec.id}: duplicate item key "${key}"`);
       items.set(key, { section: sec.id, body: it.body, group: it.group });
       if (it.validThrough) checkThrough(`${key}.validThrough`, it.validThrough);
+      const v = it.video;
+      if (v) {
+        if (!v.src.trim() || !v.poster.trim())
+          problems.push(`${key}.video: needs a src and a poster`);
+        if (!v.alt.trim()) problems.push(`${key}.video: no alt text`);
+        if (!v.type.startsWith("video/"))
+          problems.push(`${key}.video: type "${v.type}" is not a video type`);
+        if (!(v.width > 0 && v.height > 0))
+          problems.push(`${key}.video: needs a width and a height`);
+        const why = unplaceable(v);
+        if (why) problems.push(`${key}.video: may not be placed (${why})`);
+      }
     }
     for (const u of sec.unknowns ?? []) {
       const key = itemKey(sec.id, u);
@@ -372,6 +384,13 @@ export function validateModel(m: GuideModel, opts: ValidateModelOptions): string
     }
     if (t.kind === "quick-find" && !isRef(t.ref))
       problems.push(`drafts.${i}: "${t.ref}" is not an item key or a reserved ref`);
+    if (t.kind === "item-body") {
+      if (t.key !== "parking" && t.key !== "contact" && !items.has(t.key))
+        problems.push(
+          `drafts.${i}: item-body "${t.key}" is not an item key, "parking" or "contact"`,
+        );
+      if (!d.text.trim()) problems.push(`drafts.${i}: item-body for "${t.key}" is empty`);
+    }
     if (
       t.kind === "subhead" &&
       !items.has(t.group) &&

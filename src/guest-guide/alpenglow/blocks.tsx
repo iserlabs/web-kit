@@ -1,8 +1,36 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource react */
 import type { ReactNode } from "react";
+import type { VideoV2 } from "../model";
 import type { Block, PlacedPhoto, StepItem } from "../plan";
 import type { RenderImage } from "./image";
+
+/**
+ * A how-to video that loads nothing until tapped: preload="none", and the
+ * poster goes in only when the row nears the window (the inline behavior
+ * script moves data-poster to poster), so the first load carries 0 KB of it.
+ */
+export function Video({ v }: { v: VideoV2 }) {
+  return (
+    <figure className="video">
+      {/* biome-ignore lint/a11y/useMediaCaption: the captions track renders whenever the video has speech; a silent how-to has none, and its aria-label says what it shows */}
+      <video
+        controls
+        preload="none"
+        playsInline
+        width={v.width}
+        height={v.height}
+        data-poster={v.poster}
+        aria-label={v.alt}
+      >
+        <source src={v.src} type={v.type} />
+        {v.captions ? (
+          <track kind="captions" src={v.captions} srcLang="en" label="English" default />
+        ) : null}
+      </video>
+    </figure>
+  );
+}
 
 /** The visible label is the button's name; a bare "Copy" says what it copies. */
 export function copyName(label: string): string | undefined {
@@ -113,6 +141,7 @@ export function Blocks({ blocks, render }: { blocks: Block[]; render: RenderImag
             <p>{b.body}</p>
             {b.until ? <p className="until">{b.until}</p> : null}
             {b.photos ? <RoomPhotos photos={b.photos} render={render} /> : null}
+            {b.video ? <Video v={b.video} /> : null}
           </div>
         ) : (
           <div key={k} className="fact" id={b.id}>
@@ -121,6 +150,7 @@ export function Blocks({ blocks, render }: { blocks: Block[]; render: RenderImag
             {b.where ? <span className="where">{b.where}</span> : null}
             {b.until ? <span className="until">{b.until}</span> : null}
             {b.photos ? <RoomPhotos photos={b.photos} render={render} /> : null}
+            {b.video ? <Video v={b.video} /> : null}
           </div>
         );
       case "unknown":

@@ -27,15 +27,32 @@ export const longNameFixture = from("long-name", (m) => {
   m.name = "616 Bonfoy Main House and Cottage";
 });
 
-/** A 63-character Wi-Fi password, the WPA maximum. The door row takes the default (a jump link), the release valve for a crowded cover. */
+/**
+ * A 63-character Wi-Fi password, the WPA maximum. The longer timetable climbs
+ * past the photo's measured quiet zone (design-check: white at 4.44:1 on a
+ * 402 x 874 phone), so this cover takes the band layout, the spec's answer to
+ * a zone that fails; the door row takes the default jump link.
+ */
 export const longPasswordFixture = from("long-password", (m) => {
   delete m.look.coverRows;
+  if (m.look.cover.kind === "photo") {
+    m.look.cover.layout = "band";
+    m.look.cover.factsInk = "ink";
+  }
   if (m.wifi.kind === "printed")
     m.wifi.password.value = "Fx7kQ2mN9pL4vR8sT1wY6zB3cD5eG0hJ2kM4nP6qR8sT1vW3xZ5aC7eG9iK1mOq";
 });
 
-/** The Wi-Fi arrives in a message: the cover prints that live line and no Copy button. */
+/**
+ * The Wi-Fi arrives in a message: the cover prints that live line and no Copy
+ * button. The three-line row lifts the timetable past the quiet zone (white at
+ * 4.43:1 on a 402 x 874 phone), so this cover is measured band too.
+ */
 export const wifiInMessageFixture = from("wifi-in-message", (m) => {
+  if (m.look.cover.kind === "photo") {
+    m.look.cover.layout = "band";
+    m.look.cover.factsInk = "ink";
+  }
   m.wifi = {
     kind: "in-message",
     line: {
