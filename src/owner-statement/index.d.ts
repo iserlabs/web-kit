@@ -191,7 +191,6 @@ export interface RenderedStatement {
 }
 
 export interface BrandTokens {
-  name: string;
   display: string;
   text: string;
   figures: string;
@@ -205,6 +204,8 @@ export interface BrandTokens {
   tint: string;
   /** Palisade keeps a gold stripe down the left edge of the sheet. */
   stripe: string | null;
+  /** Height of the masthead logo in CSS pixels. */
+  logoHeight: number;
   fontsHref: string;
 }
 

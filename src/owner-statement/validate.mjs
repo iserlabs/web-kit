@@ -319,6 +319,19 @@ function checkCosts(m, errors) {
   }
 }
 
+function checkSources(m, errors) {
+  if (!Array.isArray(m.sources)) return;
+  m.sources.forEach((s, i) => {
+    if (!isObj(s) || !isStr(s.label)) {
+      errors.push(`shape: sources[${i}] needs a label`);
+      return;
+    }
+    if (s.href !== null && s.href !== undefined && !/^https?:\/\//.test(s.href)) {
+      errors.push(`shape: sources[${i}] href must be a web address or null`);
+    }
+  });
+}
+
 function checkSettlement(m, errors) {
   const s = m.settlement;
   if (s === null || s === undefined) return;
@@ -347,6 +360,7 @@ export function validate(model) {
   checkGroups(model, errors);
   checkCosts(model, errors);
   checkSettlement(model, errors);
+  checkSources(model, errors);
   checkWords(model, errors);
   return errors;
 }

@@ -171,6 +171,13 @@ describe("one planted break per rule gives a named error", () => {
     expect(errs.some((e) => e.startsWith("subtotal:"))).toBe(true);
   });
 
+  it("a source address must be a web address", () => {
+    const errs = planted("sun-mountain", (m) => {
+      m.sources[0].href = "javascript:alert(1)";
+    });
+    expect(errs.some((e) => e.startsWith("shape:") && e.includes("href"))).toBe(true);
+  });
+
   it("money must be whole cents", () => {
     const errs = planted("sun-mountain", (m) => {
       m.summary.rows[0].month = 3746.79;
