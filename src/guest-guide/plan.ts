@@ -402,8 +402,16 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
     const figure = figureOf.get(key);
     const until = item.validThrough ? `Until ${formatDay(item.validThrough)}` : undefined;
     if (figure) {
-      out.push({ kind: "sub", text: head?.text ?? item.label, id: bid });
-      out.push({ kind: "figure", value: figure, text: item.body, key });
+      // An approved head is a sub-head; the live label stays small above the figure.
+      if (head) out.push({ kind: "sub", text: head.text });
+      out.push({
+        kind: "figure",
+        value: figure,
+        text: item.body,
+        key,
+        id: bid,
+        label: head ? undefined : item.label,
+      });
       if (item.where) out.push({ kind: "p", text: item.where, tone: "sec" });
       return out;
     }

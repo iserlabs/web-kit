@@ -25,6 +25,9 @@ importers:
       node-html-parser:
         specifier: ^9.0.0
         version: 9.0.6
+      qrcode-generator:
+        specifier: ^2.0.4
+        version: 2.0.4
       tailwind-merge:
         specifier: ^3.0.0
         version: 3.7.0
@@ -1803,6 +1806,9 @@ packages:
     resolution: {integrity: sha512-VA5Pf54N8shfopNkZZXCdiiwfnnY8ZJYAMqFQRhlH5mGUhfwf53Ar770GPtdpTDLUqvQeYpIBtC9/G2Jij2IJw==}
     engines: {node: '>=22.12.0'}
 
+  qrcode-generator@2.0.4:
+    resolution: {integrity: sha512-mZSiP6RnbHl4xL2Ap5HfkjLnmxfKcPWpWe/c+5XxCuetEenqmNFf1FH/ftXPCtFG5/TDobjsjz6sSNL0Sr8Z9g==}
+
   qs@6.17.1:
     resolution: {integrity: sha512-jd3COkaKVgGUW+ZHyEHCG9bH7RoaaiWuMgzsIBjUMVjLAaWGWpoUAVwljVvBHxRu/2qEHnadLGZrkutYUBPQJA==}
     engines: {node: '>=0.6'}
@@ -3540,6 +3546,8 @@ snapshots:
       - proxy-agent
       - utf-8-validate
       - yauzl
+
+  qrcode-generator@2.0.4: {}
 
   qs@6.17.1:
     dependencies:
