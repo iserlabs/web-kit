@@ -237,6 +237,14 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover--high .tt{flex:1;align-content:start;margin:14px calc(-1 * var(--gut)) 0;padding:18px var(--gut) 20px;background:var(--f-arrival)}
 }
 
+/* Facts low, a short window: the facts climb into the brighter rock, where white fell under 4.5:1 with the shade at its
+   0.35 cap (measured), so they drop onto the arrival field under the photo's sky (the band fallback, per geometry) */
+@media (orientation: portrait) and (max-width: 699px) and (max-height: 700px),(min-width: 1001px) and (max-height: 620px){
+  .gg .cover--low[data-facts-ink] .cover__ground{background:var(--f-arrival);color:var(--ink);text-shadow:none;margin-top:0;padding-top:16px}
+  .gg .cover--low .copy{outline:2px solid var(--ink);outline-offset:0}
+  .gg .cover--low .copy:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:none}
+}
+
 /* Landscape phone: photo left, facts right on the arrival field */
 @media (orientation: landscape) and (max-height: 500px) and (max-width: 1000px){
   .gg .cover{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);grid-template-rows:auto 1fr;gap:0;justify-content:stretch}
