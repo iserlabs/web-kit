@@ -3,6 +3,12 @@
 ## Unreleased
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
+## 0.17.0-alpenglow.2 (pre-release)
+- **guest-guide: three fixes from the Columbus and Palisade previews.**
+  1) Offline keeps the brand faces. At save time the page now also hands the worker the same-origin stylesheets and font files it actually loaded (next/font hashes file names, so a site cannot list them); the saved page used to fall back to Georgia and Arial. Sites may still pass known URLs in `planGuide({ extraUrls })`. Proven in headless Chrome with a hashed font: offline, the heading still renders in the brand face.
+  2) Every standalone link (quick find, picks, phone, 911, cover rows) is at least 44 x 44 px; one-word quick-find links ("Pets") measured 41 px wide. Sites can drop their local patch.
+  3) Home Screen icons draw the house initials (a leading house number, else the first letters of two words) in the brand display face. `guideIconSvg(plan, brand, { font })` embeds the site's own face file; `guideIconSpec` gives next/og renderers the same text, colors, face and size.
+
 ## 0.17.0-alpenglow.1 (pre-release)
 - **guest-guide v2, the "Alpenglow" template.** Additive: every 0.16 export still works.
   1) `model.ts`: `GuideModel` and parts (`Unknown`/`Slot` for facts not on record, `WifiV2`, `PriceTable`, `LookV2`, `CoverV2`).

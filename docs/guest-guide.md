@@ -77,11 +77,19 @@ files passed to `renderGuideHtml({ fonts })`).
 ## Offline
 
 Serve `guideServiceWorker({ cachePrefix, scope, version })` at the site's existing worker path with
-`Cache-Control: no-cache`. The page posts `plan.offlineUrls` after load, on idle, never with
-Save-Data on; the worker caches exactly those into `<cachePrefix>-v2-<version>`, drops only the
+`Cache-Control: no-cache`. The page posts `plan.offlineUrls` plus the same-origin stylesheets and
+font files it actually loaded (next/font's hashed names included) after load and the fonts, on
+idle, never with Save-Data on; the worker caches exactly those into `<cachePrefix>-v2-<version>`, drops only the
 site's older `<cachePrefix>-*` caches, and answers; only then does the saved line show. A saved page
 refreshes on each successful online visit. Proven in headless Chrome (`sw.browser.test.ts`); the
 real-iPhone airplane-mode test before production is still owed.
+
+## Home Screen
+
+`guideManifest({ plan, brand, startUrl, scope, icons })` per house. The icon carries the house
+initials (a leading number, else the first letters of two words) on the arrival field in the brand
+display face: `guideIconSvg(plan, brand, { font: { data } })` embeds the site's own face file;
+`guideIconSpec(plan, brand)` gives a next/og renderer the same text, colors, face and size.
 
 ## Crawlers
 

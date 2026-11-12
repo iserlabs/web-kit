@@ -30,7 +30,14 @@ export {
 } from "./copy";
 export { type FactRow, factsMarkdown, factsTable } from "./facts";
 export { decide, findForbidden, findLeaks } from "./leaks";
-export { type GuideManifestInput, guideIconSvg, guideManifest, iconText } from "./manifest";
+export {
+  type GuideManifestInput,
+  guideIconSpec,
+  guideIconSvg,
+  guideManifest,
+  type IconFont,
+  iconText,
+} from "./manifest";
 export type {
   ChapterId,
   ContactV2,

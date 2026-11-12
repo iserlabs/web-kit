@@ -7,9 +7,11 @@
  * polite live region speaks. A blocked clipboard is never silent: the button
  * shows the password itself, selected for a long-press copy (the v1 rule).
  *
- * Save: after load, on idle, never with Save-Data on. The page posts exactly
- * the URL list the plan made; the worker caches those and answers, and only
- * then does the saved line show.
+ * Save: after load and the fonts, on idle, never with Save-Data on. The page
+ * posts the plan's URL list plus the same-origin stylesheets and font files it
+ * actually loaded (next/font hashes file names, so a site cannot list them at
+ * build; without them the saved page fell back to Georgia and Arial). The
+ * worker caches those and answers, and only then does the saved line show.
  */
 export const BEHAVIOR_JS = String.raw`(function(){
 var d=document,root=d.querySelector('.gg');if(!root)return;
@@ -28,7 +30,10 @@ var sw=ds.sw;if(!sw||!('serviceWorker' in navigator)||!('caches' in window))retu
 if(navigator.connection&&navigator.connection.saveData)return;
 var page=ds.page||location.pathname,urls=[];try{urls=JSON.parse(ds.offline||'[]');}catch(e){console.warn('guide: offline list unreadable',e);return;}
 navigator.serviceWorker.addEventListener('message',function(e){var m=e.data;if(m&&m.type==='guide-saved'&&m.page===page){var s=d.querySelector('[data-saved]');if(s)s.setAttribute('data-on','');}});
-function save(){navigator.serviceWorker.register(sw,{scope:ds.swScope||'./'}).then(function(){return navigator.serviceWorker.ready;}).then(function(reg){if(reg.active)reg.active.postMessage({type:'save-guide',page:page,urls:urls});}).catch(function(e){console.warn('guide: offline save unavailable',e&&e.message);});}
+function same(u){try{return new URL(u,location.href).origin===location.origin;}catch(e){return false;}}
+function used(){var u=[];d.querySelectorAll('link[rel~="stylesheet"][href],link[rel~="preload"][as="font"][href]').forEach(function(l){u.push(l.href);});
+var es=performance.getEntriesByType?performance.getEntriesByType('resource'):[];es.forEach(function(e){if(/\.(woff2?|ttf|otf)(\?|#|$)/i.test(e.name))u.push(e.name);});return u.filter(same);}
+function save(){var ready=d.fonts&&d.fonts.ready?d.fonts.ready:Promise.resolve();ready.then(function(){return navigator.serviceWorker.register(sw,{scope:ds.swScope||'./'});}).then(function(){return navigator.serviceWorker.ready;}).then(function(reg){var all=urls.concat(used()).filter(function(x,i,a){return a.indexOf(x)===i;});if(reg.active)reg.active.postMessage({type:'save-guide',page:page,urls:all});}).catch(function(e){console.warn('guide: offline save unavailable',e&&e.message);});}
 function idle(){(window.requestIdleCallback||function(f){setTimeout(f,200);})(save);}
 if(d.readyState==='complete')idle();else window.addEventListener('load',idle,{once:true});
 })();`;

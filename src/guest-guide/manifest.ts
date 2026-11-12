@@ -35,19 +35,66 @@ export function guideManifest(i: GuideManifestInput) {
 const esc = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
 
-/** The text the icon carries: the house number, or the first word of the name. */
+/**
+ * The house initials the icon carries: a leading house number as it is
+ * ("135 Yale" is 135, up to four digits), else the first letter of each of the
+ * first two words ("Crown Ridge Cottage" is CR, "Lark" is L).
+ */
 export function iconText(name: string): string {
-  const first = name.trim().split(/\s+/)[0] ?? name;
-  return first.length <= 4 ? first : first.slice(0, 2);
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const number = /^\d{1,4}[A-Za-z]?$/.exec(words[0] ?? "");
+  if (number) return number[0];
+  return words
+    .slice(0, 2)
+    .map((w) => w.charAt(0).toUpperCase())
+    .join("");
+}
+
+/** Everything a renderer needs to draw the icon in the brand face (next/og, a canvas, the SVG below). */
+export function guideIconSpec(plan: Plan, brand: GuideBrand) {
+  const text = iconText(plan.name);
+  return {
+    text,
+    background: brand.fields.arrival,
+    color: brand.ink,
+    fontFamily: brand.faces.display.family,
+    fallback: brand.faces.display.fallback,
+    fontWeight: brand.faces.display.weight,
+    /** On a 512 px square. */
+    fontSize: text.length <= 2 ? 280 : text.length === 3 ? 210 : 170,
+  };
+}
+
+export type IconFont = {
+  /** The brand display face file (the site's own self-hosted woff2), as bytes or base64. */
+  data: Uint8Array | string;
+  format?: "woff2" | "woff" | "truetype" | "opentype";
+};
+
+/** Base64 without Node's Buffer, so it also runs in an edge or browser runtime. */
+function base64(d: Uint8Array | string): string {
+  if (typeof d === "string") return d;
+  let bin = "";
+  for (let i = 0; i < d.length; i += 0x8000)
+    bin += String.fromCharCode(...d.subarray(i, i + 0x8000));
+  return btoa(bin);
 }
 
 /**
- * A square SVG icon: the arrival field, the house's number or first letters
- * in the brand's display face and ink. 512 px; sites rasterize it for iPhone.
+ * A square SVG icon: the arrival field and the house initials in the brand's
+ * display face and ink, 512 px. Pass the face file and it is embedded, so the
+ * icon draws in the brand face on a phone that does not have the font; sites
+ * rasterize it to PNG for iPhone (next/og with the same face, or a browser).
  */
-export function guideIconSvg(plan: Plan, brand: GuideBrand): string {
-  const text = iconText(plan.name);
-  const size = text.length <= 2 ? 260 : text.length === 3 ? 210 : 170;
-  const family = brand.faces.display.family.replace(/["<>&]/g, "");
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="512" fill="${esc(brand.fields.arrival)}"/><text x="256" y="256" dy="0.35em" text-anchor="middle" font-family="${esc(family)}, ${esc(brand.faces.display.fallback)}" font-weight="${brand.faces.display.weight}" font-size="${size}" fill="${esc(brand.ink)}">${esc(text)}</text></svg>`;
+export function guideIconSvg(
+  plan: Plan,
+  brand: GuideBrand,
+  opts: { font?: IconFont } = {},
+): string {
+  const s = guideIconSpec(plan, brand);
+  const family = s.fontFamily.replace(/["'<>&;{}\\]/g, "");
+  const face = opts.font
+    ? `<style>@font-face{font-family:"${family}";src:url(data:font/${opts.font.format ?? "woff2"};base64,${base64(opts.font.data)}) format("${opts.font.format ?? "woff2"}");font-weight:${s.fontWeight}}</style>`
+    : "";
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">${face}<rect width="512" height="512" fill="${esc(s.background)}"/><text x="256" y="256" dy="0.35em" text-anchor="middle" font-family="&quot;${esc(family)}&quot;, ${esc(s.fallback)}" font-weight="${s.fontWeight}" font-size="${s.fontSize}" fill="${esc(s.color)}">${esc(s.text)}</text></svg>`;
 }

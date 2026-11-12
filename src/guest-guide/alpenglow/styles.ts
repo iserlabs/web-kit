@@ -79,7 +79,7 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .find__item{display:grid;grid-template-columns:44px minmax(0,1fr)}
 .gg .find__n{font:400 15px/1 var(--fig);color:var(--accent-text);padding-top:9px}
 .gg .find__q{font:var(--head-w) 22px/1.25 var(--head);font-optical-sizing:auto}
-.gg .find__q a{display:inline-flex;align-items:center;min-height:44px;text-decoration-thickness:1px}
+.gg .find__q a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;text-decoration-thickness:1px}
 .gg .find__a{margin-top:2px;font:var(--text-w) 16px/1.45 var(--text);color:var(--sec)}
 .gg .find__wifi{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:4px}
 .gg .find__wifi .find__a{margin:0;overflow-wrap:anywhere;min-width:0}
@@ -136,7 +136,7 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .picks li{margin:0 0 22px}
 .gg .row-link{margin:0 0 6px}
 .gg .row-link a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;font-weight:var(--strong)}
-.gg .picks a{display:inline-flex;align-items:center;min-height:44px;font-weight:var(--strong)}
+.gg .picks a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;font-weight:var(--strong)}
 .gg .picks span{display:block;color:var(--sec);font-size:16px}
 .gg .picks .pick-note{color:var(--ink);font-size:18px}
 
@@ -146,8 +146,8 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .help>*{max-width:34rem}
 .gg .help .q{margin-bottom:12px}
 .gg .contact{font-weight:var(--strong)}
-.gg .reach a{display:inline-flex;align-items:center;min-height:44px;margin-right:18px}
-.gg .call{display:inline-flex;align-items:baseline;gap:14px;min-height:64px;text-decoration:none;margin:4px 0 8px}
+.gg .reach a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;margin-right:18px}
+.gg .call{display:inline-flex;align-items:baseline;gap:14px;min-height:64px;min-width:44px;text-decoration:none;margin:4px 0 8px}
 .gg .call .big{margin:0;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:0.12em}
 .gg .call .t{font:var(--strong) 17px/1.3 var(--text)}
 .gg .colophon{margin-top:56px;display:grid;gap:6px;font:var(--text-w) 15px/1.45 var(--text);color:var(--sec)}

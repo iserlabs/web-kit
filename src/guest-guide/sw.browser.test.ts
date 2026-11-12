@@ -9,6 +9,7 @@
  * fails, never skips, when the browser cannot start, unless
  * WEB_KIT_SKIP_BROWSER=1 is set on purpose.
  */
+import { readFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -37,12 +38,45 @@ function page(slug: string, save: boolean): string {
   });
 }
 
+/**
+ * A Next-style page: the brand face lives in an external stylesheet with a
+ * hashed font file the plan never lists (what next/font produces).
+ */
+function fontedPage(): string {
+  const m = { ...structuredClone(yaleFixture), slug: "fonted" };
+  const brand = {
+    ...sunMountainBrand,
+    faces: {
+      ...sunMountainBrand.faces,
+      display: { family: "TestFace", fallback: "serif", weight: 600 },
+    },
+  };
+  const plan = planGuide(m, resolveCopy(m, { approvals: [] }), { page: "/guides/fonted" });
+  return renderGuideHtml({
+    plan,
+    brand,
+    page: "/guides/fonted",
+    serviceWorker: { url: "/guides/sw.js", scope: "/guides/" },
+    head: { canonical: "https://example.invalid/guides/fonted" },
+  }).replace("</head>", '<link rel="stylesheet" href="/_next/static/css/a1b2c3.css">\n</head>');
+}
+
+const FONT = readFileSync(
+  new URL("../../test-assets/fonts/cinzel-600-latin.woff2", import.meta.url),
+);
+
 let server: Server;
 let origin = "";
 const hits: string[] = [];
 
 beforeAll(async () => {
   const routes: Record<string, [string, string | Buffer]> = {
+    "/guides/fonted": ["text/html; charset=utf-8", fontedPage()],
+    "/_next/static/css/a1b2c3.css": [
+      "text/css",
+      '@font-face{font-family:"TestFace";src:url(/_next/static/media/9f8e7d-s.p.woff2) format("woff2");font-weight:600;font-display:swap}',
+    ],
+    "/_next/static/media/9f8e7d-s.p.woff2": ["font/woff2", FONT],
     "/guides/yale": ["text/html; charset=utf-8", page("yale", true)],
     "/guides/lark": ["text/html; charset=utf-8", page("lark", false)],
     "/guides/sw.js": [
@@ -120,6 +154,47 @@ describe.skipIf(SKIP)("guide service worker in headless Chrome", () => {
       expect(hits.length).toBe(before);
       await expect(p.goto(`${origin}/guides/lark`)).rejects.toThrow();
       expect(errors).toEqual([]);
+    } finally {
+      await browser.close();
+    }
+  }, 60_000);
+
+  it("saves the brand faces the page loaded, so the offline page keeps them (no Georgia fallback)", async () => {
+    const { chromium } = await import("playwright");
+    const browser = await chromium.launch();
+    try {
+      const context = await browser.newContext();
+      const p = await context.newPage();
+      await p.goto(`${origin}/guides/fonted`);
+      await expect
+        .poll(
+          () => p.evaluate(() => document.querySelector("[data-saved]")?.hasAttribute("data-on")),
+          {
+            timeout: 20_000,
+          },
+        )
+        .toBe(true);
+      const cached = await p.evaluate(async () => {
+        const c = await caches.open("test-guides-v2-b2");
+        return (await c.keys()).map((r) => new URL(r.url).pathname);
+      });
+      expect(cached).toContain("/_next/static/css/a1b2c3.css");
+      expect(cached).toContain("/_next/static/media/9f8e7d-s.p.woff2");
+
+      await context.setOffline(true);
+      const res = await p.goto(`${origin}/guides/fonted`);
+      expect(res?.status()).toBe(200);
+      const face = await p.evaluate(async () => {
+        await document.fonts.ready;
+        await document.fonts.load('600 80px "TestFace"');
+        const loaded = [...document.fonts].some(
+          (f) => f.family.replace(/"/g, "") === "TestFace" && f.status === "loaded",
+        );
+        const h1 = getComputedStyle(document.querySelector("h1") as Element).fontFamily;
+        return { loaded, h1 };
+      });
+      expect(face.h1).toContain("TestFace");
+      expect(face.loaded).toBe(true);
     } finally {
       await browser.close();
     }

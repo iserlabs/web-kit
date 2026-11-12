@@ -43,11 +43,20 @@ describe("guideIconSvg", () => {
   it("draws the house number on the arrival field in the display face", () => {
     const svg = guideIconSvg(plan(), sunMountainBrand);
     expect(iconText("135 Yale")).toBe("135");
-    expect(iconText("Lark")).toBe("Lark");
-    expect(iconText("Cranbrook")).toBe("Cr");
+    expect(iconText("Lark")).toBe("L");
+    expect(iconText("Crown Ridge Cottage")).toBe("CR");
+    expect(iconText("616 Bonfoy Main House and Cottage")).toBe("616");
+    expect(iconText("Cranbrook")).toBe("C");
     expect(svg).toContain('fill="#e9c2a4"');
     expect(svg).toContain(">135</text>");
-    expect(svg).toContain('font-family="Newsreader, Georgia, serif"');
+    expect(svg).toContain('font-family="&quot;Newsreader&quot;, Georgia, serif"');
+    expect(svg).not.toContain("@font-face");
+    const embedded = guideIconSvg(plan(), sunMountainBrand, {
+      font: { data: new Uint8Array([1, 2, 3]) },
+    });
+    expect(embedded).toContain(
+      '@font-face{font-family:"Newsreader";src:url(data:font/woff2;base64,AQID)',
+    );
   });
 });
 
