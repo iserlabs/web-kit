@@ -47,6 +47,11 @@ describe("guideIconSvg", () => {
     expect(iconText("Crown Ridge Cottage")).toBe("CR");
     expect(iconText("616 Bonfoy Main House and Cottage")).toBe("616");
     expect(iconText("Cranbrook")).toBe("C");
+    expect(iconText("Apartment 202")).toBe("202");
+    expect(iconText("2nd floor A2")).toBe("A2");
+    expect(iconText("Unit 12b")).toBe("12B");
+    expect(iconText("M02")).toBe("M02");
+    expect(iconText("1st Street Loft")).toBe("SL");
     expect(svg).toContain('fill="#e9c2a4"');
     expect(svg).toContain(">135</text>");
     expect(svg).toContain('font-family="&quot;Newsreader&quot;, Georgia, serif"');
@@ -82,5 +87,19 @@ describe("guideServiceWorker", () => {
     expect(() =>
       guideServiceWorker({ cachePrefix: "sms-guides", scope: "/g'uides/", version: "1" }),
     ).toThrow();
+  });
+});
+
+describe("explicit icon initials", () => {
+  it("a site's own iconText wins over the name, and the validator bounds it", async () => {
+    const { validateModel } = await import("./validate");
+    const m = structuredClone(yaleFixture);
+    m.iconText = "Y1";
+    const p = planGuide(m, resolveCopy(m, { approvals: [] }));
+    expect(guideIconSvg(p, sunMountainBrand)).toContain(">Y1</text>");
+    m.iconText = "TOOLONG";
+    expect(validateModel(m, { today: "2026-11-11" }).some((x) => x.startsWith("iconText:"))).toBe(
+      true,
+    );
   });
 });

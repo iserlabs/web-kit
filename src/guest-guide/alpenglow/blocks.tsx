@@ -1,19 +1,21 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource react */
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import type { VideoV2 } from "../model";
 import type { Block, PlacedPhoto, StepItem } from "../plan";
 import type { RenderImage } from "./image";
 
 /**
- * A how-to video that loads nothing until tapped: preload="none", and the
- * poster goes in only when the row nears the window (the inline behavior
- * script moves data-poster to poster), so the first load carries 0 KB of it.
+ * A how-to video that loads nothing until tapped: preload="none"; the poster
+ * goes in only when the row nears the window, and the captions track only when
+ * play starts (the inline behavior script moves data-poster and data-captions
+ * in), so the first load carries 0 KB of it. A clip with no captions gets no
+ * track. Height is capped at 72vh and width at the clip's own width.
  */
 export function Video({ v }: { v: VideoV2 }) {
   return (
     <figure className="video">
-      {/* biome-ignore lint/a11y/useMediaCaption: the captions track renders whenever the video has speech; a silent how-to has none, and its aria-label says what it shows */}
+      {/* biome-ignore lint/a11y/useMediaCaption: the captions track is added on play when the clip has one (a track in the markup is fetched on load); a silent how-to has none, and its aria-label says what it shows */}
       <video
         controls
         preload="none"
@@ -21,12 +23,10 @@ export function Video({ v }: { v: VideoV2 }) {
         width={v.width}
         height={v.height}
         data-poster={v.poster}
+        data-captions={v.captions}
         aria-label={v.alt}
       >
         <source src={v.src} type={v.type} />
-        {v.captions ? (
-          <track kind="captions" src={v.captions} srcLang="en" label="English" default />
-        ) : null}
       </video>
     </figure>
   );
@@ -70,6 +70,11 @@ function Steps({ items, head, headId }: { items: StepItem[]; head?: string; head
               {s.text}
               {s.where ? <span className="where">{s.where}</span> : null}
             </span>
+            {s.video ? (
+              <div className="media">
+                <Video v={s.video} />
+              </div>
+            ) : null}
           </li>
         ))}
       </ol>
@@ -134,24 +139,27 @@ export function Blocks({ blocks, render }: { blocks: Block[]; render: RenderImag
           </div>
         );
       case "item":
-        return b.asHead ? (
-          <div key={k} id={b.id}>
-            <h3 className="sub">{b.label}</h3>
-            {b.where ? <p className="where">{b.where}</p> : null}
-            <p>{b.body}</p>
-            {b.until ? <p className="until">{b.until}</p> : null}
+        // Text and media in separate boxes, so text always sits on the field and is measured there.
+        return (
+          <Fragment key={k}>
+            {b.asHead ? (
+              <div id={b.id}>
+                <h3 className="sub">{b.label}</h3>
+                {b.where ? <p className="where">{b.where}</p> : null}
+                <p>{b.body}</p>
+                {b.until ? <p className="until">{b.until}</p> : null}
+              </div>
+            ) : (
+              <div className="fact" id={b.id}>
+                <span className="fact__label">{b.label}</span>
+                {b.body}
+                {b.where ? <span className="where">{b.where}</span> : null}
+                {b.until ? <span className="until">{b.until}</span> : null}
+              </div>
+            )}
             {b.photos ? <RoomPhotos photos={b.photos} render={render} /> : null}
             {b.video ? <Video v={b.video} /> : null}
-          </div>
-        ) : (
-          <div key={k} className="fact" id={b.id}>
-            <span className="fact__label">{b.label}</span>
-            {b.body}
-            {b.where ? <span className="where">{b.where}</span> : null}
-            {b.until ? <span className="until">{b.until}</span> : null}
-            {b.photos ? <RoomPhotos photos={b.photos} render={render} /> : null}
-            {b.video ? <Video v={b.video} /> : null}
-          </div>
+          </Fragment>
         );
       case "unknown":
         return (

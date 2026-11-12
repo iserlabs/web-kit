@@ -3,6 +3,12 @@
 ## Unreleased
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
+## 0.17.0-alpenglow.3 (pre-release)
+- **guest-guide: layout, video and icon fixes from the Sun Mountain and Euclid ports.**
+  1) Text rows and photo or video blocks render in separate boxes, so text always sits on the field and design-check measures it there (Cranbrook's "A Keurig coffee machine." was measured against its photo at iPad sizes).
+  2) Video: the captions track is added only when play starts (a `<track>` in the markup is fetched on load); a clip with no captions gets none; videos in numbered lists (Checkout) now render; a clip is capped at its own width and 72vh.
+  3) Icons: a house or unit number standing as its own word wins ("Apartment 202" is 202), then a letter-and-digit unit code ("2nd floor A2" is A2), never an ordinal; `GuideModel.iconText` sets the initials outright (1 to 4 letters or digits, validated).
+
 ## 0.17.0-alpenglow.2 (pre-release)
 - **guest-guide: three fixes from the Columbus and Palisade previews.**
   1) Offline keeps the brand faces. At save time the page now also hands the worker the same-origin stylesheets and font files it actually loaded (next/font hashes file names, so a site cannot list them); the saved page used to fall back to Georgia and Arial. Sites may still pass known URLs in `planGuide({ extraUrls })`. Proven in headless Chrome with a hashed font: offline, the heading still renders in the brand face.

@@ -180,6 +180,8 @@ export function validateModel(m: GuideModel, opts: ValidateModelOptions): string
   const dates: string[] = [];
 
   if (!SLUG.test(m.slug)) problems.push(`slug: "${m.slug}" is not lowercase-hyphenated`);
+  if (m.iconText !== undefined && !/^[A-Za-z0-9]{1,4}$/.test(m.iconText))
+    problems.push(`iconText: "${m.iconText}" must be 1 to 4 letters or digits`);
 
   const strings: [string, string][] = [];
   walk(m, "", (path, v) => {

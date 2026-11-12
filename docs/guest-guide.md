@@ -50,7 +50,8 @@ The v0.13 to v0.16 exports (`GuestGuide`, `validateGuide`, `factsTable`, `factsM
 ## Rows beyond text
 
 - **Video** (`ItemV2.video`, `VideoV2`): `<video preload="none">`, the poster set only as the row nears
-  the window, so it adds 0 KB to the first load; never saved offline; the photo never-place rules apply.
+  the window and the captions track only on play, so it adds 0 KB to the first load; capped at its own
+  width and 72vh; rendered in numbered lists too; never saved offline; the photo never-place rules apply.
 - **Link rows** (`SectionV2.links`, `LinkItem`): a plain 44 px row link (https:// or a same-site path),
   an external one marked with an arrow and a hidden "(another site)". Quick find may point at one.
 - **Photo credits** (`PhotoV2.credit`): printed verbatim in the colophon for each placed photo, once.
@@ -87,7 +88,8 @@ real-iPhone airplane-mode test before production is still owed.
 ## Home Screen
 
 `guideManifest({ plan, brand, startUrl, scope, icons })` per house. The icon carries the house
-initials (a leading number, else the first letters of two words) on the arrival field in the brand
+initials (a house or unit number, then a unit code like A2, else the first letters of two words;
+`GuideModel.iconText` overrides) on the arrival field in the brand
 display face: `guideIconSvg(plan, brand, { font: { data } })` embeds the site's own face file;
 `guideIconSpec(plan, brand)` gives a next/og renderer the same text, colors, face and size.
 

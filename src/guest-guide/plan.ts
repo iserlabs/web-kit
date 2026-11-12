@@ -25,7 +25,14 @@ import { unplaceable } from "./validate";
 
 export type PlacedPhoto = PhotoV2 & { caption?: string };
 
-export type StepItem = { text: string; label?: string; where?: string; key?: string; id?: string };
+export type StepItem = {
+  text: string;
+  label?: string;
+  where?: string;
+  key?: string;
+  id?: string;
+  video?: VideoV2;
+};
 
 export type Block =
   | { kind: "p"; text: string; id?: string; tone?: "sec" }
@@ -153,6 +160,8 @@ export type Plan = {
   slug: string;
   name: string;
   shortName: string;
+  /** The site's own icon initials, when it set them. */
+  iconText?: string;
   cover: CoverPlan;
   quickFind: { head: Line; rows: QuickRow[] };
   chapters: ChapterPlan[];
@@ -468,6 +477,7 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
             label: item.label,
             text: bodyOf(key, item),
             where: item.where,
+            video: item.video && !unplaceable(item.video) ? item.video : undefined,
           })),
         },
       ];
@@ -521,6 +531,7 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
             label: item.label,
             text: bodyOf(key, item),
             where: item.where,
+            video: item.video && !unplaceable(item.video) ? item.video : undefined,
           })),
         });
     } else if (chapter === "house") {
@@ -941,6 +952,7 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
     name: m.name,
     shortName:
       m.shortName ?? (m.name.length <= 14 ? m.name : m.name.split(/\s+/).slice(0, 2).join(" ")),
+    iconText: m.iconText,
     cover: coverPlan,
     quickFind: { head: L.quickFindHead ?? { text: "Quick find", from: "live" }, rows: quickRows },
     chapters,

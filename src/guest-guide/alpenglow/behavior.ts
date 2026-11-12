@@ -24,8 +24,9 @@ timers.set(b,setTimeout(function(){b.textContent=label;b.removeAttribute('data-d
 else{b.textContent=t;var r=d.createRange();r.selectNodeContents(b);var s=getSelection();if(s){s.removeAllRanges();s.addRange(r);}say((ds.saidBlocked||'').replace('{password}',t));}}
 d.addEventListener('click',function(e){var b=e.target&&e.target.closest?e.target.closest('[data-copy]'):null;if(!b)return;var t=b.getAttribute('data-copy')||'';if(!t)return;
 if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(function(){report(b,true,t);},function(){report(b,legacy(t),t);});}else{report(b,legacy(t),t);}});
-var vids=d.querySelectorAll('video[data-poster]');function poster(v){v.setAttribute('poster',v.getAttribute('data-poster'));v.removeAttribute('data-poster');}
+var vids=d.querySelectorAll('video[data-poster]');function poster(v){var p=v.getAttribute('data-poster');if(!p)return;v.setAttribute('poster',p);v.removeAttribute('data-poster');}
 if(vids.length){if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){poster(e.target);io.unobserve(e.target);}});},{rootMargin:'300px 0px'});vids.forEach(function(v){io.observe(v);});}else vids.forEach(poster);}
+d.addEventListener('play',function(e){var v=e.target;if(!v||v.tagName!=='VIDEO')return;poster(v);var c=v.getAttribute('data-captions');if(!c)return;v.removeAttribute('data-captions');var t=d.createElement('track');t.kind='captions';t.src=c;t.srclang='en';t.label='English';t.default=true;v.appendChild(t);},true);
 var sw=ds.sw;if(!sw||!('serviceWorker' in navigator)||!('caches' in window))return;
 if(navigator.connection&&navigator.connection.saveData)return;
 var page=ds.page||location.pathname,urls=[];try{urls=JSON.parse(ds.offline||'[]');}catch(e){console.warn('guide: offline list unreadable',e);return;}

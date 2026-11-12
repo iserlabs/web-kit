@@ -231,6 +231,8 @@ export type GuideModel = {
   nameLines?: string[];
   /** Home Screen title. Default: name, if 14 characters or fewer, else the first two words of the name. */
   shortName?: string;
+  /** The Home Screen icon's initials, 1 to 4 characters. Default: from the name (`iconText`). */
+  iconText?: string;
   door?: Sourced;
   address: Sourced<GuestAddress> & {
     mapUrl: string;

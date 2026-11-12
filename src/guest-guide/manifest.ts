@@ -36,15 +36,26 @@ const esc = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
 
 /**
- * The house initials the icon carries: a leading house number as it is
- * ("135 Yale" is 135, up to four digits), else the first letter of each of the
- * first two words ("Crown Ridge Cottage" is CR, "Lark" is L).
+ * The initials the icon carries, from the name, in this order:
+ * 1) a house or unit number standing as its own word, the last one wins
+ *    ("135 Yale" is 135, "Apartment 202" is 202, "Unit 12B" is 12B);
+ * 2) a unit code of one or two letters and digits ("2nd floor A2" is A2,
+ *    "M02" is M02); ordinals like "2nd" are never a unit;
+ * 3) else the first letters of the first two words that start with a letter
+ *    ("Crown Ridge Cottage" is CR, "Lark" is L).
+ * A site that wants other initials sets `GuideModel.iconText`.
  */
 export function iconText(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
-  const number = /^\d{1,4}[A-Za-z]?$/.exec(words[0] ?? "");
-  if (number) return number[0];
+  const numbers = words.filter(
+    (w) => /^\d{1,4}[A-Za-z]?$/.test(w) && !/^\d+(st|nd|rd|th)$/i.test(w),
+  );
+  const last = numbers.at(-1);
+  if (last) return last.toUpperCase();
+  const unit = words.filter((w) => /^[A-Za-z]{1,2}\d{1,3}$/.test(w)).at(-1);
+  if (unit) return unit.toUpperCase();
   return words
+    .filter((w) => /^[A-Za-z]/.test(w))
     .slice(0, 2)
     .map((w) => w.charAt(0).toUpperCase())
     .join("");
@@ -52,7 +63,7 @@ export function iconText(name: string): string {
 
 /** Everything a renderer needs to draw the icon in the brand face (next/og, a canvas, the SVG below). */
 export function guideIconSpec(plan: Plan, brand: GuideBrand) {
-  const text = iconText(plan.name);
+  const text = plan.iconText ?? iconText(plan.name);
   return {
     text,
     background: brand.fields.arrival,

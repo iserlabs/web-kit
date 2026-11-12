@@ -45,7 +45,9 @@ describe("video block (SPEC 5.5, 11)", () => {
     expect(tag).toContain('aria-label="Opening the key box and taking the key"');
     expect(tag).toContain('width="720"');
     expect(out).toContain('<source src="/media/keycafe-pickup.mp4" type="video/mp4"/>');
-    expect(out).toContain('kind="captions"');
+    // The captions file loads only on play: no track in the markup, the URL waits in data-captions.
+    expect(out).not.toContain("<track");
+    expect(tag).toContain('data-captions="/media/keycafe-pickup.vtt"');
   });
 
   it("is never placed when it shows a door, a code, or AI footage, and the validator says why", () => {

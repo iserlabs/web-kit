@@ -120,7 +120,8 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .room--two{display:grid;grid-template-columns:1fr 1fr;gap:2px}
 .gg .room img{width:100%;height:auto;aspect-ratio:3/4;object-fit:cover}
 .gg .video{margin:12px 0 24px}
-.gg .video video{display:block;width:100%;height:auto;background:var(--paper)}
+.gg .video video{display:block;width:auto;height:auto;max-width:100%;max-height:72vh;background:var(--paper)}
+.gg .steps .media{grid-column:2;min-width:0}
 .gg .room figcaption{padding:8px 0 0}
 .gg .wifi-block{margin-top:48px}
 .gg .wifi-block .wifi{justify-content:flex-start;margin:0 0 18px}
