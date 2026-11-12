@@ -103,14 +103,20 @@ describe("what the page carries", () => {
   });
 
   for (const name of BRAND_FILES) {
-    it(`${name}: exactly one call link, plain, inside one sentence`, () => {
+    it(`${name}: no booking link on the page, and the closing line points at the email`, () => {
       const { html } = render(name);
-      expect(count(html, 'href="https://jakejjlee.com/meet"')).toBe(1);
-      expect(html).toContain(
-        'Questions on any figure: reply to the email, or book a call at <a href="https://jakejjlee.com/meet">jakejjlee.com/meet</a>.',
-      );
+      expect(html.toLowerCase()).not.toContain("jakejjlee");
+      expect(html).not.toContain("book a call");
+      expect(html).toContain("<p>Questions on any figure: reply to the statement email.</p>");
     });
   }
+
+  it("the model keeps its calls address for the email; the page never prints it", () => {
+    const m = load("sun-mountain");
+    m.calls = "https://example.org/somewhere";
+    const { html } = renderStatement(m, { logo: LOGO });
+    expect(html).not.toContain("example.org");
+  });
 
   it("one details per row with a breakdown, closed on screen, summary carries the ref", () => {
     for (const name of BRAND_FILES) {
@@ -159,6 +165,21 @@ describe("what the page carries", () => {
   });
 });
 
+describe("sources", () => {
+  it("a site path and a web address become links; a source with no address stays text", () => {
+    const m = load("sun-mountain");
+    m.sources = [
+      { label: "Statement notes", file: null, href: "/notes/october" },
+      { label: "Export", file: null, href: "https://example.com/export" },
+      { label: "Plain source", file: null, href: null },
+    ];
+    const { html } = renderStatement(m, { logo: LOGO });
+    expect(html).toContain('<a href="/notes/october">Statement notes</a>');
+    expect(html).toContain('<a href="https://example.com/export">Export</a>');
+    expect(html).toContain("<li>Plain source</li>");
+  });
+});
+
 describe("escaping", () => {
   const evil = "<script>alert(1)</script>";
 
@@ -197,15 +218,27 @@ describe("escaping", () => {
 
 describe("one brand per page", () => {
   for (const name of BRAND_FILES) {
-    it(`${name}: no other business name reaches the HTML or CSS`, () => {
+    it(`${name}: no other business name or brand id reaches the HTML or CSS, class names included`, () => {
       const { html, css } = render(name);
       for (const other of BRAND_FILES) {
         if (other === name) continue;
-        for (const word of NAMES[other]) {
-          expect(html, `${name} html mentions ${word}`).not.toContain(word);
-          expect(css, `${name} css mentions ${word}`).not.toContain(word);
+        const words = [...NAMES[other], other, other.replace("-", " "), other.replace("-", "")];
+        for (const word of words) {
+          expect(html.toLowerCase(), `${name} html mentions ${word}`).not.toContain(
+            word.toLowerCase(),
+          );
+          expect(css.toLowerCase(), `${name} css mentions ${word}`).not.toContain(
+            word.toLowerCase(),
+          );
         }
       }
+    });
+
+    it(`${name}: the stylesheet names no brand at all, so every brand gets the same rules`, () => {
+      // The print footer quotes the statement's own title, which is data, not a rule.
+      const rules = render(name).css.replace(/content:"[^"]*"/g, 'content:""');
+      for (const id of BRAND_FILES) expect(rules.toLowerCase(), id).not.toContain(id);
+      expect(rules).not.toMatch(/\.os--/);
     });
   }
 });

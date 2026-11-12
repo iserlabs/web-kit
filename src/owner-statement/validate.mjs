@@ -19,6 +19,8 @@ const EM_DASH = String.fromCharCode(0x2014);
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const isStr = (v) => typeof v === "string" && v.length > 0;
 const isInt = (v) => Number.isSafeInteger(v);
+/** A source link: a web address, or a path on the same site. Never another scheme, never "//" or "/\". */
+const SOURCE_HREF = /^(https?:\/\/\S|\/(?![/\\]))/;
 const money = (c) => formatCents(c, { parens: true });
 
 /** Every string in the model, with a readable path. */
@@ -367,8 +369,14 @@ function checkSources(m, errors) {
       errors.push(`shape: sources[${i}] needs a label`);
       return;
     }
-    if (s.href !== null && s.href !== undefined && !/^https?:\/\//.test(s.href)) {
-      errors.push(`shape: sources[${i}] href must be a web address or null`);
+    if (
+      s.href !== null &&
+      s.href !== undefined &&
+      (typeof s.href !== "string" || !SOURCE_HREF.test(s.href))
+    ) {
+      errors.push(
+        `shape: sources[${i}] href must be a web address, a site path starting with one "/", or null`,
+      );
     }
   });
 }

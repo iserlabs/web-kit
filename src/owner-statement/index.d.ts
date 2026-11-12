@@ -204,6 +204,10 @@ export interface BrandTokens {
   tint: string;
   /** Palisade keeps a gold stripe down the left edge of the sheet. */
   stripe: string | null;
+  /** Size of figures against the body text (1 = the same size). Kept at 0.93 or more so no figure drops under 13px. */
+  figureScale: number;
+  /** Width of one printed figure character, in em of the figures' own face. Sizes the money columns. */
+  figureAdvance: number;
   /** Height of the masthead logo in CSS pixels. */
   logoHeight: number;
   /** Use tabular figures. Off where the face's tabular digits look mechanical. */

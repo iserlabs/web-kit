@@ -24,7 +24,7 @@ const fmt = (cents) => formatCents(cents, { parens: true });
 const DASH = "&ndash;";
 
 /** A link target a statement may carry: a web address, a path, or a page anchor. */
-const SAFE_HREF = /^(https?:\/\/|\/(?!\/)|\.{1,2}\/|#)/i;
+const SAFE_HREF = /^(https?:\/\/|\/(?![/\\])|\.{1,2}\/|#)/i;
 const safeHref = (href) => (typeof href === "string" && SAFE_HREF.test(href) ? href : null);
 
 function longDate(iso) {
@@ -42,35 +42,103 @@ const cell = (column, value) => {
   return esc(value);
 };
 
-/** Which columns stay on a phone: the first, plus the last two figure columns (money before count). */
-function phoneColumns(columns) {
+/** The text width of the sheet on the narrowest phone (320px, 16px each side), in rem. */
+const PHONE_REM = 18;
+/** The least room a label or name column keeps on that phone, so a long word never spills. */
+const TEXT_MIN_REM = 7;
+const PHONE_GAP_REM = 0.5;
+
+/**
+ * Which columns stay on a phone: the first, plus the last two figure columns (money before
+ * count). When those leave the name column under TEXT_MIN_REM on a 320px phone, figure columns
+ * drop (counts first, then the earlier money) until it fits or one figure column is left.
+ */
+function phoneColumns(columns, refRem, phoneRem) {
   const indexes = (kind) => columns.flatMap((c, i) => (i > 0 && c.kind === kind ? [i] : []));
   const money = indexes("money");
   const counts = indexes("int");
-  const keep = new Set([0, ...money.slice(-2)]);
+  const figures = [...money.slice(-2)];
   const need = 2 - Math.min(2, money.length);
-  if (need > 0) for (const i of counts.slice(-need)) keep.add(i);
-  return keep;
+  if (need > 0) figures.unshift(...counts.slice(-need));
+  // `figures` runs from least to most important: counts, then earlier money, then the last money.
+  const room = () =>
+    PHONE_REM -
+    refRem -
+    PHONE_GAP_REM * (figures.length + 1) -
+    figures.reduce((sum, i) => sum + phoneRem[i], 0);
+  while (figures.length > 1 && room() < TEXT_MIN_REM) figures.shift();
+  return new Set([0, ...figures]);
 }
 
-function trackFor(column, wide) {
-  if (column.kind === "money") return wide ? "6.4rem" : "5.4rem";
-  if (column.kind === "int") return "3rem";
-  return "minmax(0,.8fr)";
+const roundUp = (n) => Math.ceil(n * 10) / 10;
+const widest = (texts) => Math.max(0, ...texts.map((t) => String(t).length));
+
+/** Room, in rem, for the widest printed figure: its characters, in the figures' own face and size. */
+function figureRem(texts, tokens) {
+  return widest(texts) * tokens.figureAdvance * tokens.figureScale + 0.4;
 }
 
-function gridVars(columns, keep) {
-  const phone = ["3rem"];
-  const wide = ["3rem"];
-  columns.forEach((c, i) => {
+/** Room for the longest word of a heading (set at .875rem), so a heading can wrap but never break a word. */
+function headingRem(label) {
+  const longest = Math.max(
+    0,
+    ...String(label)
+      .split(/\s+/)
+      .map((w) => w.length),
+  );
+  return Math.min(5, longest * 0.46 + 0.3);
+}
+
+/** The text a cell prints, without markup, to measure it. */
+function plain(column, value) {
+  if (value === undefined) return "";
+  return column.kind === "money" ? fmt(value) : String(value);
+}
+
+/** A figure column's width in rem, or null for a text column (which takes a share of what is left). */
+function trackRem(column, texts, tokens, wide) {
+  const need = Math.max(figureRem(texts, tokens), headingRem(column.label));
+  if (column.kind === "money") return roundUp(wide ? Math.max(need, 6.4) : need);
+  if (column.kind === "int") return roundUp(Math.max(need, wide ? 3 : 2.4));
+  return null;
+}
+
+/** The phone and wide grid tracks for one group table, and which columns a phone keeps. */
+function groupLayout(g, tokens) {
+  const refRem = Math.max(3, roundUp(widest(g.rows.map((r) => r.ref)) * 0.58 + 1.2));
+  const texts = g.columns.map((c) => [
+    ...g.rows.map((r) => plain(c, r.cells[c.key])),
+    plain(c, g.subtotal.cells[c.key]),
+  ]);
+  const phoneRem = g.columns.map((c, i) => trackRem(c, texts[i], tokens, false) ?? 0);
+  const keep = phoneColumns(g.columns, refRem, phoneRem);
+  const phone = [`${refRem}rem`];
+  const wide = [`${refRem}rem`];
+  g.columns.forEach((c, i) => {
     const first = i === 0;
-    wide.push(first ? "minmax(0,1.3fr)" : trackFor(c, true));
-    if (keep.has(i)) phone.push(first ? "minmax(0,1fr)" : trackFor(c, false));
+    const w = trackRem(c, texts[i], tokens, true);
+    wide.push(first ? "minmax(0,1.3fr)" : w === null ? "minmax(0,.8fr)" : `${w}rem`);
+    if (keep.has(i)) {
+      const p = trackRem(c, texts[i], tokens, false);
+      phone.push(first ? "minmax(0,1fr)" : p === null ? "minmax(0,.8fr)" : `${p}rem`);
+    }
   });
-  return `--os-cols-phone:${phone.join(" ")};--os-cols-wide:${wide.join(" ")}`;
+  return { keep, vars: `--os-cols-phone:${phone.join(" ")};--os-cols-wide:${wide.join(" ")}` };
 }
 
-function renderSummary(m) {
+/** The width of one figure column in the summary and in an opened breakdown. */
+function columnVars(texts, headings, tokens) {
+  const need = Math.max(figureRem(texts, tokens), ...headings.map(headingRem));
+  return `--os-c:${roundUp(need)}rem;--os-cw:${roundUp(Math.max(need, 6.4))}rem`;
+}
+
+/** Whether a summary with this many figure columns leaves its labels too little room on a 320px phone. */
+function summaryStacks(texts, headings, tokens, columns) {
+  const c = roundUp(Math.max(figureRem(texts, tokens), ...headings.map(headingRem)));
+  return PHONE_REM - columns * (c + 0.625) < TEXT_MIN_REM;
+}
+
+function renderSummary(m, tokens) {
   const s = m.summary;
   const known = s.ytd.known;
   const rows = s.rows
@@ -83,21 +151,30 @@ function renderSummary(m) {
     ? ""
     : `<p class="os__ytd-none">${esc(s.columns.ytd)}: ${DASH} ${esc(String(s.ytd.reason).replace(/\.$/, ""))}.</p>`;
   const mod = known ? " os__colhead--ytd" : "";
-  return `<section class="os__sec"><h2 class="os__cap os__h">${esc(s.title)}</h2><div class="os__colhead${mod}" aria-hidden="true"><span></span><span>${esc(s.columns.month)}</span><span class="os__y${known ? "" : " os__c--minor"}">${esc(s.columns.ytd)}</span></div><ol class="os__rows${known ? " os__rows--ytd" : ""}">${rows}</ol>${note}</section>`;
+  const figures = s.rows.flatMap((r) => [fmt(r.month), known ? fmt(r.ytd) : "-"]);
+  const headings = [s.columns.month, s.columns.ytd];
+  const vars = columnVars(figures, headings, tokens);
+  const stack = summaryStacks(figures, headings, tokens, known ? 2 : 1) ? " os__rows--stack" : "";
+  return `<section class="os__sec" style="${vars}"><h2 class="os__cap os__h">${esc(s.title)}</h2><div class="os__colhead${mod}" aria-hidden="true"><span></span><span>${esc(s.columns.month)}</span><span class="os__y${known ? "" : " os__c--minor"}">${esc(s.columns.ytd)}</span></div><ol class="os__rows${known ? " os__rows--ytd" : ""}${stack}">${rows}</ol>${note}</section>`;
 }
 
-function renderDetail(detail) {
+function renderDetail(detail, tokens) {
   const lines = detail
     .map(
       (d) =>
         `<li${d.strong ? ' class="os__strong"' : ""}><span class="os__lb">${esc(d.label)}<span class="os__dots"></span></span><span class="os__num">${fmt(d.cents)}</span></li>`,
     )
     .join("");
-  return `<ol class="os__rows">${lines}</ol>`;
+  const vars = columnVars(
+    detail.map((d) => fmt(d.cents)),
+    [],
+    tokens,
+  );
+  return `<ol class="os__rows" style="${vars}">${lines}</ol>`;
 }
 
-function renderGroup(g, showTitle) {
-  const keep = phoneColumns(g.columns);
+function renderGroup(g, showTitle, tokens) {
+  const { keep, vars } = groupLayout(g, tokens);
   const minor = (i) => (keep.has(i) ? "" : " os__c--minor");
   const cls = (c, i) => `${c.kind === "text" ? "os__c" : "os__num"}${minor(i)}`;
   const head = `<div class="os__thead"><span>Ref</span>${g.columns.map((c, i) => `<span class="${cls(c, i)}">${esc(c.label)}</span>`).join("")}</div>`;
@@ -109,7 +186,7 @@ function renderGroup(g, showTitle) {
       const note = r.note ? `<span class="os__snote">${esc(r.note)}</span>` : "";
       const inner = `<span class="os__ref">${esc(r.ref)}</span>${cells}${note}`;
       if (r.detail?.length) {
-        return `<details class="os__stay"><summary class="os__srow">${inner}</summary>${renderDetail(r.detail)}</details>`;
+        return `<details class="os__stay"><summary class="os__srow">${inner}</summary>${renderDetail(r.detail, tokens)}</details>`;
       }
       return `<div class="os__stay os__stay--plain"><div class="os__srow">${inner}</div></div>`;
     })
@@ -123,7 +200,7 @@ function renderGroup(g, showTitle) {
     .join("");
   const note = g.note ? `<p class="os__gnote">${esc(g.note)}</p>` : "";
   const title = showTitle ? `<h2 class="os__cap os__h">${esc(g.title)}</h2>` : "";
-  return `<section class="os__sec">${title}<h3 class="os__prop-h">${esc(g.property)}</h3><div class="os__tbl" style="${gridVars(g.columns, keep)}">${head}${rows}${note}<div class="os__srow os__ssub"><span class="os__ref"></span>${subCells}</div></div></section>`;
+  return `<section class="os__sec">${title}<h3 class="os__prop-h">${esc(g.property)}</h3><div class="os__tbl" style="${vars}">${head}${rows}${note}<div class="os__srow os__ssub"><span class="os__ref"></span>${subCells}</div></div></section>`;
 }
 
 function link(href, text) {
@@ -178,9 +255,6 @@ export function renderStatement(model, options) {
   if (pdfHref !== undefined && !safeHref(pdfHref)) {
     throw new Error("owner-statement: options.pdfHref must be a web address or a path");
   }
-  if (!/^https?:\/\//.test(model.calls)) {
-    throw new Error("owner-statement: calls must be a web address");
-  }
   const tokens = BRANDS[model.brand];
   const stacks = {
     display: fonts.display ?? tokens.display,
@@ -205,7 +279,7 @@ export function renderStatement(model, options) {
     .map((g) => {
       const show = g.title !== lastTitle;
       lastTitle = g.title;
-      return renderGroup(g, show);
+      return renderGroup(g, show, tokens);
     })
     .join("");
 
@@ -216,21 +290,20 @@ export function renderStatement(model, options) {
     ? `<section class="os__sec"><h2 class="os__cap os__h">Sources</h2><ul class="os__src">${model.sources.map((s) => `<li>${link(s.href, s.label)}</li>`).join("")}</ul></section>`
     : "";
 
-  const callText = model.calls.replace(/^https?:\/\//, "").replace(/\/$/, "");
   const html =
     `<div class="os os--${esc(model.brand)}" lang="en"><article class="os__sheet${tokens.stripe ? " os__stripe" : ""}">` +
     `<header class="os__mast"><img class="os__logo" src="${esc(logo.src)}" alt="${esc(logo.alt)}" width="${esc(logo.width)}" height="${esc(logo.height)}">` +
     `<p class="os__cap">Owner statement</p><h1 class="os__month">${esc(model.monthLabel)}</h1>` +
     `<p class="os__prop">${esc(model.property.line)}<br>Prepared for ${esc(model.owner.name)}</p></header>` +
     `<section class="os__lead"><p class="os__cap">${esc(mv.headline)}</p><p class="os__big">${esc(big)}</p><p class="os__line">${esc(line)}</p>${pdf}</section>` +
-    renderSummary(model) +
+    renderSummary(model, tokens) +
     groups +
     (model.costs ? renderCosts(model.costs) : "") +
     (model.settlement ? renderSettlement(model.settlement) : "") +
     attention +
     sources +
     `<footer class="os__sign"><p>${esc(model.prepared.by)} of ${esc(model.business)} prepared and reconciled this statement on ${esc(longDate(model.prepared.date))}.</p>` +
-    `<p>Questions on any figure: reply to the email, or book a call at <a href="${esc(model.calls)}">${esc(callText)}</a>.</p></footer>` +
+    `<p>Questions on any figure: reply to the statement email.</p></footer>` +
     `</article></div>`;
 
   return {

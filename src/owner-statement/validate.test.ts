@@ -184,6 +184,33 @@ describe("one planted break per rule gives a named error", () => {
     expect(errs.some((e) => e.startsWith("shape:") && e.includes("href"))).toBe(true);
   });
 
+  it("a source address may be a site path starting with one slash", () => {
+    const errs = planted("sun-mountain", (m) => {
+      m.sources[0].href = "/notes/october";
+    });
+    expect(errs).toEqual([]);
+  });
+
+  it("a source address is refused when it is another scheme or protocol-relative", () => {
+    for (const bad of [
+      "//evil.example/x",
+      "data:text/html,hi",
+      "javascript:alert(1)",
+      "mailto:a@b.co",
+      "ftp://x.co/y",
+      "notes/october",
+      "",
+    ]) {
+      const errs = planted("sun-mountain", (m) => {
+        m.sources[0].href = bad;
+      });
+      expect(
+        errs.some((e) => e.startsWith("shape:") && e.includes("sources[0]")),
+        bad,
+      ).toBe(true);
+    }
+  });
+
   it("money must be whole cents", () => {
     const errs = planted("sun-mountain", (m) => {
       m.summary.rows[0].month = 3746.79;
