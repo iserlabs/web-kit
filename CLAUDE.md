@@ -23,7 +23,7 @@ or commit SHA in their `package.json` (`github:iserlabs/web-kit#<ref>`).
 ## Exports
 
 `@iserlabs/web-kit/{biome, tsconfig, tsconfig-next, tailwind, seo, schema, forms,
-env, utils, audits, brand-pack, artist, inquiry, owner-portal, desk/*, observability, observability/env, observability/server}`. Notes:
+env, utils, audits, brand-pack, artist, inquiry, owner-portal, owner-statement, desk/*, observability, observability/env, observability/server}`. Notes:
 - `tsconfig` is **lib-oriented** (ES2022 / `noUncheckedIndexedAccess` /
   `verbatimModuleSyntax`) and breaks Next apps — Next sites extend
   `tsconfig-next` instead (the Next-safe preset).
@@ -53,6 +53,12 @@ env, utils, audits, brand-pack, artist, inquiry, owner-portal, desk/*, observabi
   Figures come from the statement itself; the kit holds no client name or number. See
   `docs/owner-portal.md`.
 
+- `owner-statement` renders one engine-written `owner-statement/1` model as the owner's monthly
+  statement page and print PDF (`renderStatement`, `validate`, `formatCents`, `BRANDS`), plus its link
+  preview (`statementShareMeta`, `renderStatementShareCard`; see `src/owner-statement/README.md`). `.mjs` plus
+  `index.d.ts`, framework free; every rule scoped under `.os`. Fixtures carry real figures but
+  stand-in names (public repo). The sites keep their own model files and logos.
+
 ## CLI
 
 The `web-kit` bin (used by consumers as `pnpm wk:doctor` / `wk:audit`):
@@ -64,6 +70,8 @@ The `web-kit` bin (used by consumers as `pnpm wk:doctor` / `wk:audit`):
   boards into a client site. Required on every new client build and major
   redesign; `audit --tier required` fails an adopted site without one, unless
   its `package.json` carries a dated `web-kit.brandPack.skip` with a reason.
+- `web-kit owner-statement validate|render` checks a statement model and renders it to a standalone
+  HTML file (and a PDF through headless Chrome).
 - `web-kit inquiry init` scaffolds the inquiry flow component and an example config into a site.
 - `web-kit audit --tier extended` — Lighthouse (perf/SEO/BP/a11y + CWV) + axe
   (WCAG), advisory `warn` by default. Browser deps (`lighthouse`,

@@ -295,3 +295,106 @@ describe("letterhead variants", () => {
     );
   });
 });
+
+describe("button block", () => {
+  const withButton = {
+    subject: "290 Lydecker St | November 2026 owner statement",
+    blocks: [
+      { type: "p", text: "Hi Sam," },
+      {
+        type: "button",
+        label: "Open your November statement",
+        href: "https://palisadestays.com/owners/lydecker/2026-11",
+      },
+      {
+        type: "link",
+        label: "The PDF copy:",
+        href: "https://palisadestays.com/owners/lydecker/2026-11.pdf",
+      },
+      { type: "close", text: "Best," },
+    ],
+  };
+
+  const buttons = (html: string) =>
+    parse(html)
+      .querySelectorAll("a")
+      .filter((a) => a.text.trim() === "Open your November statement");
+
+  it("renders one painted, padded button in every layout, with the label as its only text", () => {
+    for (const id of LETTERHEAD_IDS) {
+      const html = renderLetterhead(id, config, person, withButton);
+      const found = buttons(html);
+      expect(found, id).toHaveLength(1);
+      const a = found[0];
+      expect(a?.getAttribute("href")).toBe("https://palisadestays.com/owners/lydecker/2026-11");
+      const aStyle = a?.getAttribute("style") ?? "";
+      // the link itself is the tap area: block, padded, its own text color set
+      expect(aStyle, id).toMatch(/display:block/);
+      expect(aStyle, id).toMatch(/padding:1[4-9]px/);
+      expect(aStyle, id).toMatch(/color:#[0-9a-f]{6}/i);
+      expect(aStyle, id).toMatch(/text-decoration:none/);
+      // the cell behind it is painted twice (attribute and style), which Gmail and Outlook both keep
+      const td = a?.parentNode;
+      expect(td?.tagName, id).toBe("TD");
+      expect(td?.getAttribute("bgcolor"), id).toBe("#0d2318");
+      expect(td?.getAttribute("style") ?? "", id).toMatch(/background-color:#0d2318/);
+      // the raw address is not printed as text in the button block
+      expect(html.includes(">https://palisadestays.com/owners/lydecker/2026-11<"), id).toBe(false);
+    }
+  });
+
+  it("is at least 44px tall: padding plus line height", () => {
+    const html = renderLetterhead("paper", config, person, withButton);
+    const style = buttons(html)[0]?.getAttribute("style") ?? "";
+    const pad = Number(/padding:(\d+)px/.exec(style)?.[1]);
+    const line = Number(/line-height:(\d+)px/.exec(style)?.[1]);
+    expect(pad * 2 + line).toBeGreaterThanOrEqual(44);
+  });
+
+  it("paints the text in the paper color on the ink ground, or the letterhead's own button colors", () => {
+    const html = renderLetterhead("masthead", config, person, withButton);
+    expect(buttons(html)[0]?.getAttribute("style")).toMatch(/color:#fbf8f0/);
+    const custom = {
+      ...config,
+      letterhead: { ...config.letterhead, buttonBackground: "#233755", buttonText: "#ffffff" },
+    };
+    const a = buttons(renderLetterhead("paper", custom, person, withButton))[0];
+    expect(a?.getAttribute("style")).toMatch(/color:#ffffff/);
+    expect(a?.parentNode?.getAttribute("bgcolor")).toBe("#233755");
+  });
+
+  it("stays email-safe: no flex, grid, class or background image", () => {
+    for (const id of LETTERHEAD_IDS) {
+      const html = renderLetterhead(id, config, person, withButton);
+      expect(html).not.toMatch(/display:\s*(flex|grid)|class=|background-image|<style/);
+    }
+  });
+
+  it("leaves the link block exactly as it was beside it", () => {
+    const html = renderLetterhead("paper", config, person, withButton);
+    expect(html).toContain("The PDF copy:");
+    expect(html).toContain("https://palisadestays.com/<wbr>owners/<wbr>lydecker/<wbr>2026-11.pdf");
+  });
+
+  it("plain text carries the label and the address", () => {
+    const text = letterheadPlainText(withButton, person);
+    expect(text).toContain(
+      "Open your November statement\nhttps://palisadestays.com/owners/lydecker/2026-11",
+    );
+  });
+
+  it("needs a label and a web address", () => {
+    const bad = (b: object) => ({ subject: "s", blocks: [b] });
+    expect(() =>
+      renderLetterhead("paper", config, person, bad({ type: "button", href: "https://x.co" })),
+    ).toThrow(/label/);
+    expect(() =>
+      renderLetterhead(
+        "paper",
+        config,
+        person,
+        bad({ type: "button", label: "Go", href: "javascript:x" }),
+      ),
+    ).toThrow(/href/);
+  });
+});

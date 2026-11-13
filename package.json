@@ -1,6 +1,6 @@
 {
   "name": "@iserlabs/web-kit",
-  "version": "0.16.0",
+  "version": "0.19.0",
   "private": false,
   "type": "module",
   "license": "MIT",
@@ -29,6 +29,11 @@
       "types": "./src/brand-pack/types.d.ts",
       "default": "./src/brand-pack/index.mjs"
     },
+    "./owner-statement": {
+      "types": "./src/owner-statement/index.d.ts",
+      "default": "./src/owner-statement/index.mjs"
+    },
+    "./owner-statement/schema.json": "./src/owner-statement/schema.json",
     "./desk/fold-groups": "./src/desk/fold-groups.ts",
     "./desk/ics": "./src/desk/ics.ts",
     "./desk/intake-guard": "./src/desk/intake-guard.ts",
