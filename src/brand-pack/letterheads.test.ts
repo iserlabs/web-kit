@@ -37,7 +37,7 @@ const person = {
   name: "Jake Lee",
   title: "Founder",
   email: "hello@sunmountainstays.com",
-  phone: "555.010.0100",
+  phone: "201.321.5446",
 };
 
 const email = {
@@ -118,6 +118,16 @@ describe("letterhead variants", () => {
     }
   });
 
+  it("turns a web address in a sentence into an inline link, without the trailing period", () => {
+    const e = {
+      ...email,
+      blocks: [{ type: "p", text: "Schedule a call with me here: https://jakejjlee.com/meet." }],
+    };
+    const html = renderLetterhead("paper", config, person, e);
+    expect(html).toContain('<a href="https://jakejjlee.com/meet" style=');
+    expect(html).toContain(">https://jakejjlee.com/meet</a>.");
+  });
+
   it("shows a visible missing state when there is no header image yet", () => {
     const c = { ...config, letterhead: { ...config.letterhead, headerUrl: "__UNFILLED__" } };
     const html = renderLetterhead("paper", c, person, email);
@@ -167,7 +177,7 @@ describe("letterhead variants", () => {
 
   it("keeps a pasted signature's words while making its links tappable and its phone plain text", () => {
     const sig =
-      '<a href="tel:+15550100100" style="color:#000">555.010.0100</a> · <a href="mailto:a@b.co" style="color:#000">a@b.co</a>';
+      '<a href="tel:+12013215446" style="color:#000">201.321.5446</a> · <a href="mailto:a@b.co" style="color:#000">a@b.co</a>';
     const out = letterheadSignature(sig);
     expect(parse(out).textContent).toBe(parse(sig).textContent);
     expect(out).not.toContain("tel:");
@@ -293,6 +303,65 @@ describe("letterhead variants", () => {
     expect(renderLetterhead("paper", config, person, endsOnLink, "<div>SIG</div>")).not.toMatch(
       rule,
     );
+  });
+});
+
+describe("heading, table and bars blocks", () => {
+  const data = {
+    subject: "s",
+    blocks: [
+      { type: "heading", text: "Examples" },
+      {
+        type: "table",
+        intro: "Three sizes:",
+        columns: ["Homes", "Desk", "Setup"],
+        rows: [
+          ["5 homes", "$495", "$1,295"],
+          ["10 homes", "$990", "$2,290"],
+        ],
+        note: "Setup is waived with three months paid ahead.",
+      },
+      {
+        type: "bars",
+        intro: "Average setup per home:",
+        rows: [
+          ["3 homes", 299, "$299"],
+          ["60 homes", 122, "$122"],
+        ],
+      },
+    ],
+  };
+
+  it("prints every heading, cell, bar label and value in every layout", () => {
+    for (const id of LETTERHEAD_IDS) {
+      const text = parse(renderLetterhead(id, config, person, data)).textContent;
+      for (const s of [
+        "Examples",
+        "Homes",
+        "5 homes",
+        "$1,295",
+        "$2,290",
+        "Setup is waived",
+        "60 homes",
+        "$122",
+      ])
+        expect(text, `${id}: ${s}`).toContain(s);
+    }
+  });
+
+  it("marks table headers with scope and scales each bar to the largest value", () => {
+    const out = renderLetterhead("paper", config, person, data);
+    expect(out).toContain('<th scope="col"');
+    expect(out).toContain('<th scope="row"');
+    expect(out).toContain('width="100%"');
+    expect(out).toContain('width="41%"');
+  });
+
+  it("carries tables and bars into the plain-text part", () => {
+    const txt = letterheadPlainText(data, person);
+    expect(txt).toContain("EXAMPLES");
+    expect(txt).toContain("10 homes | $990 | $2,290");
+    expect(txt).toContain("60 homes: $122");
   });
 });
 
