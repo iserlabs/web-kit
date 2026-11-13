@@ -37,7 +37,7 @@ const person = {
   name: "Jake Lee",
   title: "Founder",
   email: "hello@sunmountainstays.com",
-  phone: "555.010.0100",
+  phone: "201.321.5446",
 };
 
 const email = {
@@ -118,6 +118,16 @@ describe("letterhead variants", () => {
     }
   });
 
+  it("turns a web address in a sentence into an inline link, without the trailing period", () => {
+    const e = {
+      ...email,
+      blocks: [{ type: "p", text: "Schedule a call with me here: https://jakejjlee.com/meet." }],
+    };
+    const html = renderLetterhead("paper", config, person, e);
+    expect(html).toContain('<a href="https://jakejjlee.com/meet" style=');
+    expect(html).toContain(">https://jakejjlee.com/meet</a>.");
+  });
+
   it("shows a visible missing state when there is no header image yet", () => {
     const c = { ...config, letterhead: { ...config.letterhead, headerUrl: "__UNFILLED__" } };
     const html = renderLetterhead("paper", c, person, email);
@@ -167,7 +177,7 @@ describe("letterhead variants", () => {
 
   it("keeps a pasted signature's words while making its links tappable and its phone plain text", () => {
     const sig =
-      '<a href="tel:+15550100100" style="color:#000">555.010.0100</a> · <a href="mailto:a@b.co" style="color:#000">a@b.co</a>';
+      '<a href="tel:+12013215446" style="color:#000">201.321.5446</a> · <a href="mailto:a@b.co" style="color:#000">a@b.co</a>';
     const out = letterheadSignature(sig);
     expect(parse(out).textContent).toBe(parse(sig).textContent);
     expect(out).not.toContain("tel:");
@@ -293,5 +303,219 @@ describe("letterhead variants", () => {
     expect(renderLetterhead("paper", config, person, endsOnLink, "<div>SIG</div>")).not.toMatch(
       rule,
     );
+  });
+});
+
+describe("heading, table and bars blocks", () => {
+  const data = {
+    subject: "s",
+    blocks: [
+      { type: "heading", text: "Examples" },
+      {
+        type: "table",
+        intro: "Three sizes:",
+        columns: ["Homes", "Desk", "Setup"],
+        rows: [
+          ["5 homes", "$495", "$1,295"],
+          ["10 homes", "$990", "$2,290"],
+        ],
+        note: "Setup is waived with three months paid ahead.",
+      },
+      {
+        type: "bars",
+        intro: "Average setup per home:",
+        rows: [
+          ["3 homes", 299, "$299"],
+          ["60 homes", 122, "$122"],
+        ],
+      },
+    ],
+  };
+
+  it("prints every heading, cell, bar label and value in every layout", () => {
+    for (const id of LETTERHEAD_IDS) {
+      const text = parse(renderLetterhead(id, config, person, data)).textContent;
+      for (const s of [
+        "Examples",
+        "Homes",
+        "5 homes",
+        "$1,295",
+        "$2,290",
+        "Setup is waived",
+        "60 homes",
+        "$122",
+      ])
+        expect(text, `${id}: ${s}`).toContain(s);
+    }
+  });
+
+  it("marks table headers with scope and scales each bar to the largest value", () => {
+    const out = renderLetterhead("paper", config, person, data);
+    expect(out).toContain('<th scope="col"');
+    expect(out).toContain('<th scope="row"');
+    expect(out).toContain('width="100%"');
+    expect(out).toContain('width="41%"');
+  });
+
+  it("carries tables and bars into the plain-text part", () => {
+    const txt = letterheadPlainText(data, person);
+    expect(txt).toContain("EXAMPLES");
+    expect(txt).toContain("10 homes | $990 | $2,290");
+    expect(txt).toContain("60 homes: $122");
+  });
+});
+
+describe("button block", () => {
+  const withButton = {
+    subject: "290 Lydecker St | November 2026 owner statement",
+    blocks: [
+      { type: "p", text: "Hi Sam," },
+      {
+        type: "button",
+        label: "Open your November statement",
+        href: "https://palisadestays.com/owners/lydecker/2026-11",
+      },
+      {
+        type: "link",
+        label: "The PDF copy:",
+        href: "https://palisadestays.com/owners/lydecker/2026-11.pdf",
+      },
+      { type: "close", text: "Best," },
+    ],
+  };
+
+  const buttons = (html: string) =>
+    parse(html)
+      .querySelectorAll("a")
+      .filter((a) => a.text.trim() === "Open your November statement");
+
+  it("renders one painted, padded button in every layout, with the label as its only text", () => {
+    for (const id of LETTERHEAD_IDS) {
+      const html = renderLetterhead(id, config, person, withButton);
+      const found = buttons(html);
+      expect(found, id).toHaveLength(1);
+      const a = found[0];
+      expect(a?.getAttribute("href")).toBe("https://palisadestays.com/owners/lydecker/2026-11");
+      const aStyle = a?.getAttribute("style") ?? "";
+      // the link itself is the tap area: block, padded, its own text color set
+      expect(aStyle, id).toMatch(/display:block/);
+      expect(aStyle, id).toMatch(/padding:1[4-9]px/);
+      expect(aStyle, id).toMatch(/color:#[0-9a-f]{6}/i);
+      expect(aStyle, id).toMatch(/text-decoration:none/);
+      // the cell behind it is painted twice (attribute and style), which Gmail and Outlook both keep
+      const td = a?.parentNode;
+      expect(td?.tagName, id).toBe("TD");
+      expect(td?.getAttribute("bgcolor"), id).toBe("#0d2318");
+      expect(td?.getAttribute("style") ?? "", id).toMatch(/background-color:#0d2318/);
+      // the raw address is not printed as text in the button block
+      expect(html.includes(">https://palisadestays.com/owners/lydecker/2026-11<"), id).toBe(false);
+    }
+  });
+
+  it("is at least 44px tall: padding plus line height", () => {
+    const html = renderLetterhead("paper", config, person, withButton);
+    const style = buttons(html)[0]?.getAttribute("style") ?? "";
+    const pad = Number(/padding:(\d+)px/.exec(style)?.[1]);
+    const line = Number(/line-height:(\d+)px/.exec(style)?.[1]);
+    expect(pad * 2 + line).toBeGreaterThanOrEqual(44);
+  });
+
+  it("paints the text in the paper color on the ink ground, or the letterhead's own button colors", () => {
+    const html = renderLetterhead("masthead", config, person, withButton);
+    expect(buttons(html)[0]?.getAttribute("style")).toMatch(/color:#fbf8f0/);
+    const custom = {
+      ...config,
+      letterhead: { ...config.letterhead, buttonBackground: "#233755", buttonText: "#ffffff" },
+    };
+    const a = buttons(renderLetterhead("paper", custom, person, withButton))[0];
+    expect(a?.getAttribute("style")).toMatch(/color:#ffffff/);
+    expect(a?.parentNode?.getAttribute("bgcolor")).toBe("#233755");
+  });
+
+  it("stays email-safe: no flex, grid, class or background image", () => {
+    for (const id of LETTERHEAD_IDS) {
+      const html = renderLetterhead(id, config, person, withButton);
+      expect(html).not.toMatch(/display:\s*(flex|grid)|class=|background-image|<style/);
+    }
+  });
+
+  it("leaves the link block exactly as it was beside it", () => {
+    const html = renderLetterhead("paper", config, person, withButton);
+    expect(html).toContain("The PDF copy:");
+    expect(html).toContain("https://palisadestays.com/<wbr>owners/<wbr>lydecker/<wbr>2026-11.pdf");
+  });
+
+  it("plain text carries the label and the address", () => {
+    const text = letterheadPlainText(withButton, person);
+    expect(text).toContain(
+      "Open your November statement\nhttps://palisadestays.com/owners/lydecker/2026-11",
+    );
+  });
+
+  it("needs a label and a web address", () => {
+    const bad = (b: object) => ({ subject: "s", blocks: [b] });
+    expect(() =>
+      renderLetterhead("paper", config, person, bad({ type: "button", href: "https://x.co" })),
+    ).toThrow(/label/);
+    expect(() =>
+      renderLetterhead(
+        "paper",
+        config,
+        person,
+        bad({ type: "button", label: "Go", href: "javascript:x" }),
+      ),
+    ).toThrow(/href/);
+  });
+});
+
+describe("a pasted signature on a narrow phone", () => {
+  const pasted =
+    '<table style="border-collapse:collapse"><tr><td><div style="width:392.515625px;height:1px">&nbsp;</div><div style="font-size:13px;max-width:360px">Remote operations support</div></td></tr>' +
+    '<tr><td style="font-size:12px;white-space:nowrap"><a href="mailto:a@example.com" style="color:#333">a@example.com</a><span style="padding:0px 7px">·</span><a href="https://example.com/" style="color:#333">example.com</a></td></tr></table>';
+
+  it("drops no-wrap, stretches a fixed-width rule, keeps max-width, and lets the contact line wrap after its dot", () => {
+    for (const id of LETTERHEAD_IDS) {
+      const html = renderLetterhead(id, config, person, email, pasted);
+      expect(html, id).not.toMatch(
+        /white-space:\s*nowrap;?[^"]*">a@example\.com|nowrap"><a href="mailto/,
+      );
+      expect(html, id).not.toContain("width:392.515625px");
+      expect(html, id).toContain("width:100%;height:1px");
+      expect(html, id).toContain("max-width:360px");
+      expect(html, id).toContain(
+        '<span style="padding:0px 7px">·</span><wbr><a href="https://example.com/"',
+      );
+    }
+  });
+});
+
+describe("table row labels on a narrow phone", () => {
+  const withTable = {
+    ...email,
+    blocks: [
+      {
+        type: "table",
+        columns: ["", "October", "September"],
+        rows: [
+          ["Management fee", "($3,812.42)", "-"],
+          ["Occupancy", "50.8%", "-"],
+          ["Host payout", "$46,196.31", "$45,311.12"],
+        ],
+      },
+    ],
+  };
+
+  it("carry dictionary soft hyphens in long statement words and none in short ones", () => {
+    const html = renderLetterhead("paper", config, person, withTable);
+    expect(html).toContain(">Man&shy;age&shy;ment fee</th>");
+    expect(html).toContain(">Oc&shy;cu&shy;pan&shy;cy</th>");
+    expect(html).toContain(">Host payout</th>");
+    expect(html).not.toMatch(/hyphens:auto/);
+  });
+
+  it("leave the figures whole and the plain-text part without soft hyphens", () => {
+    const html = renderLetterhead("paper", config, person, withTable);
+    expect(html).toMatch(/white-space:nowrap;">\(\$3,812\.42\)<\/td>/);
+    expect(letterheadPlainText(withTable, person)).toContain("Management fee | ($3,812.42) | -");
   });
 });

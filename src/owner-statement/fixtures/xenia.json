@@ -1,0 +1,373 @@
+{
+  "schema": "owner-statement/1",
+  "brand": "xenia",
+  "business": "Xenia Hospitality Operations",
+  "businessShort": "Xenia",
+  "month": "2026-10",
+  "monthLabel": "October 2026",
+  "monthShort": "October",
+  "status": "final",
+  "owner": {
+    "key": "sample-owner",
+    "name": "Morgan Example",
+    "greeting": "Morgan"
+  },
+  "property": {
+    "label": "The Euclid Grand",
+    "line": "Roam North Stays, The Euclid Grand"
+  },
+  "prepared": {
+    "by": "Jake Lee",
+    "date": "2026-11-11"
+  },
+  "moves": {
+    "direction": "to_partner",
+    "cents": 996618,
+    "headline": "Owed to Riley at the close of October 2026",
+    "line": "from you to Riley, for October",
+    "method": null,
+    "date": null,
+    "dateUnknown": "due date not set yet",
+    "sentence": "You owe Riley $5,444.26 for October, half of your $10,888.51 net, due on a date not set yet."
+  },
+  "summary": {
+    "title": "Statement summary",
+    "columns": {
+      "month": "October",
+      "ytd": "Since Sept 28"
+    },
+    "ytd": {
+      "known": true,
+      "reason": null,
+      "from": "2026-09-28"
+    },
+    "rows": [
+      {
+        "label": "Opening position, owed to Riley on October 1",
+        "role": "balance",
+        "month": -452192,
+        "ytd": 0
+      },
+      {
+        "label": "Money in: payouts, Airbnb and Vrbo",
+        "role": "in",
+        "month": 1361351,
+        "ytd": 2428735
+      },
+      {
+        "label": "Costs: cleaning, flat rate per stay",
+        "role": "cost",
+        "month": -272500,
+        "ytd": -435500
+      },
+      {
+        "label": "Net after costs",
+        "role": "subtotal",
+        "month": 1088851,
+        "ytd": 1993235
+      },
+      {
+        "label": "Riley's share, 50% of net",
+        "role": "share",
+        "month": -544426,
+        "ytd": -996618
+      },
+      {
+        "label": "Closing position, owed to Riley",
+        "role": "moves",
+        "month": -996618,
+        "ytd": -996618
+      }
+    ],
+    "foot": [[["in", "cost"], "subtotal"], [["balance", "share"], "moves"]]
+  },
+  "groups": [
+    {
+      "title": "Every stay, by property",
+      "property": "The Euclid Grand: 6 apartments, 41 stays",
+      "columns": [
+        {
+          "key": "unit",
+          "label": "Apartment",
+          "kind": "text"
+        },
+        {
+          "key": "stays",
+          "label": "Stays",
+          "kind": "int"
+        },
+        {
+          "key": "nights",
+          "label": "Nights",
+          "kind": "int"
+        },
+        {
+          "key": "payout",
+          "label": "Payouts",
+          "kind": "money"
+        },
+        {
+          "key": "net",
+          "label": "Net",
+          "kind": "money"
+        }
+      ],
+      "rows": [
+        {
+          "ref": "A-1",
+          "cells": {
+            "unit": "M02, 2 BR",
+            "stays": 9,
+            "nights": 26,
+            "payout": 279837,
+            "net": 207837
+          },
+          "detail": [
+            {
+              "label": "Payouts, Airbnb and Vrbo",
+              "cents": 279837
+            },
+            {
+              "label": "Cleaning, flat rate per stay",
+              "cents": -72000
+            },
+            {
+              "label": "Net after costs",
+              "cents": 207837,
+              "strong": true
+            }
+          ]
+        },
+        {
+          "ref": "A-2",
+          "cells": {
+            "unit": "M09, 1 BR",
+            "stays": 8,
+            "nights": 24,
+            "payout": 258791,
+            "net": 213291
+          },
+          "detail": [
+            {
+              "label": "Payouts, Airbnb and Vrbo",
+              "cents": 258791
+            },
+            {
+              "label": "Cleaning, flat rate per stay",
+              "cents": -45500
+            },
+            {
+              "label": "Net after costs",
+              "cents": 213291,
+              "strong": true
+            }
+          ]
+        },
+        {
+          "ref": "A-3",
+          "cells": {
+            "unit": "M11, 2 BR",
+            "stays": 8,
+            "nights": 20,
+            "payout": 271049,
+            "net": 207049
+          },
+          "detail": [
+            {
+              "label": "Payouts, Airbnb and Vrbo",
+              "cents": 271049
+            },
+            {
+              "label": "Cleaning, flat rate per stay",
+              "cents": -64000
+            },
+            {
+              "label": "Net after costs",
+              "cents": 207049,
+              "strong": true
+            }
+          ]
+        },
+        {
+          "ref": "A-4",
+          "cells": {
+            "unit": "212, 1 BR",
+            "stays": 2,
+            "nights": 15,
+            "payout": 148804,
+            "net": 142304
+          },
+          "detail": [
+            {
+              "label": "Payouts, Airbnb and Vrbo",
+              "cents": 148804
+            },
+            {
+              "label": "Cleaning, flat rate per stay",
+              "cents": -6500
+            },
+            {
+              "label": "Net after costs",
+              "cents": 142304,
+              "strong": true
+            }
+          ]
+        },
+        {
+          "ref": "A-5",
+          "cells": {
+            "unit": "234, 1 BR",
+            "stays": 9,
+            "nights": 30,
+            "payout": 307420,
+            "net": 248920
+          },
+          "detail": [
+            {
+              "label": "Payouts, Airbnb and Vrbo",
+              "cents": 307420
+            },
+            {
+              "label": "Cleaning, flat rate per stay",
+              "cents": -58500
+            },
+            {
+              "label": "Net after costs",
+              "cents": 248920,
+              "strong": true
+            }
+          ]
+        },
+        {
+          "ref": "A-6",
+          "cells": {
+            "unit": "239, 1 BR",
+            "stays": 5,
+            "nights": 10,
+            "payout": 95450,
+            "net": 69450
+          },
+          "detail": [
+            {
+              "label": "Payouts, Airbnb and Vrbo",
+              "cents": 95450
+            },
+            {
+              "label": "Cleaning, flat rate per stay",
+              "cents": -26000
+            },
+            {
+              "label": "Net after costs",
+              "cents": 69450,
+              "strong": true
+            }
+          ]
+        }
+      ],
+      "subtotal": {
+        "label": "6 apartments",
+        "cells": {
+          "stays": 41,
+          "nights": 125,
+          "payout": 1361351,
+          "net": 1088851
+        }
+      },
+      "note": "Cleaning on every stay at one flat rate, shown once: $80 for a 2-bedroom and $65 for a 1-bedroom."
+    }
+  ],
+  "costs": null,
+  "settlement": {
+    "title": "Settlement with Riley",
+    "rows": [
+      {
+        "ref": "C-1",
+        "label": "Owed at the close of September",
+        "cents": 452192,
+        "role": null
+      },
+      {
+        "ref": "C-2",
+        "label": "Riley's share of October, 50% of net",
+        "cents": 544426,
+        "role": null
+      },
+      {
+        "ref": "C-3",
+        "label": "Paid so far",
+        "cents": 0,
+        "role": null
+      },
+      {
+        "ref": "C-4",
+        "label": "Owed at the close of October",
+        "cents": 996618,
+        "role": "balance"
+      }
+    ]
+  },
+  "attention": [
+    "Open to Riley: $9,966.18, with $0.00 paid so far.",
+    "Your 5 Vrbo stays ($2,394.68) come from your own Vrbo payout report."
+  ],
+  "stats": {
+    "stays": 41,
+    "nights": 125,
+    "occupancyPct": 62.4,
+    "last": {
+      "monthLabel": "September 2026",
+      "stays": 21,
+      "nights": 61,
+      "occupancyPct": null
+    }
+  },
+  "sources": [
+    {
+      "label": "Reservations export, pulled November 11",
+      "file": null,
+      "href": null
+    },
+    {
+      "label": "Vrbo payout report, exported November 11",
+      "file": null,
+      "href": null
+    },
+    {
+      "label": "Cleaning record, flat rate per stay",
+      "file": null,
+      "href": null
+    }
+  ],
+  "email": {
+    "subject": "The Euclid Grand | October 2026 owner statement",
+    "summary": [
+      {
+        "label": "Payouts",
+        "month": 1361351,
+        "last": 1067384
+      },
+      {
+        "label": "Cleaning",
+        "month": -272500,
+        "last": -163000
+      },
+      {
+        "label": "Net",
+        "month": 1088851,
+        "last": 904384
+      },
+      {
+        "label": "Occupancy",
+        "pct": 62.4,
+        "lastPct": null
+      }
+    ],
+    "button": "Open the October statement",
+    "password": "sample"
+  },
+  "links": {
+    "page": "https://example.com/clients/sample/october-2026",
+    "pdf": "https://example.com/clients/sample/october-2026/pdf"
+  },
+  "calls": "https://jakejjlee.com/meet"
+}

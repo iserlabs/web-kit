@@ -19,6 +19,8 @@
  *   { type: "p", text }                 a paragraph
  *   { type: "lead", text }              the opening paragraph, set larger
  *   { type: "link", label, href, note } the one link the email exists to send
+ *   { type: "button", label, href, note } one painted button: the label is its only text, the
+ *                                       address rides in the plain-text part (label, then URL)
  *   { type: "list", intro, items }      numbered items, typed as 1) 2) 3)
  *   { type: "close", text }             the sign-off line ("Best,")
  */
@@ -37,7 +39,71 @@ const esc = (s) =>
 const table = (inner, style = "") =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;${style}">${inner}</table>`;
 
+/** A hex color `w` of the way from `a` to `b` (both #rrggbb); falls back to `a` on anything else. */
+const mix = (a, b, w) => {
+  const rgb = (h) =>
+    /^#[0-9a-f]{6}$/i.test(h ?? "")
+      ? [1, 3, 5].map((i) => Number.parseInt(h.slice(i, i + 2), 16))
+      : null;
+  const x = rgb(a);
+  const y = rgb(b);
+  if (!x || !y) return a;
+  return `#${x
+    .map((v, i) =>
+      Math.round(v + (y[i] - v) * w)
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+};
+
 const BREAK = "overflow-wrap:break-word;word-break:normal;";
+/** A long address in a sentence may break at any character, so it never pushes a phone sideways. */
+const ANYWHERE = "overflow-wrap:anywhere;word-break:break-word;";
+/** A table's row label gives way before its figures do: at a soft hyphen first, at any character as a last resort. */
+const LABEL_WRAP = "overflow-wrap:anywhere;";
+/**
+ * Dictionary break points for the long words a statement's row labels carry. A soft hyphen is
+ * invisible unless the word must break, which only happens on the narrowest phones, and it works
+ * where automatic hyphenation does not: a mail app with no dictionary, or one that dropped the
+ * language (and automatic hyphenation also splits short words like "pay-out" that should wrap whole).
+ */
+const BREAK_POINTS = [
+  "adjust-ment",
+  "adjust-ments",
+  "clean-ing",
+  "com-mis-sion",
+  "ex-pens-es",
+  "main-te-nance",
+  "man-age-ment",
+  "oc-cu-pan-cy",
+  "pay-outs",
+  "pro-ceeds",
+  "re-im-burse-ment",
+  "re-im-burse-ments",
+  "res-er-va-tions",
+  "rev-e-nue",
+  "turn-over",
+];
+const BREAKS = new Map(BREAK_POINTS.map((w) => [w.replaceAll("-", ""), w.split("-")]));
+const softHyphens = (text) =>
+  text.replace(/[A-Za-z]{7,}/g, (w) => {
+    const parts = BREAKS.get(w.toLowerCase());
+    if (!parts) return w;
+    const out = [];
+    let at = 0;
+    for (const p of parts) {
+      out.push(w.slice(at, at + p.length));
+      at += p.length;
+    }
+    return out.join("&shy;");
+  });
+/**
+ * A side margin that is `px` on the 600px letter (`box` is the sheet's width inside any border)
+ * and shrinks with a narrower screen (about 10px at 320), so the narrowest phone gets the room
+ * back without a media query, which Gmail compose drops.
+ */
+const side = (px, box = MAX_WIDTH) => `${+((px / box) * 100).toFixed(4)}%`;
 /** An address printed as text, with a soft break after each slash so it wraps at a slash, not mid-word. */
 const url = (href) => esc(href).replace(/([^/])\/(?!\/)/g, "$1/<wbr>");
 
@@ -51,6 +117,8 @@ const tokens = (c) => {
     line: l.line ?? "#e2ded6",
     soft: l.soft ?? "#5d5a55",
     link: l.link ?? c.ink,
+    buttonBackground: l.buttonBackground ?? c.ink,
+    buttonText: l.buttonText ?? l.paper ?? c.ground,
     headerUrl: l.headerUrl,
     headerWidth: l.headerWidth ?? 240,
     headerAlt: l.headerAlt ?? c.wordmark,
@@ -78,11 +146,21 @@ const siteLabel = (c) => c.siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, ""
  */
 function body(email, c, t, s) {
   const P = `margin:0 0 18px 0;font-family:${s.font};font-size:${s.size}px;line-height:1.6;color:${c.ink};`;
+  // A web address written in a sentence stays in the sentence and becomes a
+  // plain underlined link, in the brand's link color. The "link" block is a
+  // button with its own rows; this is for "...a call with me here: <address>"
+  // where the sender wants one line, not a button (Jake, 2026-11-06).
+  const prose = (text) =>
+    esc(text).replace(
+      /https?:\/\/[^\s<]+?(?=[.,;:!?)]*(?:\s|$))/g,
+      (u) =>
+        `<a href="${u}" style="color:${t.link};text-decoration:underline;${ANYWHERE}">${u}</a>`,
+    );
   return email.blocks
     .map((b) => {
       switch (b.type) {
         case "p":
-          return `<p style="${P}">${esc(b.text)}</p>`;
+          return `<p style="${P}">${prose(b.text)}</p>`;
         case "lead":
           return `<p style="${P}font-family:${s.leadFont ?? s.font};font-size:${s.leadSize}px;line-height:1.6;">${esc(b.text)}</p>`;
         case "close":
@@ -108,8 +186,113 @@ function body(email, c, t, s) {
             .join("");
           return `${b.intro ? `<p style="${P}margin-bottom:6px;">${esc(b.intro)}</p>` : ""}${table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`)}`;
         }
+        case "heading":
+          return `<p style="margin:30px 0 12px 0;padding-top:16px;border-top:1px solid ${t.line};font-family:${c.bodyFont};font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;line-height:1.4;color:${c.accent};">${esc(b.text)}</p>`;
+        case "table": {
+          // A real data table: header cells carry scope, the first column reads left, the rest right
+          // (figures line up), and `align` overrides per column. Sized for a phone at 600px max.
+          // Figures never wrap, so on the narrowest phone (320) the row labels give way instead:
+          // they hyphenate, and break anywhere only when no hyphen fits. At 600 nothing changes.
+          const al = (i) => b.align?.[i] ?? (i === 0 ? "left" : "right");
+          const cell = (i, head, strong) =>
+            `padding:${head ? "8px" : "11px"} ${i === b.columns.length - 1 ? 0 : 10}px ${head ? "8px" : "11px"} 0;text-align:${al(i)};vertical-align:top;border-bottom:1px solid ${head ? t.rule : t.line};font-family:${head ? c.bodyFont : s.font};font-size:${head ? 12 : s.size - 1}px;line-height:1.35;color:${head ? t.soft : c.ink};${head ? "font-weight:700;letter-spacing:.06em;text-transform:uppercase;" : ""}${strong ? "font-weight:700;" : ""}${i === 0 ? LABEL_WRAP : "white-space:nowrap;"}`;
+          const head = `<tr>${b.columns.map((h, i) => `<th scope="col" style="${cell(i, true)}">${esc(h)}</th>`).join("")}</tr>`;
+          const rows = b.rows
+            .map(
+              (r, ri) =>
+                `<tr>${r.map((v, i) => (i === 0 ? `<th scope="row" style="${cell(i, false, true)}">${softHyphens(esc(v))}</th>` : `<td style="${cell(i, false, b.strongColumn === i)}">${esc(v)}</td>`)).join("")}</tr>`,
+            )
+            .join("");
+          const note = b.note
+            ? `<p style="margin:-14px 0 24px 0;font-family:${c.bodyFont};font-size:14px;line-height:1.5;color:${t.soft};">${esc(b.note)}</p>`
+            : "";
+          return `${b.intro ? `<p style="${P}margin-bottom:8px;">${esc(b.intro)}</p>` : ""}<table lang="en" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 24px 0;">${b.caption ? `<caption style="text-align:left;padding:0 0 6px 0;font-family:${c.bodyFont};font-size:13px;color:${t.soft};">${esc(b.caption)}</caption>` : ""}${head}${rows}</table>${note}`;
+        }
+        case "bars": {
+          // A horizontal bar chart built from table cells, so Gmail and Outlook draw it with no image
+          // or SVG. Each bar is scaled to the largest value; the printed figure is the accessible value.
+          const max = Math.max(...b.rows.map(([, v]) => v));
+          const rows = b.rows
+            .map(([label, v, shown]) => {
+              const pct = Math.max(1, Math.round((v / max) * 100));
+              const bar = table(
+                `<tr><td width="${pct}%" style="width:${pct}%;height:14px;background-color:${b.color ?? c.accent};font-size:0;line-height:0;">&nbsp;</td>${pct < 100 ? `<td style="font-size:0;line-height:0;">&nbsp;</td>` : ""}</tr>`,
+              );
+              const td = `padding:7px 0;border-bottom:1px solid ${t.line};vertical-align:middle;font-family:${s.font};font-size:${s.size - 2}px;line-height:1.3;color:${c.ink};`;
+              return `<tr><td style="${td}width:30%;padding-right:10px;">${esc(label)}</td><td aria-hidden="true" style="${td}">${bar}</td><td style="${td}width:1%;white-space:nowrap;text-align:right;padding-left:10px;font-weight:700;">${esc(shown ?? v)}</td></tr>`;
+            })
+            .join("");
+          const note = b.note
+            ? `<p style="margin:-14px 0 24px 0;font-family:${c.bodyFont};font-size:14px;line-height:1.5;color:${t.soft};">${esc(b.note)}</p>`
+            : "";
+          return `${b.intro ? `<p style="${P}margin-bottom:8px;">${esc(b.intro)}</p>` : ""}${table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`)}${note}`;
+        }
+        case "kpis": {
+          // Owner statement tiles, two across so a phone holds them: big figure, plain label, the
+          // denominator under it. Table cells only, so Gmail and Outlook draw them the same.
+          // Each figure sits on its own card (Jake, 2026-11-10: "more elegant and aesthetically
+          // beautiful cards"): a tinted ground halfway between the paper and the surround, a hairline
+          // border, a short brand rule, a small spaced label, the figure in the display face. Cards in
+          // one row share a height because they are cells of the same row.
+          const card = mix(t.paper, t.surround, 0.45);
+          const gap = `<td width="2%" style="width:2%;min-width:12px;font-size:0;line-height:0;">&nbsp;</td>`;
+          const tile = (k) =>
+            `<td width="49%" valign="top" align="center" style="width:49%;vertical-align:top;text-align:center;padding:18px 18px 18px 18px;background-color:${card};border:1px solid ${t.line};border-radius:10px;">` +
+            `<div style="width:22px;height:2px;background-color:${t.rule};font-size:0;line-height:0;margin:0 auto 12px auto;">&nbsp;</div>` +
+            `<div style="font-family:${c.bodyFont};font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1.35;color:${t.soft};">${esc(k.label)}</div>` +
+            `<div style="font-family:${c.displayFont};font-size:32px;line-height:1.1;color:${c.ink};padding-top:8px;font-variant-numeric:lining-nums tabular-nums;letter-spacing:-.01em;">${esc(k.value)}</div>` +
+            (k.note
+              ? `<div style="font-family:${c.bodyFont};font-size:13px;line-height:1.45;color:${t.soft};padding-top:6px;">${esc(k.note)}</div>`
+              : "") +
+            `</td>`;
+          const rows = [];
+          for (let i = 0; i < b.tiles.length; i += 2) {
+            if (i)
+              rows.push(
+                `<tr><td colspan="3" height="12" style="height:12px;font-size:0;line-height:0;">&nbsp;</td></tr>`,
+              );
+            rows.push(
+              `<tr>${tile(b.tiles[i])}${gap}${b.tiles[i + 1] ? tile(b.tiles[i + 1]) : `<td width="49%" style="width:49%;"></td>`}</tr>`,
+            );
+          }
+          return table(rows.join(""), "margin:4px 0 26px 0;border-collapse:separate;");
+        }
+        case "ledger": {
+          // One column of money that foots top to bottom: plain lines, a landing (sub), the total.
+          const rows = b.rows
+            .map((r) => {
+              const total = r.kind === "total";
+              const sub = r.kind === "sub";
+              const cell = `padding:${total ? "14px" : "10px"} 0;${total ? `border-top:2px solid ${t.rule};` : sub ? `border-top:1px solid ${t.rule};` : ""}${total ? "" : `border-bottom:1px solid ${t.line};`}font-family:${s.font};font-size:${total ? s.size + 1 : s.size}px;line-height:1.35;color:${c.ink};${total || sub ? "font-weight:700;" : ""}vertical-align:baseline;`;
+              const amount = total ? `font-size:${s.size + 8}px;` : "";
+              const note = r.note
+                ? `<div style="font-family:${c.bodyFont};font-size:${b.noteSize ?? 13}px;line-height:1.4;font-weight:400;color:${t.soft};padding-top:2px;">${esc(r.note)}</div>`
+                : "";
+              const link = r.href
+                ? `<div style="font-family:${c.bodyFont};font-size:14px;line-height:1.4;font-weight:400;padding-top:4px;"><a href="${esc(r.href)}" style="color:${t.link};text-decoration:underline;">${esc(r.linkText ?? "View")}</a></div>`
+                : "";
+              return `<tr><td style="${cell}">${esc(r.label)}${note}${link}</td><td align="right" style="${cell}${amount}text-align:right;white-space:nowrap;padding-left:12px;width:1%;font-variant-numeric:tabular-nums;">${esc(r.value)}</td></tr>`;
+            })
+            .join("");
+          return table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`);
+        }
+        case "links": {
+          // Several links in one ruled panel, so they never stack two panels' rules.
+          const rows = b.rows
+            .map(
+              (r, i) =>
+                `<tr><td style="padding:14px 0;${i ? `border-top:1px solid ${t.line};` : ""}font-family:${s.font};font-size:${s.size}px;line-height:1.5;color:${c.ink};">${esc(r.label)}<br><a href="${esc(r.href)}" style="color:${t.link};text-decoration:underline;word-break:break-word;">${esc(r.href)}</a></td></tr>`,
+            )
+            .join("");
+          return table(
+            rows,
+            `margin:0 0 22px 0;border-top:1px solid ${t.rule};border-bottom:1px solid ${t.rule};`,
+          );
+        }
         case "link":
           return s.link(b);
+        case "button":
+          return ctaButton(c, t, b);
         default:
           throw new Error(`Unknown letterhead block type "${b.type}"`);
       }
@@ -134,6 +317,34 @@ const button = (c, t, b, font) =>
         : ""),
     "margin:4px 0 26px 0;",
   );
+
+/**
+ * The email's one primary action, as a bulletproof button: a table cell painted twice (the
+ * `bgcolor` attribute and `background-color`), holding a link that is itself the padded tap area
+ * with its own text color. No image and no background image, so it reads with images off; both
+ * colors are set explicitly, so Gmail's forced dark mode inverts the pair together and the label
+ * stays readable. 14px padding around a 22px line gives a 50px target. The address is never
+ * printed in the html; the plain-text part carries it under the label.
+ */
+function ctaButton(c, t, b) {
+  if (typeof b.label !== "string" || b.label.trim() === "") {
+    throw new Error('A "button" block needs a label');
+  }
+  if (typeof b.href !== "string" || !/^https?:\/\/\S/.test(b.href)) {
+    throw new Error('A "button" block needs an href that is a web address');
+  }
+  const bg = esc(t.buttonBackground);
+  const fg = esc(t.buttonText);
+  const cell = `<td bgcolor="${bg}" style="background-color:${bg};border-radius:4px;mso-padding-alt:14px 26px;"><a href="${esc(b.href)}" style="display:block;padding:14px 26px;font-family:${c.bodyFont};font-size:17px;line-height:22px;font-weight:600;letter-spacing:.01em;color:${fg};text-decoration:none;text-align:center;border-radius:4px;${BREAK}">${esc(b.label)}</a></td>`;
+  const inner = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;max-width:100%;"><tr>${cell}</tr></table>`;
+  return table(
+    `<tr><td align="left" style="padding:0;">${inner}</td></tr>` +
+      (b.note
+        ? `<tr><td style="padding:10px 0 0 0;font-family:${c.bodyFont};font-size:15px;line-height:1.5;color:${c.ink};">${esc(b.note)}</td></tr>`
+        : ""),
+    "margin:6px 0 26px 0;",
+  );
+}
 
 /**
  * A pasted signature made fit for a letterhead without changing a word: its
@@ -285,8 +496,8 @@ function paper(email, c, p, sig) {
     `<div style="background-color:${t.paper};border:1px solid ${t.line};">
 <div style="text-align:center;padding:30px 24px 22px;background-color:${t.paper};">${header(c, t)}</div>
 <div style="height:1px;line-height:1px;font-size:1px;background-color:${t.rule};margin:0 20px;">&nbsp;</div>
-<div style="padding:30px 20px 0;">${body(email, c, t, s)}</div>
-<div style="padding:14px 20px 30px;">${sig ? `${email.blocks.at(-1)?.type === "link" ? "" : `<div style="height:1px;line-height:1px;font-size:1px;background-color:${t.line};margin:0 0 20px 0;">&nbsp;</div>`}${sig}` : `<div style="text-align:center;">${nameBlock(c, t, p, "center")}<div style="padding-top:10px;text-align:center;line-height:1.8;">${contactLines(c, t, p, c.ink, c.bodyFont, 14)}</div></div>`}</div>
+<div style="padding:30px ${side(20, MAX_WIDTH - 2)} 0;">${body(email, c, t, s)}</div>
+<div style="padding:14px ${side(20, MAX_WIDTH - 2)} 30px;">${sig ? `${email.blocks.at(-1)?.type === "link" ? "" : `<div style="height:1px;line-height:1px;font-size:1px;background-color:${t.line};margin:0 0 20px 0;">&nbsp;</div>`}${sig}` : `<div style="text-align:center;">${nameBlock(c, t, p, "center")}<div style="padding-top:10px;text-align:center;line-height:1.8;">${contactLines(c, t, p, c.ink, c.bodyFont, 14)}</div></div>`}</div>
 </div>${footerLine(c, t, t.soft)}`,
   );
 }
@@ -360,8 +571,8 @@ function postcard(email, c, p, sig) {
 <img src="${esc(t.photoUrl)}" width="${MAX_WIDTH}" alt="${esc(t.photoAlt)}" style="display:block;width:100%;max-width:${MAX_WIDTH}px;height:auto;border:0;">
 <div style="text-align:center;padding:22px 24px 18px;background-color:${t.paper};">${header(c, t, Math.min(t.headerWidth, 300))}</div>
 <div style="height:1px;line-height:1px;font-size:1px;background-color:${t.rule};margin:0 40px;">&nbsp;</div>
-<div style="padding:28px 34px 8px;">${body(email, c, t, s)}</div>
-<div style="padding:0 34px 30px;">${sig ?? nameBlock(c, t, p)}</div>
+<div style="padding:28px ${side(34)} 8px;">${body(email, c, t, s)}</div>
+<div style="padding:0 ${side(34)} 30px;">${sig ?? nameBlock(c, t, p)}</div>
 </div>${footerLine(c, t, t.soft)}`,
   );
 }
@@ -399,25 +610,65 @@ export const LETTERHEAD_IDS = LETTERHEAD_VARIANTS.map((v) => v.id);
  * the name, title and contact lines itself.
  */
 export function renderLetterhead(variantId, config, person, email, signatureHtml) {
+  const sig = signatureHtml == null ? signatureHtml : phoneSafe(signatureHtml);
   const override = config.overrides?.letterheads?.[variantId];
-  if (override) return override(config, person, email, signatureHtml);
+  if (override) return override(config, person, email, sig);
   const renderer = RENDERERS[variantId];
   if (!renderer) {
     throw new Error(
       `Unknown letterhead variant "${variantId}". Known: ${LETTERHEAD_IDS.join(", ")}`,
     );
   }
-  return renderer(email, config, person, signatureHtml);
+  return renderer(email, config, person, sig);
+}
+
+/**
+ * A signature pasted from a live Gmail account, made unable to push a phone sideways without
+ * changing how it looks on a wide screen: no line refuses to wrap, a divider drawn at a fixed
+ * pixel width runs the width it is given, and a contact line may wrap after its separator dot
+ * instead of running past the edge (the first iPhone SE is 320px wide).
+ */
+function phoneSafe(html) {
+  return (
+    String(html)
+      .replace(/white-space:\s*nowrap;?/gi, "")
+      // a width declaration only, never max-width or min-width, which already leave room
+      .replace(/(<div\b[^>]*style="(?:[^"]*?;)?\s*)width:\s*(\d+(?:\.\d+)?)px/gi, (m, pre, px) =>
+        Number(px) > 120 ? `${pre}width:100%` : m,
+      )
+      .replace(/(<span\b[^>]*>\s*(?:·|&middot;|&#183;)\s*<\/span>)(?!<wbr>)/gi, "$1<wbr>")
+  );
 }
 
 /** The same email as plain text, the alternative part every letterhead ships with. */
 export function letterheadPlainText(email, person) {
   const parts = email.blocks.map((b) => {
-    if (b.type === "link") return [b.label, b.href, b.note].filter(Boolean).join("\n");
+    if (b.type === "link" || b.type === "button")
+      return [b.label, b.href, b.note].filter(Boolean).join("\n");
     if (b.type === "list")
       return [b.intro, ...b.items.map((x, i) => `${i + 1}) ${x}`)].filter(Boolean).join("\n\n");
     if (b.type === "figures")
       return [b.intro, ...b.rows.map(([l, a]) => `${l} ${a}`)].filter(Boolean).join("\n");
+    if (b.type === "heading") return b.text.toUpperCase();
+    if (b.type === "kpis")
+      return b.tiles.map((k) => `${k.label}: ${k.value}${k.note ? ` (${k.note})` : ""}`).join("\n");
+    if (b.type === "ledger")
+      return b.rows
+        .map((r) =>
+          [`${r.label}: ${r.value}`, r.note, r.href && `${r.linkText ?? "View"}: ${r.href}`]
+            .filter(Boolean)
+            .join("\n"),
+        )
+        .join(b.rows.some((r) => r.href) ? "\n\n" : "\n");
+    if (b.type === "links") return b.rows.map((r) => `${r.label}\n${r.href}`).join("\n\n");
+    if (b.type === "table")
+      return [b.intro, b.columns.join(" | "), ...b.rows.map((r) => r.join(" | ")), b.note]
+        .filter(Boolean)
+        .join("\n");
+    if (b.type === "bars")
+      return [b.intro, ...b.rows.map(([l, v, shown]) => `${l}: ${shown ?? v}`), b.note]
+        .filter(Boolean)
+        .join("\n");
     return b.text;
   });
   const sig = [person.name, person.title, person.phone, person.email].filter(Boolean).join("\n");
