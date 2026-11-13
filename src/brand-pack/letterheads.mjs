@@ -60,13 +60,50 @@ const mix = (a, b, w) => {
 const BREAK = "overflow-wrap:break-word;word-break:normal;";
 /** A long address in a sentence may break at any character, so it never pushes a phone sideways. */
 const ANYWHERE = "overflow-wrap:anywhere;word-break:break-word;";
-/** A table's row label gives way before its figures do: hyphens first, any character as a last resort. */
-const LABEL_WRAP = "hyphens:auto;-webkit-hyphens:auto;overflow-wrap:anywhere;";
+/** A table's row label gives way before its figures do: at a soft hyphen first, at any character as a last resort. */
+const LABEL_WRAP = "overflow-wrap:anywhere;";
 /**
- * A side margin that is `px` on the 600px letter and shrinks with a narrower screen (about 10px at
- * 320), so the narrowest phone gets the room back without a media query, which Gmail compose drops.
+ * Dictionary break points for the long words a statement's row labels carry. A soft hyphen is
+ * invisible unless the word must break, which only happens on the narrowest phones, and it works
+ * where automatic hyphenation does not: a mail app with no dictionary, or one that dropped the
+ * language (and automatic hyphenation also splits short words like "pay-out" that should wrap whole).
  */
-const side = (px) => `${+((px / MAX_WIDTH) * 100).toFixed(3)}%`;
+const BREAK_POINTS = [
+  "adjust-ment",
+  "adjust-ments",
+  "clean-ing",
+  "com-mis-sion",
+  "ex-pens-es",
+  "main-te-nance",
+  "man-age-ment",
+  "oc-cu-pan-cy",
+  "pay-outs",
+  "pro-ceeds",
+  "re-im-burse-ment",
+  "re-im-burse-ments",
+  "res-er-va-tions",
+  "rev-e-nue",
+  "turn-over",
+];
+const BREAKS = new Map(BREAK_POINTS.map((w) => [w.replaceAll("-", ""), w.split("-")]));
+const softHyphens = (text) =>
+  text.replace(/[A-Za-z]{7,}/g, (w) => {
+    const parts = BREAKS.get(w.toLowerCase());
+    if (!parts) return w;
+    const out = [];
+    let at = 0;
+    for (const p of parts) {
+      out.push(w.slice(at, at + p.length));
+      at += p.length;
+    }
+    return out.join("&shy;");
+  });
+/**
+ * A side margin that is `px` on the 600px letter (`box` is the sheet's width inside any border)
+ * and shrinks with a narrower screen (about 10px at 320), so the narrowest phone gets the room
+ * back without a media query, which Gmail compose drops.
+ */
+const side = (px, box = MAX_WIDTH) => `${+((px / box) * 100).toFixed(4)}%`;
 /** An address printed as text, with a soft break after each slash so it wraps at a slash, not mid-word. */
 const url = (href) => esc(href).replace(/([^/])\/(?!\/)/g, "$1/<wbr>");
 
@@ -163,13 +200,13 @@ function body(email, c, t, s) {
           const rows = b.rows
             .map(
               (r, ri) =>
-                `<tr>${r.map((v, i) => (i === 0 ? `<th scope="row" style="${cell(i, false, true)}">${esc(v)}</th>` : `<td style="${cell(i, false, b.strongColumn === i)}">${esc(v)}</td>`)).join("")}</tr>`,
+                `<tr>${r.map((v, i) => (i === 0 ? `<th scope="row" style="${cell(i, false, true)}">${softHyphens(esc(v))}</th>` : `<td style="${cell(i, false, b.strongColumn === i)}">${esc(v)}</td>`)).join("")}</tr>`,
             )
             .join("");
           const note = b.note
             ? `<p style="margin:-14px 0 24px 0;font-family:${c.bodyFont};font-size:14px;line-height:1.5;color:${t.soft};">${esc(b.note)}</p>`
             : "";
-          return `${b.intro ? `<p style="${P}margin-bottom:8px;">${esc(b.intro)}</p>` : ""}<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 24px 0;">${b.caption ? `<caption style="text-align:left;padding:0 0 6px 0;font-family:${c.bodyFont};font-size:13px;color:${t.soft};">${esc(b.caption)}</caption>` : ""}${head}${rows}</table>${note}`;
+          return `${b.intro ? `<p style="${P}margin-bottom:8px;">${esc(b.intro)}</p>` : ""}<table lang="en" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 24px 0;">${b.caption ? `<caption style="text-align:left;padding:0 0 6px 0;font-family:${c.bodyFont};font-size:13px;color:${t.soft};">${esc(b.caption)}</caption>` : ""}${head}${rows}</table>${note}`;
         }
         case "bars": {
           // A horizontal bar chart built from table cells, so Gmail and Outlook draw it with no image
@@ -459,8 +496,8 @@ function paper(email, c, p, sig) {
     `<div style="background-color:${t.paper};border:1px solid ${t.line};">
 <div style="text-align:center;padding:30px 24px 22px;background-color:${t.paper};">${header(c, t)}</div>
 <div style="height:1px;line-height:1px;font-size:1px;background-color:${t.rule};margin:0 20px;">&nbsp;</div>
-<div style="padding:30px ${side(20)} 0;">${body(email, c, t, s)}</div>
-<div style="padding:14px ${side(20)} 30px;">${sig ? `${email.blocks.at(-1)?.type === "link" ? "" : `<div style="height:1px;line-height:1px;font-size:1px;background-color:${t.line};margin:0 0 20px 0;">&nbsp;</div>`}${sig}` : `<div style="text-align:center;">${nameBlock(c, t, p, "center")}<div style="padding-top:10px;text-align:center;line-height:1.8;">${contactLines(c, t, p, c.ink, c.bodyFont, 14)}</div></div>`}</div>
+<div style="padding:30px ${side(20, MAX_WIDTH - 2)} 0;">${body(email, c, t, s)}</div>
+<div style="padding:14px ${side(20, MAX_WIDTH - 2)} 30px;">${sig ? `${email.blocks.at(-1)?.type === "link" ? "" : `<div style="height:1px;line-height:1px;font-size:1px;background-color:${t.line};margin:0 0 20px 0;">&nbsp;</div>`}${sig}` : `<div style="text-align:center;">${nameBlock(c, t, p, "center")}<div style="padding-top:10px;text-align:center;line-height:1.8;">${contactLines(c, t, p, c.ink, c.bodyFont, 14)}</div></div>`}</div>
 </div>${footerLine(c, t, t.soft)}`,
   );
 }

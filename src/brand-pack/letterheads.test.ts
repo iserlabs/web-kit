@@ -488,3 +488,34 @@ describe("a pasted signature on a narrow phone", () => {
     }
   });
 });
+
+describe("table row labels on a narrow phone", () => {
+  const withTable = {
+    ...email,
+    blocks: [
+      {
+        type: "table",
+        columns: ["", "October", "September"],
+        rows: [
+          ["Management fee", "($3,812.42)", "-"],
+          ["Occupancy", "50.8%", "-"],
+          ["Host payout", "$46,196.31", "$45,311.12"],
+        ],
+      },
+    ],
+  };
+
+  it("carry dictionary soft hyphens in long statement words and none in short ones", () => {
+    const html = renderLetterhead("paper", config, person, withTable);
+    expect(html).toContain(">Man&shy;age&shy;ment fee</th>");
+    expect(html).toContain(">Oc&shy;cu&shy;pan&shy;cy</th>");
+    expect(html).toContain(">Host payout</th>");
+    expect(html).not.toMatch(/hyphens:auto/);
+  });
+
+  it("leave the figures whole and the plain-text part without soft hyphens", () => {
+    const html = renderLetterhead("paper", config, person, withTable);
+    expect(html).toMatch(/white-space:nowrap;">\(\$3,812\.42\)<\/td>/);
+    expect(letterheadPlainText(withTable, person)).toContain("Management fee | ($3,812.42) | -");
+  });
+});
