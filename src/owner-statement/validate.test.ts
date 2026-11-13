@@ -136,6 +136,25 @@ describe("one planted break per rule gives a named error", () => {
     expect(bang.some((e) => e.startsWith("words:") && e.includes("exclamation"))).toBe(true);
   });
 
+  it("a line that repeats the date reason is named: the renderer owns that wording", () => {
+    const errs = planted("columbus", (m) => {
+      m.moves.line = "from you, by check, due date not set yet";
+    });
+    expect(errs.some((e) => e.startsWith("date:") && e.includes("dateUnknown"))).toBe(true);
+    expect(
+      planted("xenia", (m) => {
+        m.moves.line = "due date not set yet";
+      }).some((e) => e.startsWith("date:")),
+    ).toBe(true);
+  });
+
+  it("businessShort, when given, is a non-empty string", () => {
+    expect(
+      planted("xenia", (m) => (m.businessShort = "")).some((e) => e.includes("businessShort")),
+    ).toBe(true);
+    expect(planted("sun-mountain", (m) => delete m.businessShort)).toEqual([]);
+  });
+
   it("a null date with no reason is named, unless nothing moves", () => {
     const errs = planted("columbus", (m) => {
       m.moves.dateUnknown = null;

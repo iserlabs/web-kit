@@ -1,7 +1,8 @@
 {
   "schema": "owner-statement/1",
   "brand": "xenia",
-  "business": "Xenia",
+  "business": "Xenia Hospitality Operations",
+  "businessShort": "Xenia",
   "month": "2026-10",
   "monthLabel": "October 2026",
   "monthShort": "October",

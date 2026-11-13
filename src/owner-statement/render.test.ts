@@ -62,6 +62,34 @@ describe("what the page carries", () => {
     expect(ch).toContain("due date not set yet");
   });
 
+  it("an unknown pay date: the renderer prints its reason once, after the line", () => {
+    for (const name of BRAND_FILES) {
+      const m = load(name);
+      if (m.moves.date !== null || m.moves.direction === "none" || !m.moves.dateUnknown) continue;
+      const { html } = render(name);
+      const line = html.match(/<p class="os__line">([^<]*)<\/p>/)?.[1] ?? "";
+      expect(line).toBe(`${m.moves.line}, ${m.moves.dateUnknown}`);
+      expect(count(html, m.moves.dateUnknown)).toBe(1);
+    }
+  });
+
+  it("a line that already carries the date reason is refused, never printed twice", () => {
+    const m = load("columbus");
+    m.moves.line = `${m.moves.line}, ${m.moves.dateUnknown}`;
+    expect(() => renderStatement(m, { logo: LOGO })).toThrow(/dateUnknown/);
+    const x = load("xenia");
+    x.moves.line = x.moves.dateUnknown as string;
+    expect(() => renderStatement(x, { logo: LOGO })).toThrow(/dateUnknown/);
+  });
+
+  it("the sign-off names the full business; the short name is for the link preview only", () => {
+    const m = load("xenia");
+    const { html } = renderStatement(m, { logo: LOGO });
+    expect(m.business).toBe("Xenia Hospitality Operations");
+    expect(html).toContain("Jake Lee of Xenia Hospitality Operations prepared and reconciled");
+    expect(html).not.toMatch(/of Roam North/);
+  });
+
   it("nothing moves: the big words say so, not $0.00", () => {
     const { html } = render("palisade");
     expect(html).toContain(">Nothing moves<");

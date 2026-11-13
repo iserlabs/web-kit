@@ -83,6 +83,9 @@ function need(value, what) {
 /** True when the property and the brand are one name (the hotel), so the street stands in. */
 const propertyIsBrand = (model) => model.property.label === model.business;
 
+/** The name a link preview carries: the short name when the model gives one, else the business. */
+const shareName = (model) => model.businessShort ?? model.business;
+
 /**
  * The tags for a statement page. `place` is "{city, state}" as the brand writes it; `street` is
  * required when the property is the brand itself. `imageUrl`, when given, comes back as a ready
@@ -92,7 +95,7 @@ export function statementShareMeta(model, options) {
   checkModel(model);
   const place = guard(model, "place", need(options?.place, "place"));
   const label = guard(model, "property", model.property.label);
-  const business = guard(model, "business", model.business);
+  const business = guard(model, "business", shareName(model));
   const month = model.monthLabel;
   const lead = propertyIsBrand(model)
     ? guard(model, "street", need(options?.street, "street (the property is the brand)"))
@@ -272,7 +275,7 @@ export function renderStatementShareCard(model, options = {}) {
           ...(s.ground ? {} : { borderRadius: s.radius }),
         },
         [],
-        { src: markUrl, alt: model.business, role: "mark" },
+        { src: markUrl, alt: shareName(model), role: "mark" },
       );
   layers.push(node("div", sealStyle, [mark], { role: "seal" }));
 

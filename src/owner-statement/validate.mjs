@@ -73,6 +73,11 @@ function checkTop(m, errors) {
   for (const key of ["business", "month", "monthLabel", "monthShort", "calls"]) {
     if (!isStr(m[key])) errors.push(`shape: "${key}" is missing or empty`);
   }
+  if (m.businessShort !== undefined && !isStr(m.businessShort)) {
+    errors.push(
+      'shape: "businessShort", when given, is the short name for link previews and cannot be empty',
+    );
+  }
   for (const key of [
     "owner",
     "property",
@@ -120,6 +125,16 @@ function checkMoves(m, errors) {
     if (mv.direction !== "none" && !isStr(mv.dateUnknown)) {
       errors.push(
         'date: no date is set, so moves.dateUnknown must say why (for example "due date not set yet")',
+      );
+    }
+    if (
+      mv.direction !== "none" &&
+      isStr(mv.dateUnknown) &&
+      isStr(mv.line) &&
+      mv.line.toLowerCase().includes(mv.dateUnknown.toLowerCase())
+    ) {
+      errors.push(
+        `date: moves.line already says moves.dateUnknown ("${mv.dateUnknown}"); the renderer adds that reason after the line, so the line leaves it out`,
       );
     }
   } else if (!/^\d{4}-\d{2}-\d{2}$/.test(mv.date)) {

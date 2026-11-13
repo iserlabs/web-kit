@@ -374,7 +374,7 @@ def xenia():
         })
     owed = cents(S(b, "open"))
     return {
-        "schema": "owner-statement/1", "brand": "xenia", "business": S(b, "sender"),
+        "schema": "owner-statement/1", "brand": "xenia", "business": "Xenia Hospitality Operations", "businessShort": S(b, "sender"),
         "month": "2026-10", "monthLabel": S(b, "month"), "monthShort": S(b, "month").split()[0],
         "status": "final",
         "owner": {"key": "sample-owner", "name": "Morgan Example", "greeting": "Morgan"},

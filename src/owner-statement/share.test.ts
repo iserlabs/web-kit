@@ -57,6 +57,14 @@ describe("statementShareMeta", () => {
     expect(meta.imageHeight).toBe(630);
   });
 
+  it("a business with a short name: the preview carries the short name, never a client's name", () => {
+    const meta = statementShareMeta(november("xenia"), PLACE.xenia);
+    expect(meta.siteName).toBe("Xenia");
+    expect(meta.description).toBe("Xenia · Cleveland, Ohio");
+    expect(meta.imageAlt).toBe("Xenia owner statement, November 2026, The Euclid Grand");
+    expect(strings(meta).join("\n")).not.toMatch(/Roam North|Hospitality Operations/);
+  });
+
   it("when the property is the brand, the street leads the description and the alt drops the repeat", () => {
     const meta = statementShareMeta(november("columbus"), PLACE.columbus);
     expect(meta.title).toBe("November 2026 owner statement · The Columbus Hotel");

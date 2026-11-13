@@ -127,6 +127,8 @@ export interface StatementModel {
   brand: StatementBrand;
   /** The sender's name, printed in the masthead. The only business name that reaches the HTML. */
   business: string;
+  /** Optional short name for the link preview (og:site_name, the card's mark alt); the sign-off keeps `business`. */
+  businessShort?: string;
   month: string;
   monthLabel: string;
   monthShort: string;
