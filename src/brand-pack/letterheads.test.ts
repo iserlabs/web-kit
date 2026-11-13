@@ -467,3 +467,24 @@ describe("button block", () => {
     ).toThrow(/href/);
   });
 });
+
+describe("a pasted signature on a narrow phone", () => {
+  const pasted =
+    '<table style="border-collapse:collapse"><tr><td><div style="width:392.515625px;height:1px">&nbsp;</div><div style="font-size:13px;max-width:360px">Remote operations support</div></td></tr>' +
+    '<tr><td style="font-size:12px;white-space:nowrap"><a href="mailto:a@example.com" style="color:#333">a@example.com</a><span style="padding:0px 7px">·</span><a href="https://example.com/" style="color:#333">example.com</a></td></tr></table>';
+
+  it("drops no-wrap, stretches a fixed-width rule, keeps max-width, and lets the contact line wrap after its dot", () => {
+    for (const id of LETTERHEAD_IDS) {
+      const html = renderLetterhead(id, config, person, email, pasted);
+      expect(html, id).not.toMatch(
+        /white-space:\s*nowrap;?[^"]*">a@example\.com|nowrap"><a href="mailto/,
+      );
+      expect(html, id).not.toContain("width:392.515625px");
+      expect(html, id).toContain("width:100%;height:1px");
+      expect(html, id).toContain("max-width:360px");
+      expect(html, id).toContain(
+        '<span style="padding:0px 7px">·</span><wbr><a href="https://example.com/"',
+      );
+    }
+  });
+});

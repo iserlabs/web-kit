@@ -58,6 +58,15 @@ const mix = (a, b, w) => {
 };
 
 const BREAK = "overflow-wrap:break-word;word-break:normal;";
+/** A long address in a sentence may break at any character, so it never pushes a phone sideways. */
+const ANYWHERE = "overflow-wrap:anywhere;word-break:break-word;";
+/** A table's row label gives way before its figures do: hyphens first, any character as a last resort. */
+const LABEL_WRAP = "hyphens:auto;-webkit-hyphens:auto;overflow-wrap:anywhere;";
+/**
+ * A side margin that is `px` on the 600px letter and shrinks with a narrower screen (about 10px at
+ * 320), so the narrowest phone gets the room back without a media query, which Gmail compose drops.
+ */
+const side = (px) => `${+((px / MAX_WIDTH) * 100).toFixed(3)}%`;
 /** An address printed as text, with a soft break after each slash so it wraps at a slash, not mid-word. */
 const url = (href) => esc(href).replace(/([^/])\/(?!\/)/g, "$1/<wbr>");
 
@@ -107,7 +116,8 @@ function body(email, c, t, s) {
   const prose = (text) =>
     esc(text).replace(
       /https?:\/\/[^\s<]+?(?=[.,;:!?)]*(?:\s|$))/g,
-      (u) => `<a href="${u}" style="color:${t.link};text-decoration:underline;">${u}</a>`,
+      (u) =>
+        `<a href="${u}" style="color:${t.link};text-decoration:underline;${ANYWHERE}">${u}</a>`,
     );
   return email.blocks
     .map((b) => {
@@ -144,9 +154,11 @@ function body(email, c, t, s) {
         case "table": {
           // A real data table: header cells carry scope, the first column reads left, the rest right
           // (figures line up), and `align` overrides per column. Sized for a phone at 600px max.
+          // Figures never wrap, so on the narrowest phone (320) the row labels give way instead:
+          // they hyphenate, and break anywhere only when no hyphen fits. At 600 nothing changes.
           const al = (i) => b.align?.[i] ?? (i === 0 ? "left" : "right");
           const cell = (i, head, strong) =>
-            `padding:${head ? "8px" : "11px"} ${i === b.columns.length - 1 ? 0 : 10}px ${head ? "8px" : "11px"} 0;text-align:${al(i)};vertical-align:top;border-bottom:1px solid ${head ? t.rule : t.line};font-family:${head ? c.bodyFont : s.font};font-size:${head ? 12 : s.size - 1}px;line-height:1.35;color:${head ? t.soft : c.ink};${head ? "font-weight:700;letter-spacing:.06em;text-transform:uppercase;" : ""}${strong ? "font-weight:700;" : ""}${i === 0 ? "" : "white-space:nowrap;"}`;
+            `padding:${head ? "8px" : "11px"} ${i === b.columns.length - 1 ? 0 : 10}px ${head ? "8px" : "11px"} 0;text-align:${al(i)};vertical-align:top;border-bottom:1px solid ${head ? t.rule : t.line};font-family:${head ? c.bodyFont : s.font};font-size:${head ? 12 : s.size - 1}px;line-height:1.35;color:${head ? t.soft : c.ink};${head ? "font-weight:700;letter-spacing:.06em;text-transform:uppercase;" : ""}${strong ? "font-weight:700;" : ""}${i === 0 ? LABEL_WRAP : "white-space:nowrap;"}`;
           const head = `<tr>${b.columns.map((h, i) => `<th scope="col" style="${cell(i, true)}">${esc(h)}</th>`).join("")}</tr>`;
           const rows = b.rows
             .map(
@@ -447,8 +459,8 @@ function paper(email, c, p, sig) {
     `<div style="background-color:${t.paper};border:1px solid ${t.line};">
 <div style="text-align:center;padding:30px 24px 22px;background-color:${t.paper};">${header(c, t)}</div>
 <div style="height:1px;line-height:1px;font-size:1px;background-color:${t.rule};margin:0 20px;">&nbsp;</div>
-<div style="padding:30px 20px 0;">${body(email, c, t, s)}</div>
-<div style="padding:14px 20px 30px;">${sig ? `${email.blocks.at(-1)?.type === "link" ? "" : `<div style="height:1px;line-height:1px;font-size:1px;background-color:${t.line};margin:0 0 20px 0;">&nbsp;</div>`}${sig}` : `<div style="text-align:center;">${nameBlock(c, t, p, "center")}<div style="padding-top:10px;text-align:center;line-height:1.8;">${contactLines(c, t, p, c.ink, c.bodyFont, 14)}</div></div>`}</div>
+<div style="padding:30px ${side(20)} 0;">${body(email, c, t, s)}</div>
+<div style="padding:14px ${side(20)} 30px;">${sig ? `${email.blocks.at(-1)?.type === "link" ? "" : `<div style="height:1px;line-height:1px;font-size:1px;background-color:${t.line};margin:0 0 20px 0;">&nbsp;</div>`}${sig}` : `<div style="text-align:center;">${nameBlock(c, t, p, "center")}<div style="padding-top:10px;text-align:center;line-height:1.8;">${contactLines(c, t, p, c.ink, c.bodyFont, 14)}</div></div>`}</div>
 </div>${footerLine(c, t, t.soft)}`,
   );
 }
@@ -522,8 +534,8 @@ function postcard(email, c, p, sig) {
 <img src="${esc(t.photoUrl)}" width="${MAX_WIDTH}" alt="${esc(t.photoAlt)}" style="display:block;width:100%;max-width:${MAX_WIDTH}px;height:auto;border:0;">
 <div style="text-align:center;padding:22px 24px 18px;background-color:${t.paper};">${header(c, t, Math.min(t.headerWidth, 300))}</div>
 <div style="height:1px;line-height:1px;font-size:1px;background-color:${t.rule};margin:0 40px;">&nbsp;</div>
-<div style="padding:28px 34px 8px;">${body(email, c, t, s)}</div>
-<div style="padding:0 34px 30px;">${sig ?? nameBlock(c, t, p)}</div>
+<div style="padding:28px ${side(34)} 8px;">${body(email, c, t, s)}</div>
+<div style="padding:0 ${side(34)} 30px;">${sig ?? nameBlock(c, t, p)}</div>
 </div>${footerLine(c, t, t.soft)}`,
   );
 }
@@ -561,15 +573,34 @@ export const LETTERHEAD_IDS = LETTERHEAD_VARIANTS.map((v) => v.id);
  * the name, title and contact lines itself.
  */
 export function renderLetterhead(variantId, config, person, email, signatureHtml) {
+  const sig = signatureHtml == null ? signatureHtml : phoneSafe(signatureHtml);
   const override = config.overrides?.letterheads?.[variantId];
-  if (override) return override(config, person, email, signatureHtml);
+  if (override) return override(config, person, email, sig);
   const renderer = RENDERERS[variantId];
   if (!renderer) {
     throw new Error(
       `Unknown letterhead variant "${variantId}". Known: ${LETTERHEAD_IDS.join(", ")}`,
     );
   }
-  return renderer(email, config, person, signatureHtml);
+  return renderer(email, config, person, sig);
+}
+
+/**
+ * A signature pasted from a live Gmail account, made unable to push a phone sideways without
+ * changing how it looks on a wide screen: no line refuses to wrap, a divider drawn at a fixed
+ * pixel width runs the width it is given, and a contact line may wrap after its separator dot
+ * instead of running past the edge (the first iPhone SE is 320px wide).
+ */
+function phoneSafe(html) {
+  return (
+    String(html)
+      .replace(/white-space:\s*nowrap;?/gi, "")
+      // a width declaration only, never max-width or min-width, which already leave room
+      .replace(/(<div\b[^>]*style="(?:[^"]*?;)?\s*)width:\s*(\d+(?:\.\d+)?)px/gi, (m, pre, px) =>
+        Number(px) > 120 ? `${pre}width:100%` : m,
+      )
+      .replace(/(<span\b[^>]*>\s*(?:·|&middot;|&#183;)\s*<\/span>)(?!<wbr>)/gi, "$1<wbr>")
+  );
 }
 
 /** The same email as plain text, the alternative part every letterhead ships with. */
