@@ -19,6 +19,8 @@
  *   { type: "p", text }                 a paragraph
  *   { type: "lead", text }              the opening paragraph, set larger
  *   { type: "link", label, href, note } the one link the email exists to send
+ *   { type: "button", label, href, note } one painted button: the label is its only text, the
+ *                                       address rides in the plain-text part (label, then URL)
  *   { type: "list", intro, items }      numbered items, typed as 1) 2) 3)
  *   { type: "close", text }             the sign-off line ("Best,")
  */
@@ -51,6 +53,8 @@ const tokens = (c) => {
     line: l.line ?? "#e2ded6",
     soft: l.soft ?? "#5d5a55",
     link: l.link ?? c.ink,
+    buttonBackground: l.buttonBackground ?? c.ink,
+    buttonText: l.buttonText ?? l.paper ?? c.ground,
     headerUrl: l.headerUrl,
     headerWidth: l.headerWidth ?? 240,
     headerAlt: l.headerAlt ?? c.wordmark,
@@ -110,6 +114,8 @@ function body(email, c, t, s) {
         }
         case "link":
           return s.link(b);
+        case "button":
+          return ctaButton(c, t, b);
         default:
           throw new Error(`Unknown letterhead block type "${b.type}"`);
       }
@@ -134,6 +140,34 @@ const button = (c, t, b, font) =>
         : ""),
     "margin:4px 0 26px 0;",
   );
+
+/**
+ * The email's one primary action, as a bulletproof button: a table cell painted twice (the
+ * `bgcolor` attribute and `background-color`), holding a link that is itself the padded tap area
+ * with its own text color. No image and no background image, so it reads with images off; both
+ * colors are set explicitly, so Gmail's forced dark mode inverts the pair together and the label
+ * stays readable. 14px padding around a 22px line gives a 50px target. The address is never
+ * printed in the html; the plain-text part carries it under the label.
+ */
+function ctaButton(c, t, b) {
+  if (typeof b.label !== "string" || b.label.trim() === "") {
+    throw new Error('A "button" block needs a label');
+  }
+  if (typeof b.href !== "string" || !/^https?:\/\/\S/.test(b.href)) {
+    throw new Error('A "button" block needs an href that is a web address');
+  }
+  const bg = esc(t.buttonBackground);
+  const fg = esc(t.buttonText);
+  const cell = `<td bgcolor="${bg}" style="background-color:${bg};border-radius:4px;mso-padding-alt:14px 26px;"><a href="${esc(b.href)}" style="display:block;padding:14px 26px;font-family:${c.bodyFont};font-size:17px;line-height:22px;font-weight:600;letter-spacing:.01em;color:${fg};text-decoration:none;text-align:center;border-radius:4px;${BREAK}">${esc(b.label)}</a></td>`;
+  const inner = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;max-width:100%;"><tr>${cell}</tr></table>`;
+  return table(
+    `<tr><td align="left" style="padding:0;">${inner}</td></tr>` +
+      (b.note
+        ? `<tr><td style="padding:10px 0 0 0;font-family:${c.bodyFont};font-size:15px;line-height:1.5;color:${c.ink};">${esc(b.note)}</td></tr>`
+        : ""),
+    "margin:6px 0 26px 0;",
+  );
+}
 
 /**
  * A pasted signature made fit for a letterhead without changing a word: its
@@ -413,7 +447,8 @@ export function renderLetterhead(variantId, config, person, email, signatureHtml
 /** The same email as plain text, the alternative part every letterhead ships with. */
 export function letterheadPlainText(email, person) {
   const parts = email.blocks.map((b) => {
-    if (b.type === "link") return [b.label, b.href, b.note].filter(Boolean).join("\n");
+    if (b.type === "link" || b.type === "button")
+      return [b.label, b.href, b.note].filter(Boolean).join("\n");
     if (b.type === "list")
       return [b.intro, ...b.items.map((x, i) => `${i + 1}) ${x}`)].filter(Boolean).join("\n\n");
     if (b.type === "figures")
