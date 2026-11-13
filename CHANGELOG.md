@@ -20,6 +20,41 @@
 - Optional contract fields added to `owner-statement/1`: `costs.subtotal` (`{ label, cents }`, checked against its rows), `groups[].rows[].note` (one line under a row), email summary percent rows carry `pct` and `lastPct`. `summary.foot` may be one foot or a list of feet, and a foot target that appears more than once means its last row.
 - Test fixtures (`src/owner-statement/fixtures/*.json`) hold real October 2026 figures with every name, address, invoice number and password replaced by a stand-in, because this repo is public. `build_fixtures.py` regenerates them from the catalog.
 
+## 0.17.0-alpenglow.4 (pre-release)
+- **guest-guide: the cover back to the approved board.**
+  1) Low covers keep the facts on the photograph at every window; the forced drop onto the arrival field on short phones and on laptops up to 820 px tall is gone. A desktop window 620 px tall or less takes the landscape-phone composition (photo and name left, timetable on the arrival field right), the one measured last resort.
+  2) A door or parking line too long for its row leaves the timetable and becomes one link in the live wording ("Getting in", "Parking") on the Directions line, with no row label beside it. Rows no longer read "Parking: Parking", and the desktop timetable is a balanced two by two (In, Wi-Fi, Door, Help) when parking jumps.
+  3) The In and Out times share one figure size, sized to their own column so both sit on one line down to 320 px.
+
+## 0.17.0-alpenglow.3 (pre-release)
+- **guest-guide: layout, video and icon fixes from the Sun Mountain and Euclid ports.**
+  1) Text rows and photo or video blocks render in separate boxes, so text always sits on the field and design-check measures it there (Cranbrook's "A Keurig coffee machine." was measured against its photo at iPad sizes).
+  2) Video: the captions track is added only when play starts (a `<track>` in the markup is fetched on load); a clip with no captions gets none; videos in numbered lists (Checkout) now render; a clip is capped at its own width and 72vh.
+  3) Icons: a house or unit number standing as its own word wins ("Apartment 202" is 202), then a letter-and-digit unit code ("2nd floor A2" is A2), never an ordinal; `GuideModel.iconText` sets the initials outright (1 to 4 letters or digits, validated).
+
+## 0.17.0-alpenglow.2 (pre-release)
+- **guest-guide: three fixes from the Columbus and Palisade previews.**
+  1) Offline keeps the brand faces. At save time the page now also hands the worker the same-origin stylesheets and font files it actually loaded (next/font hashes file names, so a site cannot list them); the saved page used to fall back to Georgia and Arial. Sites may still pass known URLs in `planGuide({ extraUrls })`. Proven in headless Chrome with a hashed font: offline, the heading still renders in the brand face.
+  2) Every standalone link (quick find, picks, phone, 911, cover rows) is at least 44 x 44 px; one-word quick-find links ("Pets") measured 41 px wide. Sites can drop their local patch.
+  3) Home Screen icons draw the house initials (a leading house number, else the first letters of two words) in the brand display face. `guideIconSvg(plan, brand, { font })` embeds the site's own face file; `guideIconSpec` gives next/og renderers the same text, colors, face and size.
+
+## 0.17.0-alpenglow.1 (pre-release)
+- **guest-guide v2, the "Alpenglow" template.** Additive: every 0.16 export still works.
+  1) `model.ts`: `GuideModel` and parts (`Unknown`/`Slot` for facts not on record, `WifiV2`, `PriceTable`, `LookV2`, `CoverV2`).
+  2) `copy.ts`: `TEMPLATE_LABELS` (live v1 wording beside held Alpenglow wording), `resolveCopy`, `HeldLine`, `Approval`, `heldStrings`, `draftTable`. Zero approvals prints live copy only; door timing needs a Guesty confirmation and a door-timing approval.
+  3) `brand.ts`: `GuideBrand`, `validateBrand` (contrast, light fields, banned faces, noBlue), `brandCss`. The noBlue hue window runs 190 to 290 degrees: navy measures 266 to 270 in LCh, outside the spec's 260.
+  4) `validate.ts`: `validateModel(model, { today })`.
+  5) `plan.ts`: `planGuide`, ported from the Sun Mountain v1 book.
+  6) `./guest-guide/alpenglow`: `AlpenglowGuide` and parts (server components, one inline stylesheet, one inline script with a CSP nonce), `guideHead`, `guideMetadata`.
+  7) `./guest-guide/static`: `renderGuideHtml` for static sites, under `tsx`.
+  8) `./guest-guide/sw`, `./guest-guide/manifest`, `./guest-guide/robots`: the offline worker, the Home Screen manifest and icon, `AI_CRAWLERS`, `aiGuideRules`, `robotsTxt`.
+  9) CLI: `web-kit guide-leaks` (the Sun Mountain leak script's exit contract) and `web-kit guide-check` (first-window essentials at 18 geometries).
+  10) Rows beyond text: `ItemV2.video` (0 KB until tapped), `SectionV2.links` (link rows), `PhotoV2.credit` (colophon attributions), and the `item-body` held-line target for short answers.
+  11) `react-dom` is an optional peer; `qrcode-generator` (MIT) draws the printed Wi-Fi code. See `docs/guest-guide.md`.
+
+## 0.17.0-alpenglow.0 (pre-release)
+- **guest-guide v2 types only** (`model.ts`, `copy.ts`, `brand.ts`), so the site ports could start.
+
 ## 0.16.0
 - **`desk/visits`: AI assistants named per engine, time on page and on site, regions in the summary.** Additive; records stored by 0.15.0 still read and fold.
   1) Each AI visit now names its engine (ChatGPT, Perplexity, Claude, Gemini, Copilot, DeepSeek, Grok, Meta AI, Poe, Mistral, You.com, Phind, Duck.ai) in a new `engines` count on the day record, beside the unchanged "AI assistants" group. New hosts: chat.deepseek.com, grok.com, meta.ai, poe.com, chat.mistral.ai, copilot.cloud.microsoft, duck.ai; Android app referrers for ChatGPT, Gemini, Claude, Perplexity, DeepSeek and Grok; link tags `gemini`, `copilot`, `perplexity.ai`, `claude.ai`. Google AI Overviews and AI Mode arrive as plain google.com and cannot be told apart, so they stay in "Google search". `sourceOf` returns `engine` for an AI visit; `AI_ENGINES` lists the names.
