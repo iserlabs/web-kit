@@ -258,8 +258,10 @@ export const ALPENGLOW_CSS = String.raw`
 
 /* The measured last resort, per window group (cover.fieldOn): where the photo's ground cannot carry the white
    facts at 4.5:1 behind the 0.35 shade, the facts move onto the arrival field, as the board's own fallback. Upright
-   windows keep the full photo and the name in its sky above the field; a landscape window takes the side-by-side
-   composition the short desktop window and the landscape phone already use */
+   windows keep the full photo and the name in its sky above the field. Desktop windows do the same: the photo stays
+   full bleed with the name on its sky, and the facts rows sit on the field as a full-width strip along the bottom
+   (Jake, 2026-11-13, "bottom strip" over the old 40/60 side-by-side). Short desktop windows and landscape phones
+   keep the side-by-side composition every low cover takes there */
 @media (max-width: 699px) and (orientation: portrait){
   .gg .cover--low[data-field-on~=phone] .cover__ground{background:var(--f-arrival);color:var(--ink);text-shadow:none;margin-top:0;padding-top:18px}
   .gg .cover--low[data-field-on~=phone] .copy{outline:2px solid var(--ink);outline-offset:0}
@@ -271,12 +273,8 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover--low[data-field-on~=tablet] .copy:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:none}
 }
 @media (min-width: 700px) and (orientation: landscape) and (min-height: 501px){
-  .gg .cover--low[data-field-on~=desktop]{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:0;justify-content:stretch}
-  .gg .cover--low[data-field-on~=desktop] .cover__photo{inset:0 60% 0 0;width:auto;height:auto}
   .gg .cover--low[data-field-on~=desktop] .cover__shade{display:none}
-  .gg .cover--low[data-field-on~=desktop] .cover__sky{grid-column:1;grid-row:1;padding:24px 32px 0}
-  .gg .cover--low[data-field-on~=desktop] .cover__name{font-size:min(calc(var(--name) * 1px),calc(var(--name) * 0.09vw))}
-  .gg .cover--low[data-field-on~=desktop] .cover__ground{grid-column:2;grid-row:1;display:flex;flex-direction:column;justify-content:center;margin:0;padding:24px var(--gut);background:var(--f-arrival);color:var(--ink);text-shadow:none}
+  .gg .cover--low[data-field-on~=desktop] .cover__ground{background:var(--f-arrival);color:var(--ink);text-shadow:none;margin-top:0;padding-top:24px}
   .gg .cover--low[data-field-on~=desktop] .copy{outline:2px solid var(--ink);outline-offset:0}
   .gg .cover--low[data-field-on~=desktop] .copy:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:none}
 }
