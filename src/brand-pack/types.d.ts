@@ -123,6 +123,10 @@ export interface BrandPackLetterhead {
   line?: string;
   soft?: string;
   link?: string;
+  /** The button block's ground. Defaults to the brand ink. */
+  buttonBackground?: string;
+  /** The button block's label color. Defaults to the paper. */
+  buttonText?: string;
   photoUrl?: string;
   photoAlt?: string;
   address?: string;
@@ -132,6 +136,8 @@ export interface BrandPackLetterhead {
 export type LetterheadBlock =
   | { type: "p" | "lead" | "close"; text: string }
   | { type: "link"; label?: string; href: string; note?: string; button?: string }
+  /** One painted button: `label` is its text, `href` a web address; plain text prints both. */
+  | { type: "button"; label: string; href: string; note?: string }
   | { type: "list"; intro?: string; items: string[] };
 
 export interface LetterheadEmail {
