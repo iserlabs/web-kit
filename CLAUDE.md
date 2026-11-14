@@ -43,6 +43,12 @@ env, utils, audits, brand-pack, artist, inquiry, owner-portal, owner-statement, 
   flag is reserved for phase-2 tooling (`web-kit artist init`, an audit check); nothing
   reads it yet and the export works without it.
 
+- `legal` builds every site's Privacy Policy and Terms and Conditions from one config
+  (`privacyPolicy`, `termsAndConditions`, `legalText`); `legal/consent` is the cookie choice
+  (`getConsent`, `setConsent`, `onConsentGranted`, GPC honored). Framework-free; the pages render in
+  each site. The ten launch items every site ships are in `docs/launch-checklist.md`, and
+  `audit --tier required` checks them through `checks/launch.mjs`.
+
 - `inquiry` is the one-question-per-screen inquiry flow (`defineInquiry`, `useInquiryFlow`,
   `createInquiryController`, `createInquiryHandler`/`createInquiryRoute`). Logic in the kit,
   `.ts` with no brand names; the visible UI is scaffolded into each site by
