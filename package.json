@@ -14,6 +14,8 @@
     "./tsconfig-next": "./src/tsconfig/tsconfig-next.json",
     "./tailwind": "./src/tailwind/contract.css",
     "./seo": "./src/seo/index.ts",
+    "./legal": "./src/legal/index.ts",
+    "./legal/consent": "./src/legal/consent.ts",
     "./schema": "./src/schema/index.ts",
     "./network": "./src/network/index.ts",
     "./proof": "./src/proof/index.ts",
