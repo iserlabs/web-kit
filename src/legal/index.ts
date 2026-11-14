@@ -164,7 +164,7 @@ export function privacyPolicy(c: LegalConfig): LegalDocument {
     heading: "Cookies",
     paragraphs: consent
       ? [
-          "Cookies the site needs to work are always on. Analytics and advertising cookies load only after you choose Accept in the cookie notice, and the site works the same if you decline. You can change your choice at any time with the Cookie settings link at the bottom of every page.",
+          `Cookies the site needs to work are always on. ${ads ? "Analytics and advertising cookies" : "Analytics cookies"} load only after you choose Accept in the cookie notice, and the site works the same if you decline. You can change your choice at any time with the Cookie settings link at the bottom of every page.`,
           "Browsers' Do Not Track setting has no common standard, so we do not respond to it. We do honor Global Privacy Control.",
         ]
       : [
