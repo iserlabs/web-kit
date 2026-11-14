@@ -56,15 +56,41 @@ export interface LegalConfig {
   service?: string;
 }
 
+export interface LegalTable {
+  /** Visible caption, also the table's accessible name. */
+  caption: string;
+  columns: string[];
+  /** One array of cells per row, same length as `columns`. The first cell names the row. */
+  rows: string[][];
+}
+
 export interface LegalSection {
+  /** Anchor id: the section is linkable as /privacy#<id>. */
   id: string;
   heading: string;
+  /** Rendered before the paragraphs when present. */
+  table?: LegalTable;
   paragraphs: string[];
 }
 
+/**
+ * How a site renders a document (the bar every legal page meets):
+ * 1) h1 title, then "Effective <date>" in a <time> element.
+ * 2) "At a glance": the `summary` lines as a short list in a quiet bordered panel, before anything
+ *    else. These are the plain-English promises; the sections below are the binding detail.
+ * 3) The intro paragraph, then "Contents": a numbered list of links to every section (#id).
+ * 4) Each section an h2 numbered to match the contents ("1. What we collect"), with `id` set
+ *    and `scroll-margin-top` clearing any sticky header. A table renders as a real <table> with
+ *    <caption> and <th scope="col">, horizontally scrollable inside its own wrapper on a phone,
+ *    never squeezing the page.
+ * 5) Reading column ~65ch, body 17-18px, line-height ~1.65, the site's own fonts and colors, light.
+ * 6) Print: hide header, footer, cookie notice and contents; black text; URLs stay readable.
+ */
 export interface LegalDocument {
   title: string;
   effective: string;
+  /** Plain-English promises shown first, 4 to 6 lines. */
+  summary: string[];
   intro: string;
   sections: LegalSection[];
 }
@@ -128,7 +154,49 @@ export function privacyPolicy(c: LegalConfig): LegalDocument {
       ? "This site does not ask for medical information, and you should not send it through a website form. Health information you give us as a patient is protected under our Notice of Privacy Practices, which governs it in place of this policy."
       : "We do not ask for government ID numbers, precise location, health information or other sensitive data through this site.",
   );
-  sections.push({ id: "collect", heading: "What we collect", paragraphs: collect });
+  const host = processors[0]?.name ?? "Vercel";
+  const helpers = processors.map((p) => p.name).filter((n) => n !== c.bookingEngine && n !== c.payments);
+  const rows: string[][] = [];
+  if (c.formFields) {
+    rows.push(["What you send us", c.formFields, "You, through a form or by email", "To answer you and follow up", listOf(helpers)]);
+  } else {
+    rows.push(["What you send us", "Whatever you choose to write to us", "You, by email", "To answer you and follow up", "Our email provider"]);
+  }
+  if (c.bookingEngine) {
+    rows.push(["Booking details", "Name, contact details, stay dates, guest count", "You, when you book", "To take and look after your booking", c.bookingEngine]);
+  }
+  if (c.bookingEngine || c.payments) {
+    rows.push(["Payment card", "Card number and billing details", "You, at checkout", "To take payment", `${c.payments ?? c.bookingEngine} only; we never see the full number`]);
+  }
+  if (c.newsletter) {
+    rows.push(["Email address for updates", "Your email address", "You, when you sign up", "To send the updates you asked for", listOf(helpers)]);
+  }
+  rows.push([
+    "Visit data",
+    "IP address, browser and device type, pages and times",
+    "Your browser, automatically",
+    "To run and secure the site",
+    listOf([host, ...(c.analytics?.cookieless ?? [])]),
+  ]);
+  if (consent) {
+    rows.push([
+      "Analytics",
+      "How you arrived and moved through the site",
+      "Cookies, only after you choose Accept",
+      ads ? "To improve the site and measure our ads" : "To improve the site",
+      listOf(c.analytics?.consentCookies ?? []),
+    ]);
+  }
+  sections.push({
+    id: "collect",
+    heading: "What we collect",
+    table: {
+      caption: "What we collect, at a glance",
+      columns: ["Information", "Examples", "Where it comes from", "Why", "Who else handles it"],
+      rows,
+    },
+    paragraphs: collect,
+  });
 
   const uses = ["to answer your inquiry and follow up on it"];
   if (c.bookingEngine) uses.push("to take, confirm and look after your booking");
@@ -229,9 +297,27 @@ export function privacyPolicy(c: LegalConfig): LegalDocument {
     paragraphs: [`Questions or requests about privacy: ${c.email}. ${c.legalName}.`],
   });
 
+  const summary = [
+    c.formFields || c.bookingEngine || c.payments || c.newsletter
+      ? "We collect only what you give us and the basic visit data every website receives."
+      : "We collect only the basic visit data every website receives, and whatever you choose to email us.",
+    "We never sell your information.",
+    consent
+      ? ads
+        ? "Analytics and advertising cookies load only if you say yes."
+        : "Analytics cookies load only if you say yes."
+      : "No tracking or advertising cookies.",
+  ];
+  if (c.bookingEngine || c.payments) {
+    summary.push(`Payments run through ${c.payments ?? c.bookingEngine}. We never see your full card number.`);
+  }
+  if (c.textMessages) summary.push("Your mobile number is never shared for marketing.");
+  summary.push(`You can see, correct or delete your information at any time: email ${c.email}.`);
+
   return {
     title: "Privacy Policy",
     effective: c.effective,
+    summary,
     intro: `This policy covers ${c.domain}, the website of ${operatedBy(c)} ("we", "us"). It explains what we collect, why, who handles it for us and what you can ask us to do with it.`,
     sections,
   };
@@ -342,6 +428,15 @@ export function termsAndConditions(c: LegalConfig): LegalDocument {
   return {
     title: "Terms and Conditions",
     effective: c.effective,
+    summary: [
+      "Use the site lawfully, and do not misuse its forms.",
+      c.bookingEngine
+        ? "Your booking confirmation and any rental agreement govern your stay."
+        : "Any work we do for you is governed by its own written agreement.",
+      "The words and photographs here belong to us or the people who licensed them.",
+      "The site is provided as is, and our liability for it is limited.",
+      `${c.state} law applies.`,
+    ],
     intro: `These terms govern your use of ${c.domain}, the website of ${operatedBy(c)} ("we", "us"). By using the site you agree to them. If you do not agree, please do not use it.`,
     sections,
   };
@@ -349,10 +444,14 @@ export function termsAndConditions(c: LegalConfig): LegalDocument {
 
 /** Plain text of a document, for a site that renders static HTML or Markdown. */
 export function legalText(doc: LegalDocument): string {
+  const table = (t: LegalTable | undefined): string[] =>
+    t ? [t.caption, ...t.rows.map((r) => r.map((cell, i) => `${t.columns[i]}: ${cell}`).join(". "))] : [];
   return [
     doc.title,
     `Effective ${doc.effective}`,
+    "At a glance",
+    ...doc.summary,
     doc.intro,
-    ...doc.sections.flatMap((s) => [s.heading, ...s.paragraphs]),
+    ...doc.sections.flatMap((s, i) => [`${i + 1}. ${s.heading}`, ...table(s.table), ...s.paragraphs]),
   ].join("\n\n");
 }

@@ -41,6 +41,29 @@ describe("legal pages", () => {
     expect(t).toContain("laws of the State of Colorado");
     expect(t).toContain("one hundred dollars ($100)");
   });
+  it("opens with a short summary of promises that match the facts", () => {
+    const none = privacyPolicy(base).summary;
+    expect(none.length).toBeGreaterThanOrEqual(4);
+    expect(none.length).toBeLessThanOrEqual(6);
+    expect(none).toContain("No tracking or advertising cookies.");
+    const ads = privacyPolicy({ ...base, bookingEngine: "Guesty", textMessages: true, analytics: { consentCookies: ["Meta Pixel"], advertising: true } }).summary;
+    expect(ads).toContain("Analytics and advertising cookies load only if you say yes.");
+    expect(ads.join(" ")).toContain("Payments run through Guesty");
+    expect(termsAndConditions(base).summary).toContain("New Jersey law applies.");
+  });
+  it("tabulates what is collected, with every row as wide as the header", () => {
+    const t = privacyPolicy({ ...base, formFields: "your name and email", bookingEngine: "Guesty", analytics: { consentCookies: ["Google Analytics"] } })
+      .sections.find((s) => s.id === "collect")?.table;
+    expect(t?.columns).toHaveLength(5);
+    for (const r of t?.rows ?? []) expect(r).toHaveLength(5);
+    expect(t?.rows.map((r) => r[0])).toEqual(["What you send us", "Booking details", "Payment card", "Visit data", "Analytics"]);
+  });
+  it("gives every section a unique anchor id", () => {
+    for (const doc of [privacyPolicy(base), termsAndConditions(base)]) {
+      const ids = doc.sections.map((s) => s.id);
+      expect(new Set(ids).size).toBe(ids.length);
+    }
+  });
   it("names the brand once when there is no separate entity", () => {
     const t = privacyPolicy({ ...base, legalName: "Example Stays" }).intro;
     expect(t).toContain("the website of Example Stays (");
