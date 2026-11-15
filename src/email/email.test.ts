@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   composeConfirmation,
   composeEmail,
-  confirmationBlocks,
+  confirmationContent,
   deliver,
   emailSubject,
   formatLongDate,
@@ -147,8 +147,41 @@ describe("confirmation", () => {
     expect(msg.text.length).toBeGreaterThan(50);
     expect(msg.html).toContain('content="light only"');
     expect(msg.html).toContain("max-width:600px");
-    expect(msg.html).toContain(">Example Stays</a>");
+    expect(msg.html).toContain("Example Stays</span>");
+    expect(msg.html).not.toContain("Times New Roman");
     expect(msg.html).not.toMatch(/prefers-color-scheme/);
+  });
+
+  it("is the Specimen: a sheet of what was received and the reference, the headline as the kind, the person's sign-off", () => {
+    expect(msg.html).toContain("Inquiry received.");
+    expect(msg.html).toContain("What you sent");
+    expect(msg.html).toContain("December 1 to January 5");
+    expect(msg.html).toContain(content.reference);
+    expect(msg.html).toContain("Hello Maria,");
+    expect(msg.html).not.toContain("Signature needed");
+    expect(msg.html).not.toMatch(/<table[^>]*bgcolor="#6b8f80"/);
+  });
+
+  it("draws the business's own logo with alt text when one is given, and a live wordmark when not", () => {
+    const withLogo = composeConfirmation({
+      ...content,
+      brand: {
+        ...brand,
+        specimen: {
+          logo: {
+            src: "https://example.test/logo.png",
+            width: 400,
+            height: 100,
+            alt: "Example Stays",
+          },
+        },
+      },
+    });
+    expect(withLogo.html).toMatch(
+      /<img src="https:\/\/example\.test\/logo\.png"[^>]*alt="Example Stays"/,
+    );
+    expect(lintMessage(withLogo)).toEqual([]);
+    expect(msg.html).not.toContain("<img");
   });
 
   it("stays far under the Gmail clip", () => {
@@ -166,7 +199,16 @@ describe("confirmation", () => {
   });
 
   it("greets without a name when there is none", () => {
-    expect(confirmationBlocks({ lead: "Got it." })[0]).toEqual({ type: "p", text: "Hello," });
+    expect(confirmationContent({ kind: "Inquiry received", lead: "Got it." }).lead).toEqual([
+      "Got it.",
+    ]);
+    expect(
+      confirmationContent({
+        kind: "Inquiry received",
+        recipientName: "Maria Lopez",
+        lead: "Got it.",
+      }).lead,
+    ).toEqual(["Hello Maria,", "Got it."]);
   });
 });
 
@@ -208,7 +250,7 @@ describe("compose", () => {
         kind: "K",
         who: "A",
         date: "2026-11-14",
-        blocks: [{ type: "p", text: "x" }],
+        content: { headline: "x.", lead: ["x"] },
       }),
     ).toThrow();
   });

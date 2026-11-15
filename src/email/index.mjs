@@ -1,22 +1,20 @@
 /**
- * The shared email framework: one letterhead layout, one subject convention, one reference format,
- * one plain-text part, and one explicit on/off switch per kind of email.
+ * The shared email framework: one design (the Specimen), one subject convention, one reference
+ * format, one plain-text part, and one explicit on/off switch per kind of email.
  *
  * What lives here is general. Facts about a business (its name, colors, header artwork, sender
  * address, the words of each email) live in that business's own repo and are passed in.
  *
- * Layout: the paper letterhead from brand-pack/letterheads.mjs, the same renderer the drafts Jake
- * sends himself use, so a form confirmation and a hand-sent letter share one design source.
+ * Layout: the Specimen (./specimen.mjs, generated from the sign-kit so the signing emails and the
+ * form receipts are one design): the business's logo, one large sentence, a sheet of what was
+ * received and the reference, and the person who answers. Hand-sent letters keep the paper
+ * letterhead in brand-pack/letterheads.mjs.
  *
  * Nothing in this file delivers mail. `deliver()` takes a transport the site already owns and
  * refuses unless the kind's switch is on.
  */
 
-import {
-  letterheadDocument,
-  letterheadPlainText,
-  renderLetterhead,
-} from "../brand-pack/letterheads.mjs";
+import { DEFAULT_FACES, makePalette, renderReceiptEmail } from "./specimen.mjs";
 
 /** Gmail clips a message body over about 102KB. Stay well under it. */
 export const GMAIL_CLIP_BYTES = 102 * 1024;
@@ -125,41 +123,80 @@ const first = (name) =>
     .split(/\s+/)[0];
 
 /**
- * The blocks of a confirmation: greeting, what was received, a reference, what happens next, who
+ * What a confirmation says, as the Specimen's content: a headline (the kind, as a sentence), the
+ * lead paragraphs, a sheet of what was received and the reference, then what happens next and who
  * replies. Every part is optional except `lead`.
  */
-export function confirmationBlocks({
+export function confirmationContent({
   recipientName,
+  headline,
+  kind,
   lead,
+  sheetTitle = "What you sent",
+  caption,
   received,
   reference,
   referenceLabel = "Reference",
   next,
   nextIntro = "What happens next:",
   replyLine,
-  close = "Thank you.",
+  close,
 }) {
   if (!lead) throw new Error("email: a confirmation needs a lead sentence");
-  const greeting = first(recipientName) ? `Hello ${first(recipientName)},` : "Hello,";
-  const rows = [
-    ...(received ?? []).map(([label, value]) => ({ label, value })),
-    ...(reference ? [{ label: referenceLabel, value: reference }] : []),
-  ].filter((r) => r.value !== undefined && String(r.value).trim() !== "");
-  return [
-    { type: "p", text: greeting },
-    { type: "lead", text: lead },
-    ...(rows.length ? [{ type: "ledger", rows }] : []),
-    ...(next?.length ? [{ type: "list", intro: nextIntro, items: next }] : []),
-    ...(replyLine ? [{ type: "p", text: replyLine }] : []),
-    { type: "close", text: close },
-  ];
+  const name = first(recipientName);
+  const rows = (received ?? [])
+    .map(([label, value]) => ({ label, value }))
+    .filter((r) => r.value !== undefined && String(r.value).trim() !== "");
+  const after = [];
+  if (next?.length) {
+    after.push(nextIntro);
+    for (const [i, item] of next.entries()) after.push(`${i + 1}) ${item}`);
+  }
+  if (replyLine) after.push(replyLine);
+  if (close) after.push(close);
+  return {
+    headline: headline ?? `${kind}.`,
+    lead: [...(name ? [`Hello ${name},`] : []), lead],
+    sheetTitle,
+    caption,
+    received: rows,
+    reference: reference ? { label: referenceLabel, value: String(reference) } : undefined,
+    after,
+  };
+}
+
+/**
+ * The Specimen's palette, faces and logo for a business, drawn from its brand-pack config. A site
+ * may refine any of them with `brand.specimen`:
+ *   { deep, gold, logo: { src, width, height, alt, markOnly? }, faces: { serif, sans, wordmark } }
+ * Without a logo the business name is set as live text, so there is never a hole.
+ */
+export function specimenLook(brand) {
+  const c = brand.config;
+  const l = c.letterhead ?? {};
+  const s = brand.specimen ?? {};
+  const palette = makePalette({
+    paper: l.paper ?? c.ground ?? "#ffffff",
+    ground: l.surround ?? "#f4f3f1",
+    ink: c.ink,
+    muted: l.soft,
+    rule: l.line ?? l.rule ?? "#d5cdc3",
+    band: s.deep ?? c.ink,
+    accent: s.gold ?? c.brand,
+  });
+  const faces = s.faces ?? {
+    serif: c.displayFont ?? DEFAULT_FACES.serif,
+    sans: c.bodyFont ?? DEFAULT_FACES.sans,
+    wordmark: c.displayFont ?? DEFAULT_FACES.wordmark,
+  };
+  return { palette, faces, logo: s.logo, fontsHref: brand.fontsHref ?? s.fontsHref };
 }
 
 /**
  * Build one email, ready for a transport. `brand` is client data:
- *   { business, config (the brand-pack config), person, from, replyTo, fontsHref?, variant? }
- * `blocks` is the body (see confirmationBlocks). Returns { from, to, replyTo, subject, html, text,
- * reference, headers }.
+ *   { business, config (the brand-pack config), person, from, replyTo, fontsHref?, specimen? }
+ * `content` is the Specimen's content (see confirmationContent). Returns { from, to, replyTo,
+ * subject, html, text, reference, headers }.
  */
 export function composeEmail({
   brand,
@@ -169,7 +206,7 @@ export function composeEmail({
   reference,
   date,
   timeZone,
-  blocks,
+  content,
   replyTo,
   from,
 }) {
@@ -177,19 +214,36 @@ export function composeEmail({
     throw new Error("email: brand needs business, config and person");
   }
   if (!to) throw new Error("email: no recipient");
+  if (!content?.headline || !content?.lead?.length) {
+    throw new Error("email: content needs a headline and a lead");
+  }
   const subject = emailSubject({ business: brand.business, kind, who, reference, date, timeZone });
-  const email = { subject, blocks };
-  const variant = brand.variant ?? "paper";
-  const body = renderLetterhead(variant, brand.config, brand.person, email, brand.signatureHtml);
-  const html = letterheadDocument(body, { subject, fontsHref: brand.fontsHref });
-  const text = letterheadPlainText(email, brand.person);
+  const look = specimenLook(brand);
+  const built = renderReceiptEmail({
+    ...look,
+    brandName: brand.business,
+    subject,
+    headline: content.headline,
+    lead: content.lead,
+    sheetTitle: content.sheetTitle ?? "What you sent",
+    caption: content.caption,
+    received: content.received ?? [],
+    reference: content.reference,
+    after: content.after,
+    signoff:
+      brand.person?.name && brand.person.name !== brand.business
+        ? { name: brand.person.name, title: brand.person.title }
+        : undefined,
+    legalLine: brand.legalLine ?? brand.business,
+    status: content.status,
+  });
   return {
     from: from ?? brand.from,
     to,
     replyTo: replyTo ?? brand.replyTo,
     subject,
-    html,
-    text,
+    html: built.html,
+    text: built.text,
     reference,
     headers: reference ? { "X-Entity-Ref-ID": reference } : {},
   };
@@ -215,7 +269,7 @@ export function composeConfirmation({
     timeZone,
     replyTo: content.replyTo,
     from: content.from,
-    blocks: confirmationBlocks({ recipientName, ...content }),
+    content: confirmationContent({ recipientName, kind, ...content }),
   });
 }
 

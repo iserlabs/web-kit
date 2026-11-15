@@ -1,5 +1,5 @@
 {
   "extends": ["./src/biome/biome.base.json"],
-  "files": { "includes": ["**", "!**/*.css"] },
+  "files": { "includes": ["**", "!**/*.css", "!src/email/specimen.mjs", "!src/email/specimen.d.mts"] },
   "linter": { "rules": { "correctness": { "noComponentHookFactories": "warn" } } }
 }
