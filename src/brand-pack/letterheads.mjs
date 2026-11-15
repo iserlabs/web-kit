@@ -134,9 +134,13 @@ const tokens = (c) => {
 
 /** The header image, or a visible unfilled state where it will go. */
 const header = (c, t, width = t.headerWidth, align = "center") =>
-  isUnfilled(t.headerUrl)
-    ? `<div style="display:inline-block;padding:14px 18px;border:2px dashed ${c.accent};color:${c.accent};font-family:${c.bodyFont};font-size:13px;">No letterhead image yet: ${esc(c.wordmark)}</div>`
-    : `<a href="${esc(c.siteUrl)}" style="text-decoration:none;display:inline-block;"><img src="${esc(t.headerUrl)}" width="${width}" alt="${esc(t.headerAlt)}" style="display:${align === "center" ? "inline-block" : "block"};width:${width}px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;color:${c.ink};font-family:${c.displayFont};font-size:22px;"></a>`;
+  isUnfilled(t.headerUrl) && c.letterhead?.textHeader === true
+    ? // A business with no header artwork yet sets `letterhead.textHeader: true`: its name is set in
+      // type and linked to the site. It is real text, so it also survives images-off.
+      `<a href="${esc(c.siteUrl)}" style="text-decoration:none;display:inline-block;font-family:${c.displayFont};font-size:26px;line-height:1.2;color:${c.ink};">${esc(c.wordmark)}</a>`
+    : isUnfilled(t.headerUrl)
+      ? `<div style="display:inline-block;padding:14px 18px;border:2px dashed ${c.accent};color:${c.accent};font-family:${c.bodyFont};font-size:13px;">No letterhead image yet: ${esc(c.wordmark)}</div>`
+      : `<a href="${esc(c.siteUrl)}" style="text-decoration:none;display:inline-block;"><img src="${esc(t.headerUrl)}" width="${width}" alt="${esc(t.headerAlt)}" style="display:${align === "center" ? "inline-block" : "block"};width:${width}px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;color:${c.ink};font-family:${c.displayFont};font-size:22px;"></a>`;
 
 const siteLabel = (c) => c.siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
