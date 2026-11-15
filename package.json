@@ -54,7 +54,15 @@
     "./desk/visits": "./src/desk/visits.ts",
     "./observability": "./src/observability/index.ts",
     "./observability/env": "./src/observability/env.ts",
-    "./observability/server": "./src/observability/server.ts"
+    "./observability/server": "./src/observability/server.ts",
+    "./email": {
+      "types": "./src/email/index.d.mts",
+      "default": "./src/email/index.mjs"
+    },
+    "./email/preview": {
+      "types": "./src/email/preview.d.mts",
+      "default": "./src/email/preview.mjs"
+    }
   },
   "bin": {
     "web-kit": "./bin/web-kit.mjs"

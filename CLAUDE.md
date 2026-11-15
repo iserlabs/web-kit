@@ -23,7 +23,7 @@ or commit SHA in their `package.json` (`github:iserlabs/web-kit#<ref>`).
 ## Exports
 
 `@iserlabs/web-kit/{biome, tsconfig, tsconfig-next, tailwind, seo, schema, forms,
-env, utils, audits, brand-pack, artist, inquiry, owner-portal, owner-statement, desk/*, observability, observability/env, observability/server}`. Notes:
+env, utils, audits, brand-pack, artist, inquiry, owner-portal, owner-statement, email, desk/*, observability, observability/env, observability/server}`. Notes:
 - `tsconfig` is **lib-oriented** (ES2022 / `noUncheckedIndexedAccess` /
   `verbatimModuleSyntax`) and breaks Next apps — Next sites extend
   `tsconfig-next` instead (the Next-safe preset).
@@ -71,6 +71,14 @@ env, utils, audits, brand-pack, artist, inquiry, owner-portal, owner-statement, 
   preview (`statementShareMeta`, `renderStatementShareCard`; see `src/owner-statement/README.md`). `.mjs` plus
   `index.d.ts`, framework free; every rule scoped under `.os`. Fixtures carry real figures but
   stand-in names (public repo). The sites keep their own model files and logos.
+
+- `email` is the one framework for a site's automatic emails: `composeConfirmation` (paper letterhead from
+  `brand-pack/letterheads.mjs`, plain-text part, reference number), `emailSubject`
+  ("Business | what | name, Month D, YYYY"), `makeReference`, `mailSwitch` (a kind sends only when its
+  variable is exactly 1/true/on/yes), `deliver` (hands a message to the site's own transport only when the
+  switch is on), `lintMessage` (the standard as checks) and `email/preview` (`writePreviews`). It never
+  delivers mail itself and holds no client facts. A business with no header artwork yet sets
+  `letterhead.textHeader: true` in its brand config. See `docs/email.md`.
 
 ## CLI
 
