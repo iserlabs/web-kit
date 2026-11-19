@@ -16,6 +16,8 @@ function render(name: string, opts: Partial<Parameters<typeof renderStatement>[1
   return renderStatement(load(name), { logo: LOGO, pdfHref: "/statement.pdf", ...opts });
 }
 
+const sentence = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
 function count(haystack: string, needle: string): number {
   return haystack.split(needle).length - 1;
 }
@@ -36,8 +38,9 @@ describe("what the page carries", () => {
       expect(html).toContain(m.business);
       expect(html).toContain(m.monthLabel);
       expect(html).toContain(m.owner.name);
-      expect(html).toContain(m.moves.headline);
-      expect(html).toContain(m.moves.line);
+      // polish findings 8 and 9: the label drops the repeated month; the line reads as a sentence
+      expect(html).toContain(m.moves.headline.replace(/[,\s]+(?:at the close of )?October 2026$/, ""));
+      expect(html).toContain(sentence(m.moves.line));
       expect(title).toContain(m.monthLabel);
       for (const g of m.groups) {
         for (const r of g.rows) expect(html).toContain(`>${r.ref}<`);
@@ -56,7 +59,7 @@ describe("what the page carries", () => {
     const sms = render("sun-mountain").html;
     expect(sms).toContain('class="os__big"');
     expect(sms).toContain(">$1,709.01<");
-    expect(sms).toContain("by bank transfer, November 2, 2026");
+    expect(sms).toContain("By bank transfer, November 2, 2026");
     const ch = render("columbus").html;
     expect(ch).toContain(`>${formatCents(load("columbus").moves.cents)}<`);
     expect(ch).toContain("due date not set yet");
@@ -68,7 +71,7 @@ describe("what the page carries", () => {
       if (m.moves.date !== null || m.moves.direction === "none" || !m.moves.dateUnknown) continue;
       const { html } = render(name);
       const line = html.match(/<p class="os__line">([^<]*)<\/p>/)?.[1] ?? "";
-      expect(line).toBe(`${m.moves.line}, ${m.moves.dateUnknown}`);
+      expect(line).toBe(sentence(`${m.moves.line}, ${m.moves.dateUnknown}`));
       expect(count(html, m.moves.dateUnknown)).toBe(1);
     }
   });
@@ -110,7 +113,7 @@ describe("what the page carries", () => {
   it("year to date unknown: a dash and the reason, once", () => {
     const m = load("sun-mountain");
     const { html } = render("sun-mountain");
-    expect(count(html, m.summary.ytd.reason as string)).toBe(1);
+    expect(count(html, sentence(m.summary.ytd.reason as string))).toBe(1);
     expect(html).toContain('class="os__ytd-none"');
     expect(html).toContain(">&ndash;<");
   });
@@ -318,7 +321,7 @@ function unscoped(css: string): string[] {
         j++;
       }
       const body = src.slice(open + 1, j - 1);
-      if (head.startsWith("@media") || head.startsWith("@supports")) walk(body);
+      if (head.startsWith("@media") || head.startsWith("@supports") || head.startsWith("@container")) walk(body);
       else if (head.startsWith("@page") || head.startsWith("@font-face")) {
         // page rules cannot be scoped; they are the print sheet itself
       } else {
@@ -368,7 +371,8 @@ describe("css", () => {
     const css = render("sun-mountain").css;
     expect(css).toContain('var(--font-newsreader, "Newsreader")');
     expect(css).toContain('var(--font-instrument-sans, "Instrument Sans")');
-    expect(render("palisade").css).toContain('var(--font-geist-mono, "Geist Mono")');
+    // polish finding 12: Palisade figures are Instrument Sans; Geist Mono is for labels only
+    expect(render("palisade").css).toMatch(/--os-figures:var\(--font-instrument-sans/);
   });
 
   it("a site can override the stacks", () => {

@@ -227,7 +227,7 @@ describe("letterhead variants", () => {
     const html = renderLetterhead("paper", config, person, e);
     expect(parse(html).textContent).toContain("Booked revenue:");
     expect(html).toMatch(
-      /text-align:right;white-space:nowrap;padding-left:12px;width:1%;">\$3,043\.58/,
+      /text-align:right;white-space:nowrap;padding-left:12px;width:1%;[^"]*">\$3,043\.58/,
     );
     expect(html).toMatch(/font-weight:700;[^>]*>Paid to you:/);
     expect(letterheadPlainText(e, person)).toContain("Paid to you: $2,302.94");

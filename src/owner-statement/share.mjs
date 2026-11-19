@@ -47,13 +47,32 @@ function checkModel(model) {
   }
 }
 
-/** The owner's name and greeting as whole words of three letters or more. */
+/** Accents off, so "José Peña" and "Jose Pena" are one name (polish finding 6). */
+const fold = (text) => String(text).normalize("NFD").replace(/\p{M}+/gu, "");
+
+/** Words in a name that are joiners or particles, never a name on their own. */
+const NOT_A_NAME = /^(and|the|of|de|del|della|der|den|di|da|du|la|le|van|von|y|mr|mrs|ms|dr|jr|sr|llc|inc|trust|family)$/i;
+
+/**
+ * The owner's name and greeting as whole words, accents folded. Polish finding 6: two-letter names
+ * ("Bo Li") count too; a two-letter word is matched exactly as the name writes it, so "Mo" never
+ * trips on the state "MO".
+ */
 function ownerWords(model) {
-  const words = `${model.owner?.name ?? ""} ${model.owner?.greeting ?? ""}`
+  const words = fold(`${model.owner?.name ?? ""} ${model.owner?.greeting ?? ""}`)
     .split(/[^\p{L}'-]+/u)
     .flatMap((w) => w.split("-"))
-    .filter((w) => w.length > 2 && !/^(and|the)$/i.test(w));
+    .filter((w) => w.length > 1 && !NOT_A_NAME.test(w));
   return [...new Set(words)];
+}
+
+/**
+ * The street the property sits on, as its postal line writes it ("2612 Lark Dr"). A surname that
+ * is also the street name is part of a legitimate address there, and only there.
+ */
+function streetOf(model) {
+  const street = String(model.property?.line ?? "").split(",")[0]?.trim() ?? "";
+  return /\d/.test(street) ? street : "";
 }
 
 /** Throws when a string bound for the public card or tags carries money or the owner's name. */
@@ -61,12 +80,19 @@ function guard(model, what, value) {
   if (MONEY.test(value)) {
     throw new Error(`owner-statement: the share ${what} would carry money: "${value}"`);
   }
+  // Polish finding 6: the street's own words are set aside before the name check, so "Mark Lark"
+  // at 2612 Lark Dr passes, while "Lark family cabin" is still refused.
+  const street = streetOf(model);
+  let text = fold(value);
+  if (street) {
+    text = text.replace(new RegExp(fold(street).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "giu"), " ");
+  }
   for (const word of ownerWords(model)) {
     const re = new RegExp(
       `(^|[^\\p{L}])${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^\\p{L}])`,
-      "iu",
+      word.length > 2 ? "iu" : "u",
     );
-    if (re.test(value)) {
+    if (re.test(text)) {
       throw new Error(`owner-statement: the share ${what} would carry the owner's name`);
     }
   }
