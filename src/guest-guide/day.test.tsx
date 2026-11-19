@@ -31,31 +31,37 @@ const visible = (h: string) =>
     .replace(/\s+/g, " ");
 
 describe("planDay", () => {
-  it.each(FIXTURES)("$id: the day comes first, numbered in reading order, Help last", ({ model, brand }) => {
-    const d = planDay(build(model, brand));
-    const nums = [...d.day.map((c) => c.number), ...d.rest.map((c) => c.number), d.help.number];
-    expect(nums).toEqual(nums.map((_, i) => i + 1));
-    for (const c of d.day) expect(DAY_CHAPTERS).toContain(c.id);
-    for (const c of d.rest) expect(DAY_CHAPTERS).not.toContain(c.id);
-    expect(d.stops[0]?.id).toBe("cover");
-    expect(d.stops.at(-1)?.id).toBe("help");
-    expect(d.stops).toHaveLength(d.day.length + d.rest.length + 2);
-  });
+  it.each(FIXTURES)(
+    "$id: the day comes first, numbered in reading order, Help last",
+    ({ model, brand }) => {
+      const d = planDay(build(model, brand));
+      const nums = [...d.day.map((c) => c.number), ...d.rest.map((c) => c.number), d.help.number];
+      expect(nums).toEqual(nums.map((_, i) => i + 1));
+      for (const c of d.day) expect(DAY_CHAPTERS).toContain(c.id);
+      for (const c of d.rest) expect(DAY_CHAPTERS).not.toContain(c.id);
+      expect(d.stops[0]?.id).toBe("cover");
+      expect(d.stops.at(-1)?.id).toBe("help");
+      expect(d.stops).toHaveLength(d.day.length + d.rest.length + 2);
+    },
+  );
 
-  it.each(FIXTURES)("$id: each quick answer sits once, at the head of its chapter", ({ model, brand }) => {
-    const plan = build(model, brand);
-    const d = planDay(plan);
-    for (const c of d.day) {
-      const firstNonAnswer = c.items.findIndex((i) => i.kind !== "answer");
-      if (firstNonAnswer >= 0)
-        expect(c.items.slice(firstNonAnswer).some((i) => i.kind === "answer")).toBe(false);
-    }
-    const ids = [
-      ...d.day.flatMap((c) => c.items.flatMap((i) => ("id" in i && i.id ? [i.id] : []))),
-      ...d.rest.flatMap((c) => c.answers.map((a) => a.id)),
-    ];
-    expect(new Set(ids).size).toBe(ids.length);
-  });
+  it.each(FIXTURES)(
+    "$id: each quick answer sits once, at the head of its chapter",
+    ({ model, brand }) => {
+      const plan = build(model, brand);
+      const d = planDay(plan);
+      for (const c of d.day) {
+        const firstNonAnswer = c.items.findIndex((i) => i.kind !== "answer");
+        if (firstNonAnswer >= 0)
+          expect(c.items.slice(firstNonAnswer).some((i) => i.kind === "answer")).toBe(false);
+      }
+      const ids = [
+        ...d.day.flatMap((c) => c.items.flatMap((i) => ("id" in i && i.id ? [i.id] : []))),
+        ...d.rest.flatMap((c) => c.answers.map((a) => a.id)),
+      ];
+      expect(new Set(ids).size).toBe(ids.length);
+    },
+  );
 
   it("Yale: the door answer is the door line without the sentence the cover prints, then its steps", () => {
     const plan = build(yaleFixture, FIXTURES[0]?.brand as GuideBrand);
@@ -84,27 +90,33 @@ describe("planDay", () => {
 });
 
 describe("the Day rail page", () => {
-  it.each(FIXTURES)("$id: every in-page link lands on an element on the page", ({ model, brand }) => {
-    for (const h of [html(model, brand), html(model, brand, ALL_APPROVED)]) {
-      const ids = new Set([...h.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
-      for (const [, ref] of h.matchAll(/href="#([^"]+)"/g)) expect(ids, ref).toContain(ref);
-      const all = [...h.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
-      expect(new Set(all).size, "ids are unique").toBe(all.length);
-    }
-  });
+  it.each(FIXTURES)(
+    "$id: every in-page link lands on an element on the page",
+    ({ model, brand }) => {
+      for (const h of [html(model, brand), html(model, brand, ALL_APPROVED)]) {
+        const ids = new Set([...h.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+        for (const [, ref] of h.matchAll(/href="#([^"]+)"/g)) expect(ids, ref).toContain(ref);
+        const all = [...h.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
+        expect(new Set(all).size, "ids are unique").toBe(all.length);
+      }
+    },
+  );
 
-  it.each(FIXTURES)("$id: one h1, tel:911 once, the rail and its dialog once", ({ model, brand }) => {
-    const h = html(model, brand);
-    expect(h.match(/<h1[\s>]/g)).toHaveLength(1);
-    expect(h.match(/href="tel:911"/g)).toHaveLength(1);
-    expect(h.match(/<nav class="rl"/g)).toHaveLength(1);
-    expect(h.match(/<dialog class="rl-sheet"/g)).toHaveLength(1);
-    expect(h).toContain('closedby="any"');
-    expect(h).toContain('aria-label="Contents"');
-    expect(h).toContain('aria-label="Back"');
-    expect(h).toContain('aria-label="Next"');
-    expect(h).toContain('aria-label="Close"');
-  });
+  it.each(FIXTURES)(
+    "$id: one h1, tel:911 once, the rail and its dialog once",
+    ({ model, brand }) => {
+      const h = html(model, brand);
+      expect(h.match(/<h1[\s>]/g)).toHaveLength(1);
+      expect(h.match(/href="tel:911"/g)).toHaveLength(1);
+      expect(h.match(/<nav class="rl"/g)).toHaveLength(1);
+      expect(h.match(/<dialog class="rl-sheet"/g)).toHaveLength(1);
+      expect(h).toContain('closedby="any"');
+      expect(h).toContain('aria-label="Contents"');
+      expect(h).toContain('aria-label="Back"');
+      expect(h).toContain('aria-label="Next"');
+      expect(h).toContain('aria-label="Close"');
+    },
+  );
 
   it.each(FIXTURES)("$id: the day body adds no words but the rail's", ({ model, brand }) => {
     const plan = build(model, brand);
