@@ -27,19 +27,49 @@ const DASH = "&ndash;";
 const SAFE_HREF = /^(https?:\/\/|\/(?![/\\])|\.{1,2}\/|#)/i;
 const safeHref = (href) => (typeof href === "string" && SAFE_HREF.test(href) ? href : null);
 
+/** Polish finding 5: a date that is not YYYY-MM-DD prints as written, never "November NaN". */
+function isoParts(iso) {
+  const hit = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
+  const month = hit ? MONTHS[Number(hit[2]) - 1] : undefined;
+  return hit && month ? { y: Number(hit[1]), month, d: Number(hit[3]) } : null;
+}
 function longDate(iso) {
-  const [y, m, d] = String(iso).split("-").map(Number);
-  return `${MONTHS[(m ?? 1) - 1]} ${d}, ${y}`;
+  const p = isoParts(iso);
+  return p ? `${p.month} ${p.d}, ${p.y}` : String(iso);
 }
 function shortDate(iso) {
-  const [, m, d] = String(iso).split("-").map(Number);
-  return `${(MONTHS[(m ?? 1) - 1] ?? "").slice(0, 3)} ${d}`;
+  const p = isoParts(iso);
+  return p ? `${p.month.slice(0, 3)} ${p.d}` : String(iso);
 }
 
+/** First letter up (polish findings 7 and 8: a line or note never starts lowercase). */
+const sentence = (text) => {
+  const t = String(text).trim();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+const reEsc = (t) => String(t).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Polish finding 9: the label over the big number drops the month the masthead already prints
+ * ("From you, October 2026" reads "From you"), so it never wraps to leave "2026" alone at 390.
+ */
+function withoutMonth(headline, model) {
+  const months = [model.monthLabel, model.monthShort].filter(Boolean).map(reEsc).join("|");
+  const out = String(headline)
+    .replace(new RegExp(`[,\\s]+(?:at the close of |for |in )?(?:${months})\\s*$`, "i"), "")
+    .trim();
+  return out || headline;
+}
+
+/** A dotted word (a channel such as Booking.com) may wrap after its dot before anywhere else. */
+const breakable = (text) => esc(text).replace(/([a-z])\.([a-z])/gi, "$1.<wbr>$2");
+
 const cell = (column, value) => {
+  // Polish finding 4: a missing text cell prints empty, never the word "undefined".
+  if (value === undefined || value === null) return "";
   if (column.kind === "money") return fmt(value);
   if (column.kind === "int") return String(value);
-  return esc(value);
+  return breakable(value);
 };
 
 /** The text width of the sheet on the narrowest phone (320px, 16px each side), in rem. */
@@ -73,9 +103,27 @@ function phoneColumns(columns, refRem, phoneRem) {
 const roundUp = (n) => Math.ceil(n * 10) / 10;
 const widest = (texts) => Math.max(0, ...texts.map((t) => String(t).length));
 
-/** Room, in rem, for the widest printed figure: its characters, in the figures' own face and size. */
+/**
+ * Advance, in em, of the narrow marks in a printed figure, measured in the brand faces at regular
+ * and bold (2026-11-13) and rounded up: commas and periods, parentheses, the dollar sign, a dash.
+ * A digit takes the brand's own `figureAdvance`.
+ */
+const MARK_EM = { ",": 0.3, ".": 0.3, "(": 0.36, ")": 0.36, $: 0.66, "-": 0.47 };
+
+/** Width of one figure in em: digits at the brand's advance, marks at their own. */
+function figureEm(text, tokens) {
+  let em = 0;
+  for (const ch of String(text)) em += MARK_EM[ch] ?? tokens.figureAdvance;
+  return em;
+}
+
+/**
+ * Room, in rem, for the widest printed figure, in the figures' own face and size. Polish finding
+ * 2: counting every mark as a digit made money columns wider than their figures and squeezed the
+ * text columns until a channel name ran into the nights; each mark now counts at its own width.
+ */
 function figureRem(texts, tokens) {
-  return widest(texts) * tokens.figureAdvance * tokens.figureScale + 0.4;
+  return Math.max(0, ...texts.map((t) => figureEm(t, tokens))) * tokens.figureScale + 0.4;
 }
 
 /** Room for the longest word of a heading (set at .875rem), so a heading can wrap but never break a word. */
@@ -98,7 +146,7 @@ function plain(column, value) {
 /** A figure column's width in rem, or null for a text column (which takes a share of what is left). */
 function trackRem(column, texts, tokens, wide) {
   const need = Math.max(figureRem(texts, tokens), headingRem(column.label));
-  if (column.kind === "money") return roundUp(wide ? Math.max(need, 6.4) : need);
+  if (column.kind === "money") return roundUp(need);
   if (column.kind === "int") return roundUp(Math.max(need, wide ? 3 : 2.4));
   return null;
 }
@@ -123,8 +171,23 @@ function groupLayout(g, tokens) {
       phone.push(first ? "minmax(0,1fr)" : p === null ? "minmax(0,.8fr)" : `${p}rem`);
     }
   });
-  return { keep, vars: `--os-cols-phone:${phone.join(" ")};--os-cols-wide:${wide.join(" ")}` };
+  // Polish finding 16: the room the wide grid needs, so a narrower sheet (or text at 200%) gets
+  // the phone grid instead of overlapping columns: figure tracks, the ref, the gaps, and
+  // WIDE_TEXT_REM for each text column.
+  const wideRem =
+    refRem +
+    g.columns.reduce((t, c, i) => t + (trackRem(c, texts[i], tokens, true) ?? WIDE_TEXT_REM), 0) +
+    WIDE_GAP_REM * g.columns.length;
+  return {
+    keep,
+    wideRem,
+    vars: `--os-cols-phone:${phone.join(" ")};--os-cols-wide:${wide.join(" ")}`,
+  };
 }
+
+/** The least room a text column keeps in the wide stay grid, and the wide column gap (10px). */
+const WIDE_TEXT_REM = 3;
+const WIDE_GAP_REM = 0.625;
 
 /** The width of one figure column in the summary and in an opened breakdown. */
 function columnVars(texts, headings, tokens) {
@@ -138,18 +201,30 @@ function summaryStacks(texts, headings, tokens, columns) {
   return PHONE_REM - columns * (c + 0.625) < TEXT_MIN_REM;
 }
 
+/**
+ * A row label with its dotted leader. Polish finding 10: the leader is drawn under the label and
+ * the label's own paper covers it, so on a wrapped label the dots show only on the last line,
+ * running to the figure, instead of a 12px stub beside the first line.
+ */
+const leader = (label) =>
+  `<span class="os__lb"><span class="os__lt">${esc(label)}</span><span class="os__dots"></span></span>`;
+
 function renderSummary(m, tokens) {
   const s = m.summary;
   const known = s.ytd.known;
   const rows = s.rows
     .map((r) => {
       const ytd = known ? fmt(r.ytd) : DASH;
-      return `<li class="os__row--${r.role}"><span class="os__lb">${esc(r.label)}<span class="os__dots"></span></span><span class="os__num">${fmt(r.month)}</span><span class="os__num os__y${known ? "" : " os__c--minor"}">${ytd}</span></li>`;
+      return `<li class="os__row--${r.role}">${leader(r.label)}<span class="os__num">${fmt(r.month)}</span><span class="os__num os__y${known ? "" : " os__c--minor"}">${ytd}</span></li>`;
     })
     .join("");
+  // Polish finding 7: the reason once, as a sentence, prefixed with the column label only when it
+  // does not already start with it ("Year to date is not shown because ...").
+  const reason = sentence(String(s.ytd.reason ?? "").replace(/\.\s*$/, ""));
+  const named = reason.toLowerCase().startsWith(String(s.columns.ytd).toLowerCase());
   const note = known
     ? ""
-    : `<p class="os__ytd-none">${esc(s.columns.ytd)}: ${DASH} ${esc(String(s.ytd.reason).replace(/\.$/, ""))}.</p>`;
+    : `<p class="os__ytd-none">${named ? "" : `${esc(s.columns.ytd)}: `}${esc(reason)}.</p>`;
   const mod = known ? " os__colhead--ytd" : "";
   const figures = s.rows.flatMap((r) => [fmt(r.month), known ? fmt(r.ytd) : "-"]);
   const headings = [s.columns.month, s.columns.ytd];
@@ -162,7 +237,7 @@ function renderDetail(detail, tokens) {
   const lines = detail
     .map(
       (d) =>
-        `<li${d.strong ? ' class="os__strong"' : ""}><span class="os__lb">${esc(d.label)}<span class="os__dots"></span></span><span class="os__num">${fmt(d.cents)}</span></li>`,
+        `<li${d.strong ? ' class="os__strong"' : ""}>${leader(d.label)}<span class="os__num">${fmt(d.cents)}</span></li>`,
     )
     .join("");
   const vars = columnVars(
@@ -171,6 +246,43 @@ function renderDetail(detail, tokens) {
     tokens,
   );
   return `<ol class="os__rows" style="${vars}">${lines}</ol>`;
+}
+
+/**
+ * Polish findings 1, 2 and 21: the stay table as a real table, for paper only. Its head (the
+ * property, then the column names) repeats at the top of every printed page; columns size to
+ * their content, so a long channel name wraps inside its own cell; each breakdown prints as one
+ * compact line under its stay, every line and figure kept. Hidden on screen, where the grid with
+ * its opening rows serves.
+ */
+function printTable(g) {
+  const span = g.columns.length + 1;
+  const fig = (c) => (c.kind === "text" ? "" : ' class="os__pn"');
+  const td = (c, v) => `<td${fig(c)}>${v === undefined || v === null ? "" : cell(c, v)}</td>`;
+  const head =
+    `<thead><tr><th class="os__pprop" colspan="${span}" scope="colgroup">${esc(g.property)}</th></tr>` +
+    `<tr><th scope="col">Ref</th>${g.columns.map((c) => `<th scope="col"${fig(c)}>${esc(c.label)}</th>`).join("")}</tr></thead>`;
+  const bodies = g.rows
+    .map((r) => {
+      const cells = g.columns.map((c) => td(c, r.cells[c.key])).join("");
+      const note = r.note
+        ? `<tr class="os__pnote"><td></td><td colspan="${span - 1}">${esc(r.note)}</td></tr>`
+        : "";
+      const lines = (r.detail ?? []).map(
+        (d) =>
+          `<span class="os__pd${d.strong ? " os__strong" : ""}">${esc(d.label)} <span class="os__pn">${fmt(d.cents)}</span></span>`,
+      );
+      const det = lines.length
+        ? `<tr class="os__pdet"><td></td><td colspan="${span - 1}">${lines.join('<span class="os__psep" aria-hidden="true"> · </span>')}</td></tr>`
+        : "";
+      return `<tbody><tr><td class="os__pref">${esc(r.ref)}</td>${cells}</tr>${note}${det}</tbody>`;
+    })
+    .join("");
+  const gnote = g.note ? `<tr class="os__pnote"><td colspan="${span}">${esc(g.note)}</td></tr>` : "";
+  const sub = g.columns
+    .map((c, i) => (i === 0 ? `<td>${esc(g.subtotal.label)}</td>` : td(c, g.subtotal.cells[c.key])))
+    .join("");
+  return `<table class="os__ptbl">${head}${bodies}<tbody class="os__psub">${gnote}<tr><td></td>${sub}</tr></tbody></table>`;
 }
 
 function renderGroup(g, showTitle, tokens) {
@@ -200,7 +312,7 @@ function renderGroup(g, showTitle, tokens) {
     .join("");
   const note = g.note ? `<p class="os__gnote">${esc(g.note)}</p>` : "";
   const title = showTitle ? `<h2 class="os__cap os__h">${esc(g.title)}</h2>` : "";
-  return `<section class="os__sec">${title}<h3 class="os__prop-h">${esc(g.property)}</h3><div class="os__tbl" style="${vars}">${head}${rows}${note}<div class="os__srow os__ssub"><span class="os__ref"></span>${subCells}</div></div></section>`;
+  return `<section class="os__sec">${title}<h3 class="os__prop-h">${esc(g.property)}</h3><div class="os__tbl" style="${vars}">${head}${rows}${note}<div class="os__srow os__ssub"><span class="os__ref"></span>${subCells}</div></div>${printTable(g)}</section>`;
 }
 
 function link(href, text) {
@@ -262,14 +374,24 @@ export function renderStatement(model, options) {
     figures: fonts.figures ?? tokens.figures,
   };
   const footer = `${model.monthLabel} owner statement, ${model.property.label}`;
-  const css = statementCss(tokens, stacks, { footer });
+  const wideRem = Math.max(0, ...model.groups.map((g) => groupLayout(g, tokens).wideRem));
+  const css = statementCss(tokens, stacks, { footer, wideRem: roundUp(wideRem) });
 
   const mv = model.moves;
   const big = mv.direction === "none" ? "Nothing moves" : fmt(mv.cents);
-  const line =
+  // Polish finding 8: the line under the big number reads as a sentence.
+  const line = sentence(
     mv.date === null && mv.direction !== "none" && mv.dateUnknown
       ? `${mv.line}, ${mv.dateUnknown}`
-      : mv.line;
+      : mv.line,
+  );
+  // Polish findings 8 and 9: the label over the big number, without the month; when nothing
+  // moves and the label would only say so again, the big words stand alone.
+  const capText = withoutMonth(mv.headline, model);
+  const cap =
+    mv.direction === "none" && /nothing moves/i.test(capText)
+      ? ""
+      : `<p class="os__cap">${esc(capText)}</p>`;
   const pdf = pdfHref
     ? `<p class="os__actions"><a class="os__btn" href="${esc(pdfHref)}">Download PDF</a></p>`
     : "";
@@ -295,7 +417,7 @@ export function renderStatement(model, options) {
     `<header class="os__mast"><img class="os__logo" src="${esc(logo.src)}" alt="${esc(logo.alt)}" width="${esc(logo.width)}" height="${esc(logo.height)}">` +
     `<p class="os__cap">Owner statement</p><h1 class="os__month">${esc(model.monthLabel)}</h1>` +
     `<p class="os__prop">${esc(model.property.line)}<br>Prepared for ${esc(model.owner.name)}</p></header>` +
-    `<section class="os__lead"><p class="os__cap">${esc(mv.headline)}</p><p class="os__big">${esc(big)}</p><p class="os__line">${esc(line)}</p>${pdf}</section>` +
+    `<section class="os__lead">${cap}<p class="os__big">${esc(big)}</p><p class="os__line">${esc(line)}</p>${pdf}</section>` +
     renderSummary(model, tokens) +
     groups +
     (model.costs ? renderCosts(model.costs) : "") +

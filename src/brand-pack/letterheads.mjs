@@ -60,6 +60,28 @@ const mix = (a, b, w) => {
 const BREAK = "overflow-wrap:break-word;word-break:normal;";
 /** A long address in a sentence may break at any character, so it never pushes a phone sideways. */
 const ANYWHERE = "overflow-wrap:anywhere;word-break:break-word;";
+/**
+ * Owner-statement polish finding 14: Gmail strips web fonts, and a figure cell set in the serif
+ * stack then falls to Georgia, whose old-style digits rise and fall in a money column. A figure
+ * cell keeps the layout's own web face first (Apple Mail) and falls to a sans with lining digits
+ * ahead of any serif, and asks for lining tabular digits. Row labels keep the layout's face.
+ */
+const FIGURE_DIGITS = "font-variant-numeric:lining-nums tabular-nums;";
+const figureFont = (stack) => {
+  const faces = String(stack)
+    .split(",")
+    .map((f) => f.trim())
+    .filter((f) => f && !/^(?:'|")?(?:Georgia|Times New Roman|Times)(?:'|")?$|^serif$/i.test(f));
+  const named = faces.filter((f) => !/^(?:sans-serif|-apple-system|system-ui)$/i.test(f));
+  const lining = ["'Helvetica Neue'", "Helvetica", "Arial"].filter(
+    (f) => !named.some((n) => n.replace(/['"]/g, "") === f.replace(/['"]/g, "")),
+  );
+  return [...named, ...lining, "sans-serif"].join(",");
+};
+
+/** Owner-statement polish finding 15: the least size any email text is set at. */
+const TYPE_FLOOR = 13;
+
 /** A table's row label gives way before its figures do: at a soft hyphen first, at any character as a last resort. */
 const LABEL_WRAP = "overflow-wrap:anywhere;";
 /**
@@ -185,13 +207,13 @@ function body(email, c, t, s) {
               const strong = i === last && b.emphasizeLast !== false;
               const cell = `padding:${strong ? "14px" : "10px"} 0;${strong ? `border-top:2px solid ${t.rule};` : ""}border-bottom:1px solid ${t.line};font-family:${s.font};font-size:${strong ? s.size + 1 : s.size}px;line-height:1.3;color:${c.ink};${strong ? "font-weight:700;" : ""}`;
               const money = strong ? `font-size:${s.size + 8}px;` : "";
-              return `<tr><td style="${cell}">${esc(label)}</td><td align="right" style="${cell}${money}text-align:right;white-space:nowrap;padding-left:12px;width:1%;">${esc(amount)}</td></tr>`;
+              return `<tr><td style="${cell}">${esc(label)}</td><td align="right" style="${cell}${money}text-align:right;white-space:nowrap;padding-left:12px;width:1%;font-family:${figureFont(s.font)};${FIGURE_DIGITS}">${esc(amount)}</td></tr>`;
             })
             .join("");
           return `${b.intro ? `<p style="${P}margin-bottom:6px;">${esc(b.intro)}</p>` : ""}${table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`)}`;
         }
         case "heading":
-          return `<p style="margin:30px 0 12px 0;padding-top:16px;border-top:1px solid ${t.line};font-family:${c.bodyFont};font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;line-height:1.4;color:${c.accent};">${esc(b.text)}</p>`;
+          return `<p style="margin:30px 0 12px 0;padding-top:16px;border-top:1px solid ${t.line};font-family:${c.bodyFont};font-size:${TYPE_FLOOR}px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;line-height:1.4;color:${c.accent};">${esc(b.text)}</p>`;
         case "table": {
           // A real data table: header cells carry scope, the first column reads left, the rest right
           // (figures line up), and `align` overrides per column. Sized for a phone at 600px max.
@@ -199,7 +221,7 @@ function body(email, c, t, s) {
           // they hyphenate, and break anywhere only when no hyphen fits. At 600 nothing changes.
           const al = (i) => b.align?.[i] ?? (i === 0 ? "left" : "right");
           const cell = (i, head, strong) =>
-            `padding:${head ? "8px" : "11px"} ${i === b.columns.length - 1 ? 0 : 10}px ${head ? "8px" : "11px"} 0;text-align:${al(i)};vertical-align:top;border-bottom:1px solid ${head ? t.rule : t.line};font-family:${head ? c.bodyFont : s.font};font-size:${head ? 12 : s.size - 1}px;line-height:1.35;color:${head ? t.soft : c.ink};${head ? "font-weight:700;letter-spacing:.06em;text-transform:uppercase;" : ""}${strong ? "font-weight:700;" : ""}${i === 0 ? LABEL_WRAP : "white-space:nowrap;"}`;
+            `padding:${head ? "8px" : "11px"} ${i === b.columns.length - 1 ? 0 : 10}px ${head ? "8px" : "11px"} 0;text-align:${al(i)};vertical-align:top;border-bottom:1px solid ${head ? t.rule : t.line};font-family:${head ? c.bodyFont : i > 0 ? `${figureFont(s.font)};${FIGURE_DIGITS}` : s.font};font-size:${head ? TYPE_FLOOR : s.size - 1}px;line-height:1.35;color:${head ? t.soft : c.ink};${head ? "font-weight:700;letter-spacing:.06em;text-transform:uppercase;" : ""}${strong ? "font-weight:700;" : ""}${i === 0 ? LABEL_WRAP : "white-space:nowrap;"}`;
           const head = `<tr>${b.columns.map((h, i) => `<th scope="col" style="${cell(i, true)}">${esc(h)}</th>`).join("")}</tr>`;
           const rows = b.rows
             .map(
@@ -243,7 +265,7 @@ function body(email, c, t, s) {
           const tile = (k) =>
             `<td width="49%" valign="top" align="center" style="width:49%;vertical-align:top;text-align:center;padding:18px 18px 18px 18px;background-color:${card};border:1px solid ${t.line};border-radius:10px;">` +
             `<div style="width:22px;height:2px;background-color:${t.rule};font-size:0;line-height:0;margin:0 auto 12px auto;">&nbsp;</div>` +
-            `<div style="font-family:${c.bodyFont};font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1.35;color:${t.soft};">${esc(k.label)}</div>` +
+            `<div style="font-family:${c.bodyFont};font-size:${TYPE_FLOOR}px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1.35;color:${t.soft};">${esc(k.label)}</div>` +
             `<div style="font-family:${c.displayFont};font-size:32px;line-height:1.1;color:${c.ink};padding-top:8px;font-variant-numeric:lining-nums tabular-nums;letter-spacing:-.01em;">${esc(k.value)}</div>` +
             (k.note
               ? `<div style="font-family:${c.bodyFont};font-size:13px;line-height:1.45;color:${t.soft};padding-top:6px;">${esc(k.note)}</div>`
@@ -275,7 +297,7 @@ function body(email, c, t, s) {
               const link = r.href
                 ? `<div style="font-family:${c.bodyFont};font-size:14px;line-height:1.4;font-weight:400;padding-top:4px;"><a href="${esc(r.href)}" style="color:${t.link};text-decoration:underline;">${esc(r.linkText ?? "View")}</a></div>`
                 : "";
-              return `<tr><td style="${cell}">${esc(r.label)}${note}${link}</td><td align="right" style="${cell}${amount}text-align:right;white-space:nowrap;padding-left:12px;width:1%;font-variant-numeric:tabular-nums;">${esc(r.value)}</td></tr>`;
+              return `<tr><td style="${cell}">${esc(r.label)}${note}${link}</td><td align="right" style="${cell}${amount}text-align:right;white-space:nowrap;padding-left:12px;width:1%;font-family:${figureFont(s.font)};${FIGURE_DIGITS}">${esc(r.value)}</td></tr>`;
             })
             .join("");
           return table(rows, `margin:0 0 24px 0;border-top:1px solid ${t.line};`);
@@ -641,6 +663,11 @@ function phoneSafe(html) {
         Number(px) > 120 ? `${pre}width:100%` : m,
       )
       .replace(/(<span\b[^>]*>\s*(?:·|&middot;|&#183;)\s*<\/span>)(?!<wbr>)/gi, "$1<wbr>")
+      // Owner-statement polish finding 15: a signature's small capitals ("FOUNDER", a tagline)
+      // and contact line read at 13px or more; 0 to 2px spacer rows keep their size. No word changes.
+      .replace(/font-size:\s*(\d+(?:\.\d+)?)px/gi, (m, size) =>
+        Number(size) > 2 && Number(size) < TYPE_FLOOR ? `font-size:${TYPE_FLOOR}px` : m,
+      )
   );
 }
 

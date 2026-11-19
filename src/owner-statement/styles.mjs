@@ -13,7 +13,12 @@ export function cssString(text) {
     .replace(/</g, "\\3C ");
 }
 
-export function statementCss(tokens, stacks, { footer }) {
+/**
+ * `wideRem` is the room the widest stay table needs for its wide grid (render.mjs works it out
+ * from the figures). Polish finding 16: the stay tables switch on the sheet's own width, not the
+ * window's, so text at 200% on a desktop gets the phone grid instead of overlapping columns.
+ */
+export function statementCss(tokens, stacks, { footer, wideRem = 36 }) {
   const stripe = tokens.stripe
     ? `
 .os__stripe{border-left:6px solid var(--os-gold)}`
@@ -26,7 +31,7 @@ export function statementCss(tokens, stacks, { footer }) {
 .os a:focus-visible,.os summary:focus-visible{outline:3px solid var(--os-accent);outline-offset:2px}
 .os :where(p,h1,h2,h3,ol,ul){margin:0;padding:0}
 .os :where(ol,ul){list-style:none}
-.os__sheet{position:relative;background:var(--os-paper);max-width:760px;margin:0 auto;padding:28px 16px 32px}${stripe}
+.os__sheet{position:relative;background:var(--os-paper);max-width:760px;margin:0 auto;padding:28px 16px 32px;container:os-sheet / inline-size}${stripe}
 .os__mast{text-align:center;border-bottom:1px solid var(--os-rule);padding-bottom:18px}
 .os__logo{display:block;margin:0 auto;height:var(--os-logo-h);width:auto;max-width:100%}
 .os__cap{font:500 .875rem/1.4 var(--os-text);letter-spacing:.16em;text-transform:uppercase;color:var(--os-accent)}
@@ -45,11 +50,11 @@ export function statementCss(tokens, stacks, { footer }) {
 .os__colhead{display:grid;grid-template-columns:minmax(0,1fr) var(--os-c);column-gap:10px;align-items:end;font-size:.875rem;line-height:1.3;color:var(--os-soft);padding:0 0 4px}
 .os__colhead span{min-width:0;text-align:right;overflow-wrap:anywhere}
 .os__colhead--ytd{grid-template-columns:minmax(0,1fr) var(--os-c) var(--os-c)}
-.os__rows li{display:grid;grid-template-columns:minmax(0,1fr) var(--os-c);column-gap:10px;align-items:baseline;padding:8px 0}
+.os__rows li{display:grid;grid-template-columns:minmax(0,1fr) var(--os-c);column-gap:10px;align-items:last baseline;padding:8px 0}
 .os__rows--ytd li{grid-template-columns:minmax(0,1fr) var(--os-c) var(--os-c)}
-.os__lb{display:flex;align-items:baseline;gap:8px;min-width:0}
-.os__rows li .os__lb::before{content:"";flex:none;width:0;height:0;border-left:6px solid var(--os-gold);border-top:4px solid transparent;border-bottom:4px solid transparent;transform:translateY(-1px)}
-.os__dots{flex:1 1 auto;min-width:12px;border-bottom:2px dotted var(--os-rule);transform:translateY(-4px)}
+.os__lb{position:relative;display:block;min-width:0}
+.os__lt{position:relative;z-index:1;padding-right:8px;background:var(--os-paper);-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.os__dots{position:absolute;left:0;right:0;bottom:.62em;border-bottom:2px dotted var(--os-rule)}
 .os__y{color:var(--os-soft)}
 .os__row--subtotal,.os__row--balance{font-weight:600}
 .os__rows .os__row--moves{font-weight:700;border-top:2px solid var(--os-ink);margin-top:6px;padding-top:12px}
@@ -60,6 +65,9 @@ export function statementCss(tokens, stacks, { footer }) {
 .os__thead,.os__srow{display:grid;grid-template-columns:var(--os-cols-phone);column-gap:8px;align-items:baseline}
 .os__thead{align-items:end;padding:4px 0;font-size:.875rem;line-height:1.3;color:var(--os-soft);border-bottom:1px solid var(--os-rule)}
 .os__thead > span{min-width:0;overflow-wrap:anywhere}
+.os__srow > span{min-width:0}
+.os__srow > .os__c{overflow-wrap:anywhere}
+.os__ptbl{display:none}
 .os__thead .os__num{font-family:inherit;font-size:1em;white-space:normal}
 .os__stay{border-bottom:1px solid var(--os-rule)}
 .os__stay > summary,.os__stay > .os__srow{padding:11px 0;min-height:44px}
@@ -98,8 +106,11 @@ export function statementCss(tokens, stacks, { footer }) {
 .os__colhead,.os__colhead--ytd,.os__rows li,.os__rows--ytd li{grid-template-columns:minmax(0,1fr) var(--os-cw) var(--os-cw)}
 .os{padding:28px 12px 56px}
 .os__sheet{padding:40px clamp(28px,4vw,56px) 36px;box-shadow:0 1px 0 var(--os-rule),0 12px 28px rgba(0,0,0,.08)}
+.os__colhead .os__c--minor,.os__rows .os__c--minor{display:block}
+}
+@container os-sheet (min-width:${wideRem}rem){
 .os__thead,.os__srow{grid-template-columns:var(--os-cols-wide);column-gap:10px}
-.os__c--minor{display:block}
+.os__tbl .os__c--minor{display:block}
 }
 @page os{size:letter;margin:.7in .75in .8in;
 @bottom-left{content:"${cssString(footer)}";font:9pt "Instrument Sans","Helvetica Neue",Arial,sans-serif;color:#4a4a4a}
@@ -108,8 +119,24 @@ export function statementCss(tokens, stacks, { footer }) {
 .os{background:none;padding:0;font-size:10.5pt;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .os__sheet{max-width:none;margin:0;padding:0;box-shadow:none;background:none}
 .os__actions{display:none}
-.os__thead,.os__srow{grid-template-columns:var(--os-cols-wide)}
 .os__c--minor{display:block}
+${tokens.stripe ? ".os__stripe{padding-left:14pt}\n" : ""}.os__lt{background:#fff}
+.os__tbl,.os__prop-h{display:none}
+.os__ptbl{display:table;width:100%;border-collapse:collapse;margin-top:6pt}
+.os__ptbl thead{display:table-header-group}
+.os__ptbl th,.os__ptbl td{padding:3pt 6pt 3pt 0;text-align:left;vertical-align:baseline;font-weight:400;overflow-wrap:break-word}
+.os__ptbl th:last-child,.os__ptbl td:last-child{padding-right:0}
+.os__ptbl thead th{color:var(--os-soft);border-bottom:1px solid var(--os-rule)}
+.os__ptbl .os__pprop{padding:6pt 0 2pt;font:500 12pt/1.3 var(--os-display);color:var(--os-ink);border-bottom:0}
+.os__ptbl .os__pn{font-family:var(--os-figures);font-size:calc(1em * var(--os-fig));font-variant-numeric:${tokens.tabular ? "tabular-nums " : ""}lining-nums;text-align:right;white-space:nowrap}
+.os__ptbl tbody{break-inside:avoid}
+.os__ptbl tbody > tr:first-child td{border-top:1px solid var(--os-rule)}
+.os__pref{color:var(--os-soft)}
+.os__pnote td,.os__pdet td{padding-top:0;color:var(--os-soft)}
+.os__pdet .os__pn{text-align:left}
+.os__pd{display:inline-block}
+.os__pd.os__strong{font-weight:600;color:var(--os-ink)}
+.os__psub tr:last-child td{border-top:2px solid var(--os-ink);font-weight:700;padding-top:5pt}
 .os details:not([open])::details-content{content-visibility:visible}
 .os__stay > summary{cursor:auto}
 .os__stay .os__rows,.os__rows li,.os__costs li,.os__ssub,.os__gnote,.os__att li{break-inside:avoid}
@@ -124,7 +151,8 @@ export function statementCss(tokens, stacks, { footer }) {
 .os__stay .os__rows{padding-bottom:6px}
 .os__stay .os__rows li{padding:2px 0}
 .os__costs li{padding:5px 0}
-.os__sign{margin-top:16px;break-inside:avoid}
+.os__sign{margin-top:16px;break-inside:avoid;break-before:avoid}
+.os__src li:last-child{break-after:avoid}
 .os p,.os li{orphans:3;widows:3}
 }
 `;

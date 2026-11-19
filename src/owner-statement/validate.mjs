@@ -23,6 +23,14 @@ const isInt = (v) => Number.isSafeInteger(v);
 const SOURCE_HREF = /^(https?:\/\/\S|\/(?![/\\]))/;
 const money = (c) => formatCents(c, { parens: true });
 
+/** A real calendar date written YYYY-MM-DD (polish finding 5: a timestamp or "November 5, 2026" printed NaN). */
+function isIsoDate(v) {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const [y, m, d] = v.split("-").map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d));
+  return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d;
+}
+
 /** Every string in the model, with a readable path. */
 function* strings(value, path) {
   if (typeof value === "string") yield [path, value];
@@ -102,6 +110,12 @@ function checkTop(m, errors) {
     for (const f of fields) {
       if (!isStr(m[key][f])) errors.push(`shape: "${key}.${f}" is missing or empty`);
     }
+  }
+  // Polish finding 5: the sign-off prints this date in words, so it must be a real YYYY-MM-DD.
+  if (isObj(m.prepared) && isStr(m.prepared.date) && !isIsoDate(m.prepared.date)) {
+    errors.push(
+      `date: prepared.date must read YYYY-MM-DD and be a real date, got ${JSON.stringify(m.prepared.date)}`,
+    );
   }
 }
 
@@ -294,7 +308,14 @@ function checkGroups(m, errors) {
       let hasFigure = false;
       let allZero = true;
       for (const [key, kind] of Object.entries(kinds)) {
-        if (kind === "text") continue;
+        if (kind === "text") {
+          // Polish finding 4: a text cell may be left out (it prints empty), but never a non-text value.
+          const v = r.cells[key];
+          if (v !== undefined && v !== null && typeof v !== "string") {
+            errors.push(`shape: ${r.ref} ${key} must be text, got ${JSON.stringify(v)}`);
+          }
+          continue;
+        }
         const v = r.cells[key];
         if (!checkCents(v, `${r.ref} ${key}`, errors)) continue;
         hasFigure = true;
@@ -337,6 +358,41 @@ function checkGroups(m, errors) {
   });
 }
 
+/**
+ * Polish finding 3: the summary against the stay tables. The contract links them in one place
+ * every statement shares: the first "in" row of the summary is the money the stays brought in, so
+ * it equals the total of each stay table's first money column, to the cent. Other income (a credit,
+ * a cleaning share) rides on later "in" rows and is not checked. A month with no stays, or tables
+ * with no money column, has nothing to check.
+ */
+function checkCross(m, errors) {
+  if (!Array.isArray(m.groups) || !isObj(m.summary) || !Array.isArray(m.summary.rows)) return;
+  const first = m.summary.rows.find((r) => isObj(r) && r.role === "in");
+  if (!first || !isInt(first.month)) return;
+  let total = 0;
+  let tables = 0;
+  const labels = new Set();
+  for (const g of m.groups) {
+    if (!isObj(g) || !Array.isArray(g.columns) || !Array.isArray(g.rows)) return;
+    const col = g.columns.find((c) => isObj(c) && c.kind === "money");
+    if (!col) continue;
+    if (!g.rows.length) continue;
+    tables++;
+    labels.add(col.label);
+    for (const r of g.rows) {
+      const v = r?.cells?.[col.key];
+      if (!isInt(v)) return; // already named by the cents check
+      total += v;
+    }
+  }
+  if (!tables) return;
+  if (total !== first.month) {
+    errors.push(
+      `cross-check: the stays' ${[...labels].join(" / ")} add up to ${money(total)} across every table, but the summary's "${first.label}" says ${money(first.month)}`,
+    );
+  }
+}
+
 function checkRefRun(rows, letter, label, errors) {
   rows.forEach((r, i) => {
     const wanted = `${letter}-${i + 1}`;
@@ -363,6 +419,10 @@ function checkCosts(m, errors) {
       continue;
     }
     if (checkCents(r.cents, `${r.ref} cents`, errors)) sum += r.cents;
+    // Polish finding 5: a cost date prints as "Oct 1", so it must be a real YYYY-MM-DD.
+    if (r.date !== null && r.date !== undefined && !isIsoDate(r.date)) {
+      errors.push(`date: ${r.ref} date must read YYYY-MM-DD and be a real date, got ${JSON.stringify(r.date)}`);
+    }
     if (r.href !== null && r.href !== undefined && !/^https?:\/\//.test(r.href)) {
       errors.push(`shape: ${r.ref} href must be a web address or null`);
     }
@@ -412,8 +472,8 @@ function checkSettlement(m, errors) {
 /**
  * Check a statement model against every invariant of `owner-statement/1`.
  * Returns plain-English messages, each starting with the name of the rule it broke
- * (`schema`, `status`, `moves`, `foot`, `subtotal`, `refs`, `zero-row`, `words`, `date`, `ytd`,
- * `cents`, `shape`, `brand`). An empty list means the statement is good to render.
+ * (`schema`, `status`, `moves`, `foot`, `subtotal`, `cross-check`, `refs`, `zero-row`, `words`,
+ * `date`, `ytd`, `cents`, `shape`, `brand`). An empty list means the statement is good to render.
  */
 export function validate(model) {
   if (!isObj(model)) return ["shape: the statement is not an object"];
@@ -422,6 +482,7 @@ export function validate(model) {
   checkSummary(model, errors);
   checkMoves(model, errors);
   checkGroups(model, errors);
+  checkCross(model, errors);
   checkCosts(model, errors);
   checkSettlement(model, errors);
   checkSources(model, errors);

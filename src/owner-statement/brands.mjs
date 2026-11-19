@@ -14,8 +14,6 @@ const NEWSREADER = 'var(--font-newsreader, "Newsreader"), Georgia, serif';
 const INSTRUMENT =
   'var(--font-instrument-sans, "Instrument Sans"), "Helvetica Neue", Arial, sans-serif';
 const GARAMOND = 'var(--font-eb-garamond, "EB Garamond"), Georgia, serif';
-const GEIST_MONO =
-  'var(--font-geist-mono, "Geist Mono"), ui-monospace, "SF Mono", Menlo, monospace';
 const LITERATA = 'var(--font-literata, "Literata"), Georgia, serif';
 const SCHIBSTED =
   'var(--font-schibsted-grotesk, "Schibsted Grotesk"), "Helvetica Neue", Arial, sans-serif';
@@ -41,7 +39,7 @@ export const BRANDS = {
     logoHeight: 40,
     tabular: true,
     figureScale: 1,
-    figureAdvance: 0.54,
+    figureAdvance: 0.6,
     card: {
       scrim: "13,35,24",
       scrimMax: 0.82,
@@ -62,7 +60,9 @@ export const BRANDS = {
   palisade: {
     display: GARAMOND,
     text: INSTRUMENT,
-    figures: GEIST_MONO,
+    // Polish findings 12 and 17: the lock is Geist Mono for labels only; figures are Instrument
+    // Sans with tabular lining digits, full size on screen (16px) and in print (10.5pt).
+    figures: INSTRUMENT,
     paper: "#ffffff",
     ground: "#ece8df",
     ink: "#2a2d31",
@@ -74,7 +74,7 @@ export const BRANDS = {
     stripe: "#b5975a",
     logoHeight: 44,
     tabular: true,
-    figureScale: 0.93,
+    figureScale: 1,
     figureAdvance: 0.6,
     card: {
       scrim: "20,18,15",
@@ -109,7 +109,7 @@ export const BRANDS = {
     logoHeight: 50,
     tabular: false,
     figureScale: 1,
-    figureAdvance: 0.54,
+    figureAdvance: 0.66,
     card: {
       scrim: "15,29,46",
       scrimMax: 0.88,
@@ -143,7 +143,7 @@ export const BRANDS = {
     logoHeight: 36,
     tabular: true,
     figureScale: 1,
-    figureAdvance: 0.54,
+    figureAdvance: 0.6,
     card: {
       scrim: "22,21,15",
       scrimMax: 0.82,
