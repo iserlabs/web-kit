@@ -176,6 +176,8 @@ export type Plan = {
     credits: string[];
   };
   print: { wifiQr?: string };
+  /** The house's Day rail photo placement (`LookV2.day`), read by `planDay`. */
+  day?: { plateUnder?: string; sheet?: string[] };
   /** Every element id the page carries, so a test can prove each link lands. */
   ids: string[];
   /** Exactly what the service worker saves: page, extras, one phone-width URL per placed photo. */
@@ -984,6 +986,7 @@ export function planGuide(m: GuideModel, copy: Copy, opts: PlanOptions = {}): Pl
       credits: [...new Set([...used].flatMap((src) => bySrc.get(src)?.credit ?? []))],
     },
     print: { wifiQr: wifiPayload(m) },
+    day: m.look.day,
     ids,
     offlineUrls: [],
     copy,

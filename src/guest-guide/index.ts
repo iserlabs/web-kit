@@ -28,6 +28,18 @@ export {
   sectionOf,
   TEMPLATE_LABELS,
 } from "./copy";
+export {
+  DAY_CHAPTERS,
+  type DayAnswer,
+  type DayChapter,
+  type DayItem,
+  type DayLook,
+  type DayPlan,
+  type DayRow,
+  planDay,
+  type RailStop,
+  type RestChapter,
+} from "./day";
 export { type FactRow, factsMarkdown, factsTable } from "./facts";
 export { decide, findForbidden, findLeaks } from "./leaks";
 export {

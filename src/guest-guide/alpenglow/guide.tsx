@@ -2,13 +2,17 @@
 /** @jsxImportSource react */
 import type { GuideBrand } from "../brand";
 import { brandCss } from "../brand";
+import { planDay } from "../day";
 import type { Plan } from "../plan";
+import { PHONE_WIDTH } from "../plan";
 import { BEHAVIOR_JS } from "./behavior";
 import { Chapter } from "./chapter";
 import { Cover } from "./cover";
+import { DayBody, Rail } from "./day";
 import { Help } from "./help";
 import { defaultImage, type ImageUrl, identityUrl, type RenderImage } from "./image";
 import { QuickFind } from "./quick-find";
+import { DAY_CSS, RAIL_CSS, RAIL_JS } from "./rail";
 import { ALPENGLOW_CSS } from "./styles";
 
 /** v1 wording for the copy announcements (Sun Mountain copy-button.tsx). */
@@ -28,6 +32,11 @@ export type AlpenglowGuideProps = {
   serviceWorker?: { url: string; scope: string };
   /** The page path the worker saves; default: the page's own path at run time. */
   page?: string;
+  /**
+   * The body under the cover. "chapters" (default): the quick find, then the chapters.
+   * "day": the Day rail (body board round 2, picked 2026-11-19) with the bottom rail.
+   */
+  body?: "chapters" | "day";
 };
 
 /**
@@ -42,9 +51,14 @@ export function AlpenglowGuide({
   nonce,
   serviceWorker,
   page,
+  body = "chapters",
 }: AlpenglowGuideProps) {
   const render = renderImage ?? defaultImage(imageUrl);
-  const css = `${brandCss(brand)}${ALPENGLOW_CSS}`;
+  const day = body === "day" ? planDay(plan, plan.day) : undefined;
+  const css = `${brandCss(brand)}${ALPENGLOW_CSS}${day ? `${DAY_CSS}${RAIL_CSS}` : ""}`;
+  // The day body shows fewer photos; the worker saves only what the page shows.
+  const hidden = new Set(day?.dropped.map((p) => imageUrl(p.src, PHONE_WIDTH)));
+  const offline = plan.offlineUrls.filter((u) => !hidden.has(u));
   return (
     <div
       className="gg"
@@ -55,7 +69,8 @@ export function AlpenglowGuide({
       data-sw={serviceWorker?.url}
       data-sw-scope={serviceWorker?.scope}
       data-page={page}
-      data-offline={serviceWorker ? JSON.stringify(plan.offlineUrls) : undefined}
+      data-body={day ? "day" : undefined}
+      data-offline={serviceWorker ? JSON.stringify(offline) : undefined}
     >
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: kit-owned CSS string; brand values are checked by brandCss */}
       <style nonce={nonce} dangerouslySetInnerHTML={{ __html: css }} />
@@ -66,16 +81,26 @@ export function AlpenglowGuide({
         Skip to the guide
       </a>
       <p id="gg-status" className="vh" role="status" aria-live="polite" />
-      <Cover cover={plan.cover} brand={brand} imageUrl={imageUrl} />
+      <Cover cover={plan.cover} brand={brand} imageUrl={imageUrl} id={day ? "cover" : undefined} />
       <main id="main">
-        <QuickFind quickFind={plan.quickFind} />
-        {plan.chapters.map((c) => (
-          <Chapter key={c.id} c={c} render={render} />
-        ))}
-        <Help plan={plan} brand={brand} render={render} />
+        {day ? (
+          <DayBody plan={plan} day={day} brand={brand} render={render} />
+        ) : (
+          <>
+            <QuickFind quickFind={plan.quickFind} />
+            {plan.chapters.map((c) => (
+              <Chapter key={c.id} c={c} render={render} />
+            ))}
+            <Help plan={plan} brand={brand} render={render} />
+          </>
+        )}
       </main>
-      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: kit-owned inline script, no guest data */}
-      <script nonce={nonce} dangerouslySetInnerHTML={{ __html: BEHAVIOR_JS }} />
+      {day ? <Rail stops={day.stops} /> : null}
+      <script
+        nonce={nonce}
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: kit-owned inline script, no guest data
+        dangerouslySetInnerHTML={{ __html: day ? `${BEHAVIOR_JS}\n${RAIL_JS}` : BEHAVIOR_JS }}
+      />
     </div>
   );
 }

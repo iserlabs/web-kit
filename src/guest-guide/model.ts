@@ -232,6 +232,8 @@ export type LookV2 = {
   coverRows?: { door?: "lead" | "full" | "link"; parking?: "lead" | "full" | "link" };
   skip?: string[];
   captions?: Record<string, string>;
+  /** The Day rail body: which answer the Arrival photo sits under, and The house sheet (photo srcs). */
+  day?: { plateUnder?: string; sheet?: string[] };
   levels?: string[];
 };
 

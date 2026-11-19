@@ -158,10 +158,13 @@ export function Cover({
   cover: c,
   brand,
   imageUrl,
+  id,
 }: {
   cover: CoverPlan;
   brand: GuideBrand;
   imageUrl: ImageUrl;
+  /** The Day rail body names the cover as its first stop. */
+  id?: string;
 }) {
   const p = c.photo;
   const lines = c.kind === "type" ? (c.typeTitle ?? [c.name]) : (c.nameLines ?? [c.name]);
@@ -175,6 +178,7 @@ export function Cover({
   const high = c.layout === "high";
   return (
     <header
+      id={id}
       className={`cover cover--${c.layout}`}
       data-hero=""
       data-name-ink={p?.nameInk ?? "ink"}
