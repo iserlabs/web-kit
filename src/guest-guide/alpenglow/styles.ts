@@ -46,7 +46,7 @@ export const ALPENGLOW_CSS = String.raw`
 .gg .tt dt{font:var(--strong) 15px/1.35 var(--text)}
 .gg .tt dd{font:var(--text-w) 16px/1.38 var(--text);min-width:0}
 .gg .tt__times{container-type:inline-size;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:18px;row-gap:2px}
-.gg .tt__times .fig{font-size:min(24px,calc((100cqi - 26px - var(--out-ch,3) * 9px) / 9));line-height:1.1;font-weight:var(--fig-w)}
+.gg .tt__times .fig{font-size:max(13px,min(24px,calc((100cqi - 26px - var(--out-ch,3) * 9px) / 9)));line-height:1.1;font-weight:var(--fig-w)}
 .gg .tt__times .lbl{font:var(--strong) 15px/1 var(--text);margin-right:8px}
 .gg .wifi{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px}
 .gg .wifi__vals{font:400 15px/1.4 var(--fig);font-variant-numeric:var(--fig-num,tabular-nums);overflow-wrap:anywhere;min-width:0}
@@ -230,7 +230,7 @@ export const ALPENGLOW_CSS = String.raw`
   .gg .cover__go{display:inline-flex;column-gap:16px}
   .gg .cover .tt{row-gap:4px}
   .gg .cover .tt dd{font-size:15px;line-height:1.3}
-  .gg .cover .tt__times .fig{font-size:min(20px,calc((100cqi - 26px - var(--out-ch,3) * 9px) / 9))}
+  .gg .cover .tt__times .fig{font-size:max(13px,min(20px,calc((100cqi - 26px - var(--out-ch,3) * 9px) / 9)))}
   .gg .cover .wifi__vals{line-height:1.3}
   .gg .cover__ground{padding-bottom:10px}
 }

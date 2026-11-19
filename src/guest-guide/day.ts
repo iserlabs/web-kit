@@ -123,12 +123,24 @@ export function planDay(plan: Plan, look: DayLook = {}): DayPlan {
   const blocks = new Map<ChapterId, Block[]>(all.map((c) => [c.id, [...c.blocks]]));
   const answers = new Map<ChapterId, DayAnswer[]>();
   const push = (c: ChapterId, a: DayAnswer) => answers.set(c, [...(answers.get(c) ?? []), a]);
+  // A group sub-head that only introduced a block taken as an answer ("Heat", "Cooling") goes with it.
   const take = (c: ChapterId, b: Block) => {
     const list = blocks.get(c);
     if (!list) return;
     const i = list.indexOf(b);
-    if (i >= 0) list.splice(i, 1);
+    if (i < 0) return;
+    const before = list[i - 1];
+    const groupHead = before?.kind === "sub" && Boolean(before.id?.includes("group"));
+    list.splice(groupHead ? i - 1 : i, groupHead ? 2 : 1);
   };
+  // Whether a chapter had facts of its own is read before any answer leaves it.
+  const hadFacts = new Set(
+    all
+      .filter((c) =>
+        c.blocks.some((b) => b.kind === "item" || b.kind === "figure" || b.kind === "unknown"),
+      )
+      .map((c) => c.id),
+  );
   const arrival = blocks.get("arrival") ?? [];
   const usedPhotos = new Set<string>();
 
@@ -233,11 +245,8 @@ export function planDay(plan: Plan, look: DayLook = {}): DayPlan {
   for (const c of all) {
     if (c.id === "arrival") continue;
     const list = blocks.get(c.id) ?? [];
-    const hasFacts = list.some(
-      (b) => b.kind === "item" || b.kind === "figure" || b.kind === "unknown",
-    );
     const first = list[0];
-    if (hasFacts && first && first.kind === "p" && !first.id && !first.tone) list.shift();
+    if (hadFacts.has(c.id) && first && first.kind === "p" && !first.id && !first.tone) list.shift();
   }
 
   // Photos: the Arrival photo under one answer, a small sheet in The house, nothing else.
