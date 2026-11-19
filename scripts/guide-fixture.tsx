@@ -2,7 +2,7 @@
  * Writes the kit's fixture guides as static HTML, the review surface for the
  * Alpenglow template (a library has no preview URL).
  *
- *   pnpm exec tsx scripts/guide-fixture.tsx --out <dir> [--assets <img dir>] [--fonts <dir>] [--fetch-fonts]
+ *   pnpm exec tsx scripts/guide-fixture.tsx --out <dir> [--assets <img dir>] [--fonts <dir>] [--fetch-fonts] [--body day]
  *
  * For each fixture it writes <id>.html (live copy only, zero approvals: what a
  * guest would see today) and <id>-drafts.html (every held line in place, for
@@ -119,6 +119,7 @@ for (const fx of FIXTURES) {
       fonts,
       page: file,
       serviceWorker: { url: "sw.js", scope: "./" },
+      body: flag("--body") === "day" ? "day" : "chapters",
       head: { canonical: `https://example.invalid/guides/${fx.model.slug}` },
     });
     writeFileSync(path.join(out, file), html);
