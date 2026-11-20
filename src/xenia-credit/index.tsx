@@ -69,7 +69,7 @@ export function XeniaCredit({
         {...(newTab ? { target: "_blank", rel: "noopener" } : {})}
       >
         <img className="xc__x" src={XENIA_GOLD_X} alt="" width={20} height={18} decoding="async" />
-        <span className="xc__by">{XENIA_CREDIT.by}</span>
+        <span className="xc__by">{XENIA_CREDIT.by}</span>{" "}
         <span className="xc__name">{XENIA_CREDIT.name}</span>
       </a>
     </>

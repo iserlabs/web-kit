@@ -13,6 +13,8 @@ describe("xenia credit", () => {
     expect(src).toContain('name: "Xenia Hospitality Operations"');
     expect(src).toContain('href: "https://xenia.host"');
     expect(src).not.toContain("ops.xenia.host");
+    // a real space between the two spans, so the link reads "Powered by Xenia ..." and not "byXenia"
+    expect(src).toContain('{XENIA_CREDIT.by}</span>{" "}');
   });
 
   it("inlines the real gold X as a PNG", () => {
