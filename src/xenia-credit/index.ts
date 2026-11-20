@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties, Fragment, createElement as h } from "react";
 import { XENIA_GOLD_X } from "./mark";
 import { XENIA_CREDIT_CSS } from "./styles";
 
@@ -57,21 +57,31 @@ export function XeniaCredit({
   if (gold) vars["--xc-gold"] = gold;
   if (ring) vars["--xc-ring"] = ring;
   if (size) vars["--xc-size"] = size;
-  return (
-    <>
-      <style href="iserlabs-xenia-credit" precedence="default">
-        {XENIA_CREDIT_CSS}
-      </style>
-      <a
-        className={className ? `xc ${className}` : "xc"}
-        href={xeniaCreditHref(refId)}
-        style={vars as CSSProperties}
-        {...(newTab ? { target: "_blank", rel: "noopener" } : {})}
-      >
-        <img className="xc__x" src={XENIA_GOLD_X} alt="" width={20} height={18} decoding="async" />
-        <span className="xc__by">{XENIA_CREDIT.by}</span>{" "}
-        <span className="xc__name">{XENIA_CREDIT.name}</span>
-      </a>
-    </>
+  // Plain createElement, no JSX: a member site's bundler then reads this file as ordinary
+  // TypeScript, with or without web-kit in its transpilePackages.
+  return h(
+    Fragment,
+    null,
+    h("style", { href: "iserlabs-xenia-credit", precedence: "default" }, XENIA_CREDIT_CSS),
+    h(
+      "a",
+      {
+        className: className ? `xc ${className}` : "xc",
+        href: xeniaCreditHref(refId),
+        style: vars as CSSProperties,
+        ...(newTab ? { target: "_blank", rel: "noopener" } : {}),
+      },
+      h("img", {
+        className: "xc__x",
+        src: XENIA_GOLD_X,
+        alt: "",
+        width: 20,
+        height: 18,
+        decoding: "async",
+      }),
+      h("span", { className: "xc__by" }, XENIA_CREDIT.by),
+      " ",
+      h("span", { className: "xc__name" }, XENIA_CREDIT.name),
+    ),
   );
 }
