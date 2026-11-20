@@ -18,6 +18,8 @@
     "./legal/consent": "./src/legal/consent.ts",
     "./schema": "./src/schema/index.ts",
     "./network": "./src/network/index.ts",
+    "./xenia-credit": "./src/xenia-credit/index.ts",
+    "./xenia-credit.css": "./src/xenia-credit/xenia-credit.css",
     "./proof": "./src/proof/index.ts",
     "./guest-guide": "./src/guest-guide/index.ts",
     "./guest-guide/alpenglow": "./src/guest-guide/alpenglow/index.ts",
