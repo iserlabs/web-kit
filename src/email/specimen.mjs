@@ -33,7 +33,8 @@
  * - the button is a plain link in every client with a VML twin for Outlook
  * - the page declares itself light-only and switches off phone auto-linking
  * - the preview line is a hidden preheader, padded so body text cannot follow it into the list
- * - "book a call" is an inline text link in the footer, never a button
+ * - the booking link is the bare address alone in its own paragraph under a footer sentence that ends
+ *   in a colon, never a button and never buried in a sentence (Jake, 2026-11-20)
  * - a plain-text twin is always built, so no send ever goes out html-only
  *
  * No phone number appears anywhere on these emails. Contact is the reply.
@@ -251,6 +252,7 @@ ${(m.after ?? []).map((t) => para(t, c, sans, { color: c.ink, align: "center", m
 ${m.signoff ? `<p style="margin:14px 0 0;text-align:center;font-family:${serif};font-style:italic;font-size:26px;line-height:32px;color:${c.deep}">${esc(m.signoff.name)}</p>${para(m.signoff.title, c, sans, { size: 14, lh: 20, color: c.mutedOnGround, align: "center" })}` : ""}
 ${gap(30)}
 ${para(m.footer.reply, c, sans, { size: 14, lh: 22, color: c.mutedOnGround, align: "center" })}
+${para(m.footer.book, c, sans, { size: 14, lh: 22, color: c.mutedOnGround, align: "center", mt: 8 })}
 ${para(m.footer.fine, c, sans, { size: 13, lh: 20, color: c.mutedOnGround, align: "center", mt: 6 })}
 ${para(m.footer.legal, c, sans, { size: 13, lh: 20, color: c.mutedOnGround, align: "center", mt: 6 })}
 </td></tr>`);
@@ -293,6 +295,8 @@ ${para(m.footer.legal, c, sans, { size: 13, lh: 20, color: c.mutedOnGround, alig
     lines.push("");
     if (m.footer.reply)
         lines.push(stripLinks(m.footer.reply).text);
+    if (m.footer.book)
+        lines.push("", stripLinks(m.footer.book).text, "");
     if (m.footer.fine)
         lines.push(m.footer.fine);
     lines.push(m.footer.legal);
@@ -316,7 +320,9 @@ export function subjectFor(m) {
     const what = m.waiting.length === 0 ? "Fully signed" : `Signed by ${m.signedBy}`;
     return `${m.subjectPlace ? `${m.subjectPlace} | ` : ""}${m.docTitle} | ${what}${day ? `, ${day}` : ""}`;
 }
-const FOOTER_REPLY = (brand, bookUrl) => `Reply to this email and it reaches ${brand}. Or [book a call](${bookUrl}).`;
+const FOOTER_REPLY = (brand) => `Reply to this email and it reaches ${brand}. To talk anything through, pick a time here:`;
+/** The booking address on its own: the link text is the address itself. */
+const FOOTER_BOOK = (bookUrl) => `[${bookUrl}](${bookUrl})`;
 /* ----------------------------------------------- the signer's email -- */
 /**
  * The confirmation a signer gets after signing. Pure: no network, no clock, no environment, so it
@@ -374,7 +380,7 @@ export function renderSignerEmail(m) {
             rows: m.terms.map((t) => ({ label: t.label, value: Array.isArray(t.value) ? t.value.join("; ") : t.value })),
             signatures,
         },
-        footer: { reply: FOOTER_REPLY(m.brandName, m.bookUrl), fine, legal: m.legalLine },
+        footer: { reply: FOOTER_REPLY(m.brandName), book: FOOTER_BOOK(m.bookUrl), fine, legal: m.legalLine },
     };
     return renderSpecimen(sm);
 }
@@ -468,7 +474,10 @@ export function lintSignerEmail(m) {
     bad(bare.length > 0, `a painted background with no bgcolor on <${bare[0]?.[1]}>`);
     const buttons = body.match(/height:56px;line-height:56px/g)?.length ?? 0;
     bad(buttons > 1, `${buttons} buttons`);
-    bad(/book a call<\/a>/.test(body) && !/Or <a [^>]*>book a call<\/a>\./.test(body), "book a call is not an inline link");
+    const meet = body.match(/<a [^>]*href="https:\/\/jakejjlee\.com\/meet"/g)?.length ?? 0;
+    bad(meet > 1, `${meet} booking links`);
+    bad(meet === 1 && !/<p [^>]*>\s*<a [^>]*href="https:\/\/jakejjlee\.com\/meet"[^>]*>https:\/\/jakejjlee\.com\/meet<\/a>\s*<\/p>/.test(body), "the booking link is not the bare address alone in its own paragraph");
+    bad(/https:\/\/jakejjlee\.com\/meet/.test(text) && !/^https:\/\/jakejjlee\.com\/meet$/m.test(text), "the booking link is not alone on its own line in the plain text");
     bad(/<a [^>]*href="(?!https:\/\/)[^"]*"/.test(body), "a link that is not https");
     bad(text.trim().length < 80, "the plain-text part is missing or empty");
     bad(/<[a-z][^>]*>|&nbsp;|&amp;|\u00a0/.test(text), "markup or a non-breaking space leaked into the plain text");

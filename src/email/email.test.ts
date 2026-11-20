@@ -14,6 +14,7 @@ import {
   makeReference,
 } from "./index.mjs";
 import { writePreviews } from "./preview.mjs";
+import { lintSignerEmail, makePalette, renderSignerEmail } from "./specimen.mjs";
 
 const brand = {
   business: "Example Stays",
@@ -263,5 +264,52 @@ describe("previews", () => {
     expect(report[0]?.findings).toEqual([]);
     expect(readFileSync(join(dir, "inquiry.txt"), "utf8")).toContain("Subject: Example Stays |");
     expect(readFileSync(join(dir, "inquiry.html"), "utf8")).toContain("<!doctype html>");
+  });
+});
+
+describe("the signing email's booking link", () => {
+  const built = renderSignerEmail({
+    palette: makePalette({
+      paper: "#ffffff",
+      ground: "#f4f3f1",
+      ink: "#2a2d31",
+      muted: "#55585e",
+      rule: "#d5cdc3",
+      band: "#2a2d31",
+      bandText: "#ffffff",
+      accent: "#b5975a",
+    }),
+    faces: { serif: "Georgia,serif", sans: "Arial,sans-serif", wordmark: "Georgia,serif" },
+    brandName: "Example Stays",
+    docTitle: "Management Agreement",
+    place: ["1 Main St"],
+    signedBy: "Jane Owner",
+    signedWhen: "November 11, 2026, 6:59 PM MST",
+    waiting: [],
+    completeDetail: "Every party has signed.",
+    completion: { title: "Done", detail: "You get the PDF." },
+    note: [],
+    terms: [{ label: "Term", value: "12 months" }],
+    bookUrl: "https://jakejjlee.com/meet",
+    legalLine: "Example Stays LLC.",
+  });
+
+  it("ends the ask in a colon and sets the bare address alone in its own paragraph", () => {
+    expect(built.html).toContain("To talk anything through, pick a time here:</p>");
+    expect(built.html).toMatch(
+      /<p [^>]*><a [^>]*href="https:\/\/jakejjlee\.com\/meet"[^>]*>https:\/\/jakejjlee\.com\/meet<\/a><\/p>/,
+    );
+    expect(built.html).not.toContain("book a call");
+  });
+
+  it("puts the address alone on its own line in the plain text, once", () => {
+    const lines = built.text.split("\n");
+    const i = lines.indexOf("https://jakejjlee.com/meet");
+    expect(i).toBeGreaterThan(1);
+    expect(lines[i - 1]).toBe("");
+    expect(lines[i + 1]).toBe("");
+    expect(lines[i - 2]).toMatch(/pick a time here:$/);
+    expect(built.text.match(/jakejjlee\.com\/meet/g)).toHaveLength(1);
+    expect(lintSignerEmail(built)).toEqual([]);
   });
 });

@@ -33,7 +33,8 @@
  * - the button is a plain link in every client with a VML twin for Outlook
  * - the page declares itself light-only and switches off phone auto-linking
  * - the preview line is a hidden preheader, padded so body text cannot follow it into the list
- * - "book a call" is an inline text link in the footer, never a button
+ * - the booking link is the bare address alone in its own paragraph under a footer sentence that ends
+ *   in a colon, never a button and never buried in a sentence (Jake, 2026-11-20)
  * - a plain-text twin is always built, so no send ever goes out html-only
  *
  * No phone number appears anywhere on these emails. Contact is the reply.
@@ -185,6 +186,8 @@ export type SpecimenModel = {
     };
     footer: {
         reply?: string;
+        /** The booking address alone in its own paragraph, under a `reply` that ends in a colon. */
+        book?: string;
         fine?: string;
         legal: string;
     };
