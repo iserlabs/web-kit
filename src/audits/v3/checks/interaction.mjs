@@ -117,6 +117,14 @@ export const C23 = {
         ),
       ]
         .filter((el) => window.__v3.vis(el))
+        /* A toggle (disclosure, pressed or tab) is labeled by what it shows, not by an
+           outcome: a fact line that opens its source is not a vague call to action. */
+        .filter(
+          (el) =>
+            !el.hasAttribute("aria-expanded") &&
+            !el.hasAttribute("aria-pressed") &&
+            el.getAttribute("role") !== "tab",
+        )
         .map((el) =>
           (el.innerText || el.value || el.getAttribute("aria-label") || "")
             .replace(/\s+/g, " ")
@@ -316,8 +324,12 @@ export const C27 = {
         const without = sig();
         e.focus({ preventScroll: true });
         const r = e.getBoundingClientRect();
+        /* Each element keeps its own identity: label plus position collided in a sideways
+           scroll strip, where every item scrolls into the same spot as focus moves (a false
+           trap on a live site's six-photo strip, 2026-11-22). */
+        if (!e.__v3id) e.__v3id = window.__v3nextId = (window.__v3nextId || 0) + 1;
         return {
-          key: window.__v3.label(e) + "@" + Math.round(r.left) + "," + Math.round(r.top + scrollY),
+          key: "#" + e.__v3id + " " + window.__v3.label(e) + "@" + Math.round(r.left) + "," + Math.round(r.top + scrollY),
           visible: outline || withFocus !== without || c.boxShadow !== "none",
           label: window.__v3.label(e),
         };
