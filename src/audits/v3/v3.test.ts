@@ -443,6 +443,19 @@ describe("decisions, baseline and printing", () => {
     expect(cta.status).toBe("FAIL");
   }, 60000);
 
+  it("real-site regression: a link inside a closed details box is not unreachable", async () => {
+    const r = await runOne(
+      server,
+      browser,
+      "C27",
+      doc(
+        '<a href="/a">Start</a><details><summary>Six Parades</summary><div class="b"><a href="/src">Read the feature</a></div></details><a href="/b">End</a>',
+        ".b{display:block !important}",
+      ),
+    );
+    expect(r.status).toBe("PASS");
+  }, 60000);
+
   it("a reason too short to mean anything does not waive", () => {
     const site = makeSite({ "docs/design/DECISIONS.md": "C01 ok\n" });
     expect(loadDecisions(site).has("C01")).toBe(false);

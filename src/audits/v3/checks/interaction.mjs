@@ -363,6 +363,9 @@ export const C27 = {
               window.__v3.vis(e) &&
               !e.__v3seen &&
               !e.closest("[aria-hidden=true],[inert]") &&
+              /* Inside a closed <details> (other than its own summary) a control is not shown
+                 and is skipped by Tab, even when a style still gives it a layout box. */
+              !(e.closest("details:not([open])") && e.closest("details:not([open])").querySelector(":scope > summary") !== e) &&
               e.tabIndex >= 0,
           )
           .map((e) => window.__v3.label(e)),
