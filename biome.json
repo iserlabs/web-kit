@@ -1,4 +1,27 @@
 {
   "extends": ["./src/biome/biome.base.json"],
-  "files": { "includes": ["**", "!**/*.css"] }
+  "files": {
+    "includes": ["**", "!**/*.css"]
+  },
+  "overrides": [
+    {
+      "includes": ["src/motion/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useExhaustiveDependencies": "off"
+          },
+          "suspicious": {
+            "noArrayIndexKey": "off"
+          },
+          "performance": {
+            "noImgElement": "off"
+          },
+          "a11y": {
+            "noStaticElementInteractions": "off"
+          }
+        }
+      }
+    }
+  ]
 }
