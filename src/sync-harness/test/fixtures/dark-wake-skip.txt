@@ -1,0 +1,6 @@
+# exit: 0
+# a dark-wake skip
+# from plfa-sync.log lines 27120-27122 (home path masked, runner lines and per-artist detail removed)
+2026-10-03 01:40:08  start
+2026-10-03 01:40:12  skipped: the Mac is asleep (a brief upkeep wake with no screen, capabilities 9),
+2026-10-03 01:40:13           so Safari cannot read the archive. The next run while it is awake catches up.

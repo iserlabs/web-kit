@@ -1,25 +1,35 @@
 {
   "extends": ["./src/biome/biome.base.json"],
   "files": {
-    "includes": ["**", "!**/*.css"]
+    "includes": [
+      "**",
+      "!**/*.css",
+      "!src/email/specimen.mjs",
+      "!src/email/specimen.d.mts",
+      "!src/audits/v3/__fixtures__"
+    ]
   },
+  "linter": { "rules": { "correctness": { "noComponentHookFactories": "warn" } } },
   "overrides": [
+    {
+      "includes": ["src/audits/v3/**"],
+      "linter": {
+        "rules": {
+          "performance": { "useDomNodeTextContent": "off" },
+          "style": { "useTemplate": "off" },
+          "correctness": { "noUnusedFunctionParameters": "off" },
+          "suspicious": { "noExplicitAny": "off" }
+        }
+      }
+    },
     {
       "includes": ["src/motion/**"],
       "linter": {
         "rules": {
-          "correctness": {
-            "useExhaustiveDependencies": "off"
-          },
-          "suspicious": {
-            "noArrayIndexKey": "off"
-          },
-          "performance": {
-            "noImgElement": "off"
-          },
-          "a11y": {
-            "noStaticElementInteractions": "off"
-          }
+          "correctness": { "useExhaustiveDependencies": "off" },
+          "suspicious": { "noArrayIndexKey": "off" },
+          "performance": { "noImgElement": "off" },
+          "a11y": { "noStaticElementInteractions": "off" }
         }
       }
     }

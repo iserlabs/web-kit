@@ -1,4 +1,11 @@
-import type { ZodType } from "zod";
+/** Anything with a zod-style `safeParse`. A zod schema fits; so does a hand-written validator. */
+export interface SafeParseSchema<T> {
+  safeParse(
+    input: unknown,
+  ):
+    | { success: true; data: T }
+    | { success: false; error: { issues: { path: PropertyKey[]; message: string }[] } };
+}
 
 export interface ContactSender {
   send(message: {
@@ -10,7 +17,7 @@ export interface ContactSender {
 }
 
 export interface ContactHandlerOptions<T> {
-  schema: ZodType<T>;
+  schema: SafeParseSchema<T>;
   to: string;
   from: string;
   sender: ContactSender;
@@ -35,7 +42,7 @@ export function createContactHandler<T>(opts: ContactHandlerOptions<T>) {
     if (!parsed.success) {
       const errors: Record<string, string[]> = {};
       for (const issue of parsed.error.issues) {
-        const key = issue.path.join(".") || "_";
+        const key = issue.path.map(String).join(".") || "_";
         const existing = errors[key] ?? [];
         existing.push(issue.message);
         errors[key] = existing;

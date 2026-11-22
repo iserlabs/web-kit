@@ -1,0 +1,124 @@
+#!/bin/bash
+# One call for a scheduled sync, so nobody has to read a 10,000-line log to know if it is healthy.
+#   sync-harness status  <job>   verdict, last good read, failures, next try, last event, the week
+#   sync-harness week    <job>   the last 7 days: good-read days, failures, self-repairs, manual help
+#   sync-harness now     <job>   clear up (the unstick hook), run the sync now, then print the status
+#   sync-harness unstick <job>   run the job's unstick hook and say what it found
+#   sync-harness run     <job>   one runner beat (what launchd runs, through beat)
+#   sync-harness beat    <job>   the launchd entry: the runner, THEN the Business OS heartbeat
+#   sync-harness install <job> [--agents-dir DIR] [--home DIR] [--force]
+#                                copy the harness to a stable home, write the launchd plist, print
+#                                the /os registry row to add (it never edits the registry)
+#   sync-harness replay  <job> [--log FILE] [--since YYYY-MM-DD]
+#                                classify every run in a log with the job's hooks, as a table
+#   sync-harness config  <job>   print the settings the job resolves to
+# <job> is a job name (found as <dir>/<job>.d/config.sh along SYNC_HARNESS_PATH) or a config path.
+# Generalized 2026-10-13 from ~/Claude/clients/plfa-sync, whose output this keeps line for line.
+
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+cmd=${1:-help}
+case $cmd in
+  run) shift; exec /bin/bash "$HERE/run.sh" "$@" ;;
+  beat) shift; exec /bin/bash "$HERE/beat.sh" "$@" ;;
+  install) shift; exec /bin/bash "$HERE/install.sh" "$@" ;;
+  replay) shift; exec /bin/bash "$HERE/replay.sh" "$@" ;;
+  status|week|now|unstick|config) ;;
+  *) sed -n '2,14p' "$0"; exit 0 ;;
+esac
+
+# shellcheck source=lib.sh
+. "$HERE/lib.sh"
+harness_load "$(harness_find_config "${2:-}")"
+harness_read_state
+now=$(harness_now)
+
+ago() { local s=$1; if [ "$s" -lt 3600 ]; then echo "$((s / 60)) min"; elif [ "$s" -lt 172800 ]; then echo "$((s / 3600)) h $((s % 3600 / 60)) min"; else echo "$((s / 86400)) days"; fi; }
+when() { date -r "$1" '+%a %-I:%M %p' 2>/dev/null || date -d "@$1" '+%a %-I:%M %p'; }
+hours() { if [ $(($1 % 60)) -eq 0 ]; then echo "$(($1 / 60)) hours"; else echo "$1 minutes"; fi; }
+
+status() {
+  local age=$((now - last_good)) v
+  if [ "$fails" -ge "$RED_AFTER" ] || [ "$age" -ge "$STALE" ]; then v="RED"
+  elif [ "$fails" -gt 0 ]; then v="RETRYING (a hiccup, it heals itself)"
+  elif [ "$degraded" -gt 0 ]; then v="PARTIAL ($PARTIAL_NOTE)"
+  else v="HEALTHY"; fi
+  echo "$SHORT_NAME: $v"
+  if [ "$last_good" -gt 0 ]; then echo "last good read: $(when "$last_good"), $(ago "$age") ago"; else echo "last good read: none on record"; fi
+  echo "failures in a row: $fails$([ "$degraded" -gt 0 ] && echo ", partial runs in a row: $degraded")"
+  if [ "$fails" -gt 0 ] && [ "${next_try:-0}" -gt "$now" ]; then echo "next try: $(when "$next_try")"
+  elif [ -n "$fail_head" ]; then echo "next try: when $CODE_BRANCH changes, or $(hours "$CODE_WAIT_MIN") after the last failure"
+  else echo "next run due: $(when $((last_good + DUE)))"; fi
+  local events
+  events=$(grep -E '^20[0-9-]+ [0-9:]+  ' "$LOG" 2>/dev/null)
+  [ -n "$EVENT_NOISE" ] && events=$(printf '%s\n' "$events" | grep -vE "  ($EVENT_NOISE):")
+  echo "last event: $(printf '%s\n' "$events" | tail -1 | cut -c1-220)"
+}
+
+manual() { printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "manual: $*" >> "$LOG"; }
+
+# The last 7 days in one block: the "watch it for a week" test. Hands-off means no day without a
+# good read, no manual run or unstick, and no failure streak that reached RED_AFTER.
+week() {
+  python3 - "$LOG" "$GOOD_RE" "$HEAL_RE" "$HEAL_LABEL" "$RED_AFTER" "${SYNC_HARNESS_NOW:-}" <<'PY'
+import re, sys, datetime as dt
+log, good_re, heal_re, heal_label, red_after, fake_now = sys.argv[1:7]
+good_re = re.compile(good_re) if good_re else None
+heal = re.compile(heal_re)
+now = dt.datetime.fromtimestamp(int(fake_now)) if fake_now else dt.datetime.now()
+since = now - dt.timedelta(days=7)
+good = set(); fails = partial = selfclosed = manual = 0; worst = 0
+try:
+    lines = open(log, errors="ignore")
+except OSError:
+    lines = []
+for line in lines:
+    m = re.match(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})  (.*)", line)
+    if not m: continue
+    t = dt.datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
+    if t < since: continue
+    msg = m.group(2)
+    if msg.startswith("runner: failure"):
+        fails += 1; n = re.search(r"failure (\d+) in a row", msg); worst = max(worst, int(n.group(1)) if n else 0)
+        c = heal.search(msg); selfclosed += int(c.group(1)) if c else 0
+    elif msg.startswith("runner: partial"): partial += 1; good.add(t.date())
+    elif msg.startswith("runner: good run"): good.add(t.date())
+    elif msg.startswith("runner: ") and heal.match(msg[len("runner: "):]):
+        selfclosed += int(heal.match(msg[len("runner: "):]).group(1))
+    elif msg.startswith("manual:"): manual += 1
+    elif good_re and good_re.search(msg): good.add(t.date())
+days = [(since + dt.timedelta(days=i+1)).date() for i in range(7)]
+missing = [d for d in days if d not in good and d <= now.date()]
+ok = not missing and manual == 0 and worst < int(red_after)
+print(f"week: {'HANDS-OFF' if ok else 'NOT YET'} | days with a good read {7-len(missing)} of 7 | failures {fails} (longest streak {worst}) | partial runs {partial} | {heal_label} {selfclosed} | manual runs or unsticks {manual}")
+if missing: print("days with no good read: " + ", ".join(d.strftime("%a %b %-d") for d in missing))
+PY
+}
+
+unstick() {
+  if harness_has hook_unstick; then hook_unstick
+  elif harness_has hook_after_fail; then out=$(hook_after_fail manual); echo "${out:-nothing to clear}"
+  else echo "this job has no unstick hook, so there is nothing to clear"; fi
+}
+
+case $cmd in
+  status) status; week | head -1 ;;
+  week) week ;;
+  unstick) manual "unstick"; unstick ;;
+  now)
+    if [ -n "$SYNC_MATCH" ] && pgrep -f "$SYNC_MATCH" >/dev/null; then echo "a run is already going; status follows"; status; exit 0; fi
+    manual "run now"
+    unstick
+    SYNC_HARNESS_FORCE=1 /bin/bash "$HERE/run.sh" "$CONFIG"
+    harness_read_state; now=$(harness_now); status ;;
+  config)
+    for k in CONFIG HOOKS JOB TITLE SHORT_NAME PLAIN LABEL SYNC_CMD SYNC_MATCH SYNC_WRITES_LOG LOG STATE \
+             DUE_HOURS SOON_MIN CODE_WAIT_MIN STALE_HOURS RED_AFTER BACKOFF_MIN BUILD_RETRY_MIN \
+             PERMISSION_RETRY_MIN ALERT_AFTER BROWSER_ALERT_AFTER PARTIAL_ALERT_AFTER NOTIFY_GAP_HOURS \
+             NO_POPUPS DNS_FALLBACK_HOSTS CODE_REPO CODE_BRANCH LOG_MAX_BYTES LOG_KEEP_LINES \
+             INTERVAL_MIN GRACE_MIN LAUNCHD_LOG XOS_TOOLS; do
+      printf '%s=%s\n' "$k" "${!k}"
+    done
+    for h in hook_classify hook_explain hook_before_run hook_after_fail hook_head hook_unstick hook_replay_then; do
+      harness_has "$h" && echo "hook: $h"
+    done ;;
+esac

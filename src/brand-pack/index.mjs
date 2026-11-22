@@ -6,6 +6,14 @@ export {
   UNFILLED,
   validateBrandPackConfig,
 } from "./config.mjs";
+export {
+  LETTERHEAD_IDS,
+  LETTERHEAD_VARIANTS,
+  letterheadDocument,
+  letterheadPlainText,
+  letterheadSignature,
+  renderLetterhead,
+} from "./letterheads.mjs";
 export { PLATFORM_IDS, PLATFORMS } from "./platforms.mjs";
 export {
   CARD_SIZE,

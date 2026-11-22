@@ -1,0 +1,350 @@
+{
+  "schema": "owner-statement/1",
+  "brand": "palisade",
+  "business": "Palisade Stays",
+  "month": "2026-10",
+  "monthLabel": "October 2026",
+  "monthShort": "October",
+  "status": "final",
+  "owner": {
+    "key": "sample-owner",
+    "name": "Sam Sample",
+    "greeting": "Sam"
+  },
+  "property": {
+    "label": "200 Oak Street",
+    "line": "200 Oak Street, Springfield, NJ"
+  },
+  "prepared": {
+    "by": "Jake Lee",
+    "date": "2026-11-01"
+  },
+  "moves": {
+    "direction": "none",
+    "cents": 0,
+    "headline": "Between us, October 2026",
+    "line": "our fee came out of the co-host payout",
+    "method": null,
+    "date": null,
+    "dateUnknown": null,
+    "sentence": "Nothing moves between us for October: our 15% fee, $558.60, came out of Airbnb's co-host payout."
+  },
+  "summary": {
+    "title": "Statement summary",
+    "columns": {
+      "month": "October",
+      "ytd": "Year to date"
+    },
+    "ytd": {
+      "known": false,
+      "reason": "year to date is not in the October record yet",
+      "from": null
+    },
+    "rows": [
+      {
+        "label": "Money in: Airbnb co-host payout to us",
+        "role": "in",
+        "month": 93465,
+        "ytd": null
+      },
+      {
+        "label": "Costs: cleaning payout, passed to the cleaner",
+        "role": "cost",
+        "month": -37605,
+        "ytd": null
+      },
+      {
+        "label": "Fees: our management fee, 15%",
+        "role": "fee",
+        "month": -55860,
+        "ytd": null
+      },
+      {
+        "label": "The money that moves: nothing",
+        "role": "moves",
+        "month": 0,
+        "ytd": null
+      }
+    ],
+    "foot": [["in", "cost", "fee"], "moves"]
+  },
+  "groups": [
+    {
+      "title": "Every stay, by property",
+      "property": "200 Oak Street: 5 stays, 21 nights",
+      "columns": [
+        {
+          "key": "dates",
+          "label": "Dates",
+          "kind": "text"
+        },
+        {
+          "key": "nights",
+          "label": "Nights",
+          "kind": "int"
+        },
+        {
+          "key": "payout",
+          "label": "Paid to us",
+          "kind": "money"
+        },
+        {
+          "key": "fee",
+          "label": "Our fee",
+          "kind": "money"
+        }
+      ],
+      "rows": [
+        {
+          "ref": "A-1",
+          "cells": {
+            "dates": "Oct 6 to 8",
+            "nights": 2,
+            "payout": 12074,
+            "fee": 4553
+          },
+          "detail": [
+            {
+              "label": "Paid to us by Airbnb, Oct 7",
+              "cents": 12074
+            },
+            {
+              "label": "Cleaning payout, passed to the cleaner",
+              "cents": -7521
+            },
+            {
+              "label": "Our fee, 15% of room revenue",
+              "cents": -4553,
+              "strong": true
+            },
+            {
+              "label": "Room revenue",
+              "cents": 30353
+            }
+          ]
+        },
+        {
+          "ref": "A-2",
+          "cells": {
+            "dates": "Oct 8 to 11",
+            "nights": 3,
+            "payout": 16865,
+            "fee": 9344
+          },
+          "detail": [
+            {
+              "label": "Paid to us by Airbnb, Oct 9",
+              "cents": 16865
+            },
+            {
+              "label": "Cleaning payout, passed to the cleaner",
+              "cents": -7521
+            },
+            {
+              "label": "Our fee, 15% of room revenue",
+              "cents": -9344,
+              "strong": true
+            },
+            {
+              "label": "Room revenue",
+              "cents": 62293
+            }
+          ]
+        },
+        {
+          "ref": "A-3",
+          "cells": {
+            "dates": "Oct 11 to 13",
+            "nights": 2,
+            "payout": 14612,
+            "fee": 7091
+          },
+          "detail": [
+            {
+              "label": "Paid to us by Airbnb, Oct 12",
+              "cents": 14612
+            },
+            {
+              "label": "Cleaning payout, passed to the cleaner",
+              "cents": -7521
+            },
+            {
+              "label": "Our fee, 15% of room revenue",
+              "cents": -7091,
+              "strong": true
+            },
+            {
+              "label": "Room revenue",
+              "cents": 47273
+            }
+          ]
+        },
+        {
+          "ref": "A-4",
+          "cells": {
+            "dates": "Oct 14 to 18",
+            "nights": 4,
+            "payout": 17681,
+            "fee": 10160
+          },
+          "detail": [
+            {
+              "label": "Paid to us by Airbnb, Oct 15",
+              "cents": 17681
+            },
+            {
+              "label": "Cleaning payout, passed to the cleaner",
+              "cents": -7521
+            },
+            {
+              "label": "Our fee, 15% of room revenue",
+              "cents": -10160,
+              "strong": true
+            },
+            {
+              "label": "Room revenue",
+              "cents": 67733
+            }
+          ]
+        },
+        {
+          "ref": "A-5",
+          "cells": {
+            "dates": "Oct 18 to 28",
+            "nights": 10,
+            "payout": 32233,
+            "fee": 24712
+          },
+          "detail": [
+            {
+              "label": "Paid to us by Airbnb, Oct 19",
+              "cents": 32233
+            },
+            {
+              "label": "Cleaning payout, passed to the cleaner",
+              "cents": -7521
+            },
+            {
+              "label": "Our fee, 15% of room revenue",
+              "cents": -24712,
+              "strong": true
+            },
+            {
+              "label": "Room revenue",
+              "cents": 164747
+            }
+          ]
+        }
+      ],
+      "subtotal": {
+        "label": "Subtotal, 200 Oak Street",
+        "cells": {
+          "nights": 21,
+          "payout": 93465,
+          "fee": 55860
+        }
+      },
+      "note": "Cleaning payout on every stay, shown once: 5 at ($75.21), ($376.05) in all."
+    }
+  ],
+  "costs": {
+    "title": "Costs and invoices",
+    "rows": [
+      {
+        "ref": "B-1",
+        "label": "Cleaner, invoice 5",
+        "payee": "Cleaner",
+        "number": "5",
+        "date": "2026-11-01",
+        "note": "6 turnovers, paid November 1. $73.95 covered by us.",
+        "cents": 45000,
+        "href": "https://example.com/invoices/cleaner-5"
+      },
+      {
+        "ref": "B-2",
+        "label": "Supply restock, invoice 1",
+        "payee": "Supplier",
+        "number": "1",
+        "date": "2026-10-05",
+        "note": "Supply restock. Paid by Zelle on October 5",
+        "cents": 16949,
+        "href": "https://example.com/invoices/restock-1"
+      },
+      {
+        "ref": "B-3",
+        "label": "Furnishings and supplies, invoice 0",
+        "payee": "Supplier",
+        "number": "0",
+        "date": "2026-10-07",
+        "note": "Furnishings and supplies. Paid by Zelle on October 7",
+        "cents": 45800,
+        "href": null
+      }
+    ]
+  },
+  "settlement": null,
+  "attention": [
+    "The Vrbo stay, October 3 to 6 is not on this statement. Vrbo is holding payment, and a refund of up to $466.84 is still to be settled.",
+    "The cleaner's invoice 5, $450.00 for 6 turnovers, was paid on November 1. The $73.95 above the cleaning payouts is ours, not billed to you."
+  ],
+  "stats": {
+    "stays": 5,
+    "nights": 21,
+    "occupancyPct": 67.7,
+    "last": {
+      "monthLabel": "September 2026",
+      "stays": 12,
+      "nights": 29,
+      "occupancyPct": 96.7
+    }
+  },
+  "sources": [
+    {
+      "label": "Airbnb co-host payout notices, October 2026",
+      "file": null,
+      "href": null
+    },
+    {
+      "label": "Airbnb transaction history, October 2026",
+      "file": null,
+      "href": null
+    },
+    {
+      "label": "Vendor invoices B-1 to B-3",
+      "file": null,
+      "href": null
+    }
+  ],
+  "email": {
+    "subject": "200 Oak Street | October 2026 owner statement",
+    "summary": [
+      {
+        "label": "Revenue",
+        "month": 372399,
+        "last": 549220
+      },
+      {
+        "label": "Our fee",
+        "month": 55860,
+        "last": 82383
+      },
+      {
+        "label": "Your net",
+        "month": 316539,
+        "last": 466837
+      },
+      {
+        "label": "Occupancy",
+        "pct": 67.7,
+        "lastPct": 96.7
+      }
+    ],
+    "button": "Open the October statement",
+    "password": "sample"
+  },
+  "links": {
+    "page": "https://example.com/clients/sample/october-2026",
+    "pdf": "https://example.com/clients/sample/october-2026/pdf"
+  },
+  "calls": "https://jakejjlee.com/meet"
+}

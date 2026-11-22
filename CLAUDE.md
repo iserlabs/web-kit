@@ -23,7 +23,7 @@ or commit SHA in their `package.json` (`github:iserlabs/web-kit#<ref>`).
 ## Exports
 
 `@iserlabs/web-kit/{biome, tsconfig, tsconfig-next, tailwind, seo, schema, forms,
-env, utils, audits, brand-pack, observability, observability/env, observability/server}`. Notes:
+env, utils, audits, brand-pack, artist, inquiry, owner-portal, owner-statement, email, desk/*, motion, motion/tokens, motion/css, observability, observability/env, observability/server}`. Notes:
 - `tsconfig` is **lib-oriented** (ES2022 / `noUncheckedIndexedAccess` /
   `verbatimModuleSyntax`) and breaks Next apps — Next sites extend
   `tsconfig-next` instead (the Next-safe preset).
@@ -32,6 +32,53 @@ env, utils, audits, brand-pack, observability, observability/env, observability/
 - `observability` provides error/event notification helpers (dedup, severity
   scrubbing, Discord notify); `observability/env` and `observability/server`
   are scoped sub-paths for env-var access and server-side transport.
+- `desk/*` is the back-office Desk's general engines, one path per file (see `docs/desk.md`).
+  Framework-free `.ts` except `unsaved` (React). A site's own facts are handed in, never written
+  here; this repo is public, so no client name, address or hosting ID goes in a file or a comment.
+- `artist` is the artist-site module (artwork record, availability, CV, shows,
+  press kit, studio auth, studio store, studio route handlers), first used by
+  julianpotulicki.com.
+  Framework-free `.ts`: handlers take a Web `Request` and return a `Response`, and
+  the visible pages stay in each site. The `"web-kit": { "artist": { "enabled": true } }`
+  flag is reserved for phase-2 tooling (`web-kit artist init`, an audit check); nothing
+  reads it yet and the export works without it.
+
+- `legal` builds every site's Privacy Policy and Terms and Conditions from one config
+  (`privacyPolicy`, `termsAndConditions`, `legalText`); `legal/consent` is the cookie choice
+  (`getConsent`, `setConsent`, `onConsentGranted`, GPC honored). Framework-free; the pages render in
+  each site. The ten launch items every site ships are in `docs/launch-checklist.md`, and
+  `audit --tier required` checks them through `checks/launch.mjs`.
+
+- `inquiry` is the one-question-per-screen inquiry flow (`defineInquiry`, `useInquiryFlow`,
+  `createInquiryController`, `createInquiryHandler`/`createInquiryRoute`). Logic in the kit,
+  `.ts` with no brand names; the visible UI is scaffolded into each site by
+  `web-kit inquiry init` and art-directed there. See `docs/inquiry.md`.
+
+- `guest-guide` (plus `guest-guide/alpenglow`, `/static`, `/sw`, `/manifest`, `/robots`) is the
+  one guest guide template, brand-switched by tokens. Model, checks and planner are framework-free
+  `.ts`; the components are React server components with no client code; `static` renders them
+  under `tsx` for plain-HTML sites. Every `.tsx` carries the automatic JSX runtime pragma, because
+  tsx compiles kit files in node_modules with no tsconfig. Fixtures use stand-in Wi-Fi values and
+  no photos (public repo). See `docs/guest-guide.md`.
+
+- `owner-portal` is the owner statements module (`StatementTabs`, `groupStatements`,
+  `portalTotals`, `validateModel`): statements by year, then month, as accessible tabs.
+  Figures come from the statement itself; the kit holds no client name or number. See
+  `docs/owner-portal.md`.
+
+- `owner-statement` renders one engine-written `owner-statement/1` model as the owner's monthly
+  statement page and print PDF (`renderStatement`, `validate`, `formatCents`, `BRANDS`), plus its link
+  preview (`statementShareMeta`, `renderStatementShareCard`; see `src/owner-statement/README.md`). `.mjs` plus
+  `index.d.ts`, framework free; every rule scoped under `.os`. Fixtures carry real figures but
+  stand-in names (public repo). The sites keep their own model files and logos.
+
+- `email` is the one framework for a site's automatic emails: `composeConfirmation` (paper letterhead from
+  `brand-pack/letterheads.mjs`, plain-text part, reference number), `emailSubject`
+  ("Business | what | name, Month D, YYYY"), `makeReference`, `mailSwitch` (a kind sends only when its
+  variable is exactly 1/true/on/yes), `deliver` (hands a message to the site's own transport only when the
+  switch is on), `lintMessage` (the standard as checks) and `email/preview` (`writePreviews`). It never
+  delivers mail itself and holds no client facts. A business with no header artwork yet sets
+  `letterhead.textHeader: true` in its brand config. See `docs/email.md`.
 
 ## CLI
 
@@ -44,6 +91,13 @@ The `web-kit` bin (used by consumers as `pnpm wk:doctor` / `wk:audit`):
   boards into a client site. Required on every new client build and major
   redesign; `audit --tier required` fails an adopted site without one, unless
   its `package.json` carries a dated `web-kit.brandPack.skip` with a reason.
+- `web-kit owner-statement validate|render` checks a statement model and renders it to a standalone
+  HTML file (and a PDF through headless Chrome).
+- `web-kit inquiry init` scaffolds the inquiry flow component and an example config into a site.
+- `web-kit audit --tier v3 --url <live url>` — the 47 v3 design checks (C01 to C47) in a real browser,
+  tiered T1/T2/T3/warn, blocking only on failures that are not in `.web-kit/v3-baseline.json`;
+  `--record-baseline` writes that file. Reads `docs/design/{FACTS.md,scales.json,DECISIONS.md}` from the
+  site repo. See `docs/v3-checks.md`.
 - `web-kit audit --tier extended` — Lighthouse (perf/SEO/BP/a11y + CWV) + axe
   (WCAG), advisory `warn` by default. Browser deps (`lighthouse`,
   `chrome-launcher`, `@axe-core/playwright`, `playwright`) install on demand so

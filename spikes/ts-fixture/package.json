@@ -1,1 +1,1 @@
-{ "name": "spike-ts", "private": true, "dependencies": { "@iserlabs/web-kit": "file:../..", "typescript": "^6.0.0" } }
+{ "name": "spike-ts", "private": true, "dependencies": { "@iserlabs/web-kit": "file:../..", "typescript": "^7.0.0" } }

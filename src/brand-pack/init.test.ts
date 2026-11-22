@@ -155,4 +155,17 @@ describe("initBrandPack", () => {
       }
     }
   });
+
+  it("announces the copy outcome and defers offscreen previews", () => {
+    const { files, result } = harness(["src/app"]);
+    result();
+    const at = (p: string) => files.get(`/site/src/app/${p}`) ?? "";
+
+    // A label change on the focused button is not reliably announced.
+    expect(at("brand/CopyButton.tsx")).toContain('role="status"');
+    // 35 previews on one page: everything below the first variant lazy-loads.
+    expect(at("brand/share/page.tsx")).toContain('loading={i === 0 ? undefined : "lazy"}');
+    // vh overshoots behind mobile browser UI.
+    expect(at("brand/styles.ts")).not.toContain("100vh");
+  });
 });

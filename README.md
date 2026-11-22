@@ -30,6 +30,7 @@ For Next sites, transpile it: `next.config.ts` → `transpilePackages: ["@iserla
 - `import { pageMeta } from "@iserlabs/web-kit/seo"`
 - `import { organization, lodgingBusiness, breadcrumb, faq } from "@iserlabs/web-kit/schema"`
 - `import { createContactHandler } from "@iserlabs/web-kit/forms"`
+- `import { useInquiryFlow, createInquiryRoute } from "@iserlabs/web-kit/inquiry"` (docs/inquiry.md)
 - `import { validateEnv } from "@iserlabs/web-kit/env"`
 - `import { cn } from "@iserlabs/web-kit/utils"`
 
@@ -54,7 +55,7 @@ fails on any `error` finding).
 
 ### Audits (extended tier — opt-in, browser-backed)
 `web-kit audit --tier extended` adds **Lighthouse** (perf/SEO/best-practices/a11y
-scores + CWV) and **axe** (WCAG a11y) per route. Findings default to `warn`
+scores + CWV) and **axe** (WCAG 2.0, 2.1 and 2.2 A/AA a11y) per route. Findings default to `warn`
 (advisory) — opt a code up to `error` via `severity` to make it a gate.
 
 The browser tools are **install-on-demand** (the kit stays lean for required-only
@@ -67,7 +68,7 @@ Configure in `web-kit.audits.config.mjs`:
 
     extended: {
       // lighthouse: false,            // or { thresholds: { performance: 0.9, seo: 0.95 } }
-      // axe: false,                   // or { tags: ["wcag2a","wcag2aa"] }
+      // axe: false,                   // or { tags: ["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22aa"] } (the default)
       // cwv: { thresholds: { lcp: 2500, cls: 0.1 } },
       // routes: ["/"],                // defaults to the required-tier route list
     }
@@ -104,4 +105,78 @@ HeadlineReveal and page transitions. Every part has a reduced-motion version and
 server-safe first render. Usage: `src/motion/DEMO.md`. React, GSAP (3.12.x), Lenis, three and
 @react-three/fiber are optional peers; install only what the site uses.
 
-TODO: #15 subject-in-front hero, #18 polish mode.
+## Artist module
+
+`@iserlabs/web-kit/artist` holds the parts of an artist's portfolio site that are
+the same on every artist's site: the artwork record and its label formatters,
+availability, the CV, and the studio (signed role cookies, per-work overlays over
+Upstash, and the login and work route handlers). It carries no React and no Next
+imports; each handler takes a Web `Request` and returns a `Response`.
+
+A site keeps its own names in `src/artist.config.ts` and wires a route in a few
+lines:
+
+    // src/app/api/studio/work/route.ts
+    import { workHandler } from "@iserlabs/web-kit/artist";
+    import { artworkBySlug } from "@/content/artworks";
+    import { studioAuth, studioStore } from "@/lib/studio";
+
+    const work = workHandler({
+      auth: studioAuth,
+      store: studioStore,
+      catalog: { has: (slug) => artworkBySlug(slug) !== undefined },
+    });
+
+    export const GET = work.GET;
+    export const PUT = work.PUT;
+    export const DELETE = work.DELETE;
+
+The `"web-kit": { "artist": { "enabled": true } }` flag in `package.json` is
+reserved for phase-2 tooling (`web-kit artist init` and an audit check). Nothing
+reads it yet, and the export works without it.
+
+`workHandler` also takes an optional `onError(error, { method, slug })`, called
+whenever the store fails, just before the 503 answer, so a site can report it
+(for example to Sentry). A throwing `onError` never changes the answer.
+
+Shows are typed in the studio and kept under their own store key. Pass
+`showsKey` to `createStudioStore` and mount `showsHandler` the same way as
+`workHandler`, with `store: studioStore.shows`. `showStatus`, `noticeShow` and
+`onView` read show dates as calendar days in the site's time zone (default
+`America/New_York`), and `cvFromShows` plus `mergeCv` put every published show
+that has opened on the CV. `pressKit` assembles a gallerist's press kit (on-request
+prices included); `generatePressToken` and `pressTokenMatches` guard its unlisted
+address. `onError` may be async; it is awaited (for at most `reportTimeoutMs`,
+default 2000) and can never change an answer.
+
+## Sync harness
+
+For a platform that copies something in from outside on a schedule (an inventory archive, a
+booking system, a feed). The harness runs it once a day or at whatever cadence you set, and
+looks after itself: a half-finished read is retried within the hour, a failed read waits 15,
+then 30, then 60 minutes instead of hammering the source, and a broken code change waits for a
+fix instead of re-running every 15 minutes. It sends at most one alert every six hours (none as
+Mac pop-ups while `~/.config/xenia/no-mac-popups` exists), turns red on the business dashboard
+only after three failures in a row or 30 hours without a good read, and answers "is it healthy"
+in one command. It is bash on purpose: launchd starts it, and macOS grants automation permission
+to the process launchd started. Design and the rules behind it:
+`docs/superpowers/specs/2026-10-13-sync-harness-design.md`.
+
+    src/sync-harness/sync-harness status <job>    # also: week, now, unstick, config
+    src/sync-harness/sync-harness replay <job> --since 2026-10-03
+
+Adding a sync to a new platform, in five steps:
+
+1. Write `~/Claude/clients/<job>.d/config.sh`: `JOB`, `TITLE`, `SYNC_CMD`, `LOG`, `STATE`, the
+   cadence and backoff settings, and `PLAIN`, `LABEL`, `INTERVAL_MIN`, `GRACE_MIN` for the
+   schedule. `src/sync-harness/examples/plfa/config.sh` lists every setting.
+2. Write `hooks.sh` next to it: `hook_classify` turns a run's log lines into one verdict (`ok`,
+   `partial`, `partial-retry-soon`, `fail-browser`, `fail-code`, `fail-build`,
+   `fail-permission`, `skip`) and `hook_explain` says it in a plain sentence. A simple sync can
+   skip the hooks and set `FINISHED_RE` and `SKIP_RE` instead.
+3. Cut fixtures from a real run of the sync into `src/sync-harness/test/fixtures/` and assert
+   their verdicts in `test/run-tests.sh`; run `pnpm test:sync-harness`.
+4. Replay the real log (`sync-harness replay <job>`) and check the verdict table against what
+   happened.
+5. `sync-harness install <job>` writes the launchd plist and prints the `launchctl` line and the
+   `/os` registry row; load the one and add the other.

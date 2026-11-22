@@ -1,0 +1,25 @@
+# exit: 0
+# a run that published one change ("done.")
+# from plfa-sync.log lines 37446-37905 (home path masked, runner lines and per-artist detail removed)
+2026-10-11 15:02:04  start
+2026-10-11 15:02:04  python: /opt/homebrew/bin/python3.12 (Python 3.12.13)
+2026-10-11 15:02:05  safari python: /opt/homebrew/bin/python3.12 (Python 3.12.13)
+2026-10-11 15:02:05  vercel: /Users/me/.nvm/versions/node/v24.17.0/bin/vercel
+2026-10-11 15:02:05  fetching
+2026-10-11 15:02:06  fetched
+2026-10-11 15:02:06  reading artist collections from the archive
+2026-10-11 15:03:01  artist collections refreshed
+2026-10-11 15:03:01  harvesting
+151 works published, 6 sold, 118 with a public price, 57 artists
+2026-10-11 15:03:12  reading show membership from the archive
+2026-10-11 15:03:26  rebuilding the show checklists
+2026-10-11 15:03:26  no change across 151 works
+2026-10-11 15:03:34  moved:  M plfa/_gen/aa-artists.json
+2026-10-11 15:03:34  bringing over any new images
+2026-10-11 15:03:34  regenerating
+2026-10-11 15:03:37  proving it
+673 passed, 1 skipped, 1 warning in 21.83s
+2026-10-11 15:04:00  committing
+2026-10-11 15:04:01  deploying
+2026-10-11 15:04:33  checking the live site
+2026-10-11 15:04:33  done. no change across 151 works

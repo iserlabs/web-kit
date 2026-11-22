@@ -25,6 +25,10 @@ echo "== TS subpath import via tsx =="
 ( cd "$ROOT/biome-fixture" && pnpm exec tsx -e "import('@iserlabs/web-kit/utils').then(m => { if (typeof m !== 'object') process.exit(1) })" ) \
   && echo "PASS ts-import" || { echo "FAIL ts-import"; fail=1; }
 
+echo "== Guide static render via tsx from node_modules =="
+( cd "$ROOT/static-fixture" && pnpm install --silent && pnpm exec tsx render.tsx | grep -q "<!doctype html>" ) \
+  && echo "PASS static-guide" || { echo "FAIL static-guide"; fail=1; }
+
 echo ""
 echo "spike fail flag (risky resolvers only): $fail"
 exit $fail

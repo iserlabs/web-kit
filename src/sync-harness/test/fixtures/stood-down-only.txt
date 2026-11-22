@@ -1,0 +1,5 @@
+# exit: 0
+# a beat that stood down for a run already going
+# from plfa-sync.log lines 38999-39000 (home path masked, runner lines and per-artist detail removed)
+2026-10-12 20:20:55  start
+2026-10-12 20:20:55  stood down: another run (process 29471) is still going

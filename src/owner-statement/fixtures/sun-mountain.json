@@ -1,0 +1,438 @@
+{
+  "schema": "owner-statement/1",
+  "brand": "sun-mountain",
+  "business": "Sun Mountain Stays",
+  "month": "2026-10",
+  "monthLabel": "October 2026",
+  "monthShort": "October",
+  "status": "final",
+  "owner": {
+    "key": "sample-owner",
+    "name": "Alex and Jordan Sample",
+    "greeting": "Alex and Jordan"
+  },
+  "property": {
+    "label": "100 Pine Street",
+    "line": "100 Pine Street, Springfield, CO 80000"
+  },
+  "prepared": {
+    "by": "Jake Lee",
+    "date": "2026-11-01"
+  },
+  "moves": {
+    "direction": "to_owner",
+    "cents": 170901,
+    "headline": "From Sun Mountain, October 2026",
+    "line": "by bank transfer, November 2, 2026",
+    "method": "bank transfer",
+    "date": "2026-11-02",
+    "dateUnknown": null,
+    "sentence": "We are sending you $1,709.01 for October by bank transfer on November 2, 2026."
+  },
+  "summary": {
+    "title": "Statement summary",
+    "columns": {
+      "month": "October",
+      "ytd": "Year to date"
+    },
+    "ytd": {
+      "known": false,
+      "reason": "year to date is not in the October record yet",
+      "from": null
+    },
+    "rows": [
+      {
+        "label": "Money in: booked revenue",
+        "role": "in",
+        "month": 374679,
+        "ytd": null
+      },
+      {
+        "label": "Costs: cleaning and expenses paid for you",
+        "role": "cost",
+        "month": -169107,
+        "ytd": null
+      },
+      {
+        "label": "Fees: management, 15%",
+        "role": "fee",
+        "month": -34671,
+        "ytd": null
+      },
+      {
+        "label": "The money that moves: sent to you",
+        "role": "moves",
+        "month": 170901,
+        "ytd": null
+      }
+    ],
+    "foot": [["in", "cost", "fee"], "moves"]
+  },
+  "groups": [
+    {
+      "title": "Every stay, by property",
+      "property": "100 Pine Street",
+      "columns": [
+        {
+          "key": "dates",
+          "label": "Dates",
+          "kind": "text"
+        },
+        {
+          "key": "channel",
+          "label": "Channel",
+          "kind": "text"
+        },
+        {
+          "key": "nights",
+          "label": "Nights",
+          "kind": "int"
+        },
+        {
+          "key": "revenue",
+          "label": "Revenue",
+          "kind": "money"
+        },
+        {
+          "key": "share",
+          "label": "Your share",
+          "kind": "money"
+        }
+      ],
+      "rows": [
+        {
+          "ref": "A-1",
+          "cells": {
+            "dates": "Oct 5 to 9",
+            "channel": "Airbnb",
+            "nights": 4,
+            "revenue": 52872,
+            "share": 24614
+          },
+          "detail": [
+            {
+              "label": "Booked revenue",
+              "cents": 52872
+            },
+            {
+              "label": "Cleaning",
+              "cents": -23914
+            },
+            {
+              "label": "Net",
+              "cents": 28958,
+              "strong": true
+            },
+            {
+              "label": "Management fee, 15%",
+              "cents": -4344
+            },
+            {
+              "label": "Your share",
+              "cents": 24614,
+              "strong": true
+            }
+          ]
+        },
+        {
+          "ref": "A-2",
+          "cells": {
+            "dates": "Oct 9 to 12",
+            "channel": "Booking.com",
+            "nights": 3,
+            "revenue": 84734,
+            "share": 51649
+          },
+          "detail": [
+            {
+              "label": "Guest paid, tax included",
+              "cents": 99189
+            },
+            {
+              "label": "Booking.com collected tax, passed through",
+              "cents": -14455
+            },
+            {
+              "label": "Booked revenue",
+              "cents": 84734
+            },
+            {
+              "label": "Cleaning",
+              "cents": -23970
+            },
+            {
+              "label": "Net",
+              "cents": 60764,
+              "strong": true
+            },
+            {
+              "label": "Management fee, 15%",
+              "cents": -9115
+            },
+            {
+              "label": "Your share",
+              "cents": 51649,
+              "strong": true
+            }
+          ]
+        },
+        {
+          "ref": "A-3",
+          "cells": {
+            "dates": "Oct 12 to 15",
+            "channel": "Airbnb",
+            "nights": 3,
+            "revenue": 47248,
+            "share": 19834
+          },
+          "detail": [
+            {
+              "label": "Booked revenue",
+              "cents": 47248
+            },
+            {
+              "label": "Cleaning",
+              "cents": -23914
+            },
+            {
+              "label": "Net",
+              "cents": 23334,
+              "strong": true
+            },
+            {
+              "label": "Management fee, 15%",
+              "cents": -3500
+            },
+            {
+              "label": "Your share",
+              "cents": 19834,
+              "strong": true
+            }
+          ]
+        },
+        {
+          "ref": "A-4",
+          "cells": {
+            "dates": "Oct 15 to 18",
+            "channel": "Airbnb",
+            "nights": 3,
+            "revenue": 79223,
+            "share": 47013
+          },
+          "detail": [
+            {
+              "label": "Booked revenue",
+              "cents": 79223
+            },
+            {
+              "label": "Cleaning",
+              "cents": -23914
+            },
+            {
+              "label": "Net",
+              "cents": 55309,
+              "strong": true
+            },
+            {
+              "label": "Management fee, 15%",
+              "cents": -8296
+            },
+            {
+              "label": "Your share",
+              "cents": 47013,
+              "strong": true
+            }
+          ]
+        },
+        {
+          "ref": "A-5",
+          "cells": {
+            "dates": "Oct 19 to 22",
+            "channel": "Airbnb",
+            "nights": 3,
+            "revenue": 51207,
+            "share": 23199
+          },
+          "detail": [
+            {
+              "label": "Booked revenue",
+              "cents": 51207
+            },
+            {
+              "label": "Cleaning",
+              "cents": -23914
+            },
+            {
+              "label": "Net",
+              "cents": 27293,
+              "strong": true
+            },
+            {
+              "label": "Management fee, 15%",
+              "cents": -4094
+            },
+            {
+              "label": "Your share",
+              "cents": 23199,
+              "strong": true
+            }
+          ]
+        },
+        {
+          "ref": "A-6",
+          "cells": {
+            "dates": "Oct 30 to Nov 2",
+            "channel": "Airbnb",
+            "nights": 3,
+            "revenue": 59395,
+            "share": 30159
+          },
+          "detail": [
+            {
+              "label": "Booked revenue",
+              "cents": 59395
+            },
+            {
+              "label": "Cleaning",
+              "cents": -23914
+            },
+            {
+              "label": "Net",
+              "cents": 35481,
+              "strong": true
+            },
+            {
+              "label": "Management fee, 15%",
+              "cents": -5322
+            },
+            {
+              "label": "Your share",
+              "cents": 30159,
+              "strong": true
+            }
+          ],
+          "note": "Still running at close"
+        }
+      ],
+      "subtotal": {
+        "label": "6 stays",
+        "cells": {
+          "nights": 19,
+          "revenue": 374679,
+          "share": 196468
+        }
+      },
+      "note": "Cleaning is inside each line; our fee is 15% of net on every stay."
+    }
+  ],
+  "costs": {
+    "title": "Expenses paid on your behalf",
+    "rows": [
+      {
+        "ref": "B-1",
+        "label": "Hot tub service, two invoices",
+        "payee": "Hot tub service",
+        "number": "003276-R-0019 and 003317-R-0015",
+        "date": "2026-10-01",
+        "note": "Paid October 1",
+        "cents": -17500,
+        "href": "https://example.com/invoices/hot-tub"
+      },
+      {
+        "ref": "B-2",
+        "label": "Linen and cleaning supplies, invoice 1",
+        "payee": "Cleaning supplier",
+        "number": "1",
+        "date": "2026-10-15",
+        "note": "October 15. Duvet covers were rented because the house's own were short",
+        "cents": -3400,
+        "href": "https://example.com/invoices/supplies-1"
+      },
+      {
+        "ref": "B-3",
+        "label": "Linen and cleaning supplies, invoice 2",
+        "payee": "Cleaning supplier",
+        "number": "2",
+        "date": "2026-10-31",
+        "note": "October 31",
+        "cents": -4667,
+        "href": "https://example.com/invoices/supplies-2"
+      }
+    ],
+    "subtotal": {
+      "label": "3 invoices",
+      "cents": -25567
+    }
+  },
+  "settlement": null,
+  "attention": [
+    "The stay of October 30 to November 2 was still running at close and is counted here.",
+    "Your own stay, October 22 to 28, is held on the calendar with no revenue and no fee.",
+    "Rented duvet covers were billed because the house's own were short: ($34.00) and ($46.67)."
+  ],
+  "stats": {
+    "stays": 6,
+    "nights": 19,
+    "occupancyPct": 61.3,
+    "last": {
+      "monthLabel": "September 2026",
+      "stays": 6,
+      "nights": 23,
+      "occupancyPct": 76.7
+    }
+  },
+  "sources": [
+    {
+      "label": "Reservations export, October 2026 (pulled November 1)",
+      "file": "reservations-2026-10.csv",
+      "href": null
+    },
+    {
+      "label": "Airbnb transaction record, October 2026",
+      "file": null,
+      "href": null
+    },
+    {
+      "label": "Booking.com payout, October 13",
+      "file": null,
+      "href": null
+    },
+    {
+      "label": "Vendor invoices B-1 to B-3",
+      "file": null,
+      "href": null
+    }
+  ],
+  "email": {
+    "subject": "100 Pine Street | October 2026 owner statement",
+    "summary": [
+      {
+        "label": "Revenue",
+        "month": 374679,
+        "last": 615917
+      },
+      {
+        "label": "Cleaning, fee, expenses",
+        "month": -203778,
+        "last": -209986
+      },
+      {
+        "label": "Sent to you",
+        "month": 170901,
+        "last": 405931
+      },
+      {
+        "label": "Occupancy",
+        "pct": 61.3,
+        "lastPct": 76.7
+      }
+    ],
+    "button": "Open the October statement",
+    "password": "sample"
+  },
+  "links": {
+    "page": "https://example.com/client/sample/report/october-2026",
+    "pdf": "https://example.com/client/sample/report/october-2026/pdf"
+  },
+  "calls": "https://jakejjlee.com/meet"
+}

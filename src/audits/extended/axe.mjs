@@ -1,10 +1,13 @@
+/** WCAG 2.0, 2.1 and 2.2 at levels A and AA (axe has no wcag22a tag). */
+export const DEFAULT_AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
+
 /**
  * Run axe-core a11y analysis against a URL via Playwright. Browser deps are
  * dynamically imported so the kit stays lean for sites that only run the
  * required tier (they never install playwright / @axe-core/playwright).
  * @returns {Promise<Array<{severity:string,code:string,message:string}>>}
  */
-export async function runAxe(url, { tags = ["wcag2a", "wcag2aa"] } = {}) {
+export async function runAxe(url, { tags = DEFAULT_AXE_TAGS } = {}) {
   let chromium;
   let AxeBuilder;
   try {

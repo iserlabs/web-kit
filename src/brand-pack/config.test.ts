@@ -20,7 +20,7 @@ const good = defineBrandPack({
       name: "Jake Lee",
       title: "Founder",
       email: "hello@sunmountainstays.com",
-      phone: "201.321.5446",
+      phone: "555.010.0100",
     },
   ],
 });
@@ -44,6 +44,12 @@ describe("validateBrandPackConfig", () => {
     expect(codes({ ...good, people: [{ ...good.people[0], phone: UNFILLED }] })).toContain(
       "brand-pack-placeholder",
     );
+  });
+
+  it("accepts a person with no phone at all", () => {
+    const { phone: _p, ...noPhone } = good.people[0];
+    expect(codes({ ...good, people: [noPhone] })).toEqual([]);
+    expect(codes({ ...good, people: [{ ...noPhone, phone: "" }] })).toEqual([]);
   });
 
   it("flags an empty person field the same way as an unfilled one", () => {

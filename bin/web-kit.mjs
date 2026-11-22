@@ -31,6 +31,14 @@ if (cmd === "audit") {
   const args = argv.slice(1);
   const tierIdx = args.indexOf("--tier");
   const tier = tierIdx >= 0 ? args[tierIdx + 1] : "required";
+  if (tier === "v3") {
+    // The v3 design checks run against a live or preview URL and block only on failures that
+    // are not in the site's .web-kit/v3-baseline.json. See docs/v3-checks.md.
+    const { runV3Cli } = await import("../src/audits/v3/cli.mjs");
+    const { lines, code } = await runV3Cli(args);
+    for (const l of lines) console.log(l);
+    process.exit(code);
+  }
   const dir = positionalDir(args);
   const findings =
     tier === "extended"
@@ -66,5 +74,42 @@ if (cmd === "brand-pack") {
   process.exit(0);
 }
 
-console.log("Usage: web-kit <doctor|audit|brand-pack> [--tier required|extended] [siteDir]");
-process.exit(cmd ? 1 : 0);
+if (cmd === "inquiry") {
+  if (argv[1] !== "init") {
+    console.log("Usage: web-kit inquiry init [siteDir]");
+    process.exit(1);
+  }
+  const dir = argv[2] || process.cwd();
+  const { initInquiry } = await import("../src/inquiry/init.mjs");
+  const { written, skipped, routeSnippet } = initInquiry(dir);
+  for (const p of written) console.log(`wrote  ${p}`);
+  for (const p of skipped) console.log(`kept   ${p} (already exists)`);
+  console.log(`\nAdd this route (for example src/app/api/inquiry/route.ts):\n\n${routeSnippet}`);
+  console.log(
+    `web-kit inquiry: ${written.length} written, ${skipped.length} kept. Edit src/content/inquiry-flow.ts for your questions and copy, then render <InquiryFlow /> on your inquiry page.`,
+  );
+  process.exit(0);
+}
+
+if (cmd === "guide-leaks" || cmd === "guide-check") {
+  const cli = await import("../src/guest-guide/cli.mjs");
+  const { lines, code } =
+    cmd === "guide-leaks"
+      ? await cli.runGuideLeaks(argv.slice(1))
+      : await cli.runGuideCheck(argv.slice(1));
+  for (const l of lines) console.log(l);
+  process.exit(code);
+}
+
+if (cmd === "owner-statement") {
+  const { runOwnerStatement } = await import("../src/owner-statement/cli.mjs");
+  const code = await runOwnerStatement(argv.slice(1));
+  // Not process.exit: let Chrome's pipe and the logo download finish flushing first.
+  process.exitCode = code;
+  if (code) process.exit(code);
+} else {
+  console.log(
+    "Usage: web-kit <doctor|audit|brand-pack|inquiry|guide-leaks|guide-check|owner-statement> [--tier required|extended|v3] [siteDir]",
+  );
+  process.exit(cmd ? 1 : 0);
+}
