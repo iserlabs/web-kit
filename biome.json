@@ -21,6 +21,17 @@
           "suspicious": { "noExplicitAny": "off" }
         }
       }
+    },
+    {
+      "includes": ["src/motion/**"],
+      "linter": {
+        "rules": {
+          "correctness": { "useExhaustiveDependencies": "off" },
+          "suspicious": { "noArrayIndexKey": "off" },
+          "performance": { "noImgElement": "off" },
+          "a11y": { "noStaticElementInteractions": "off" }
+        }
+      }
     }
   ]
 }

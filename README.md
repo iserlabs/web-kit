@@ -97,6 +97,14 @@ tokens and the real details of each named person, then send the client the
 is missing. That is deliberate: a board must never render an invented name, job
 title or tagline.
 
+## Motion kit
+
+`@iserlabs/web-kit/motion` is a small React + GSAP/Lenis/three.js layer for cinematic,
+motion-led sections: motion tokens, MotionProvider, ScrollSequence, RoomPicker3D,
+HeadlineReveal and page transitions. Every part has a reduced-motion version and a
+server-safe first render. Usage: `src/motion/DEMO.md`. React, GSAP (3.12.x), Lenis, three and
+@react-three/fiber are optional peers; install only what the site uses.
+
 ## Artist module
 
 `@iserlabs/web-kit/artist` holds the parts of an artist's portfolio site that are
