@@ -33,6 +33,7 @@
     "./env": "./src/env/index.ts",
     "./utils": "./src/utils/index.ts",
     "./audits": "./src/audits/index.mjs",
+    "./audits/v3": "./src/audits/v3/index.mjs",
     "./artist": "./src/artist/index.ts",
     "./brand-pack": {
       "types": "./src/brand-pack/types.d.ts",

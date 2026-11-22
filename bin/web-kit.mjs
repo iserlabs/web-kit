@@ -31,6 +31,14 @@ if (cmd === "audit") {
   const args = argv.slice(1);
   const tierIdx = args.indexOf("--tier");
   const tier = tierIdx >= 0 ? args[tierIdx + 1] : "required";
+  if (tier === "v3") {
+    // The v3 design checks run against a live or preview URL and block only on failures that
+    // are not in the site's .web-kit/v3-baseline.json. See docs/v3-checks.md.
+    const { runV3Cli } = await import("../src/audits/v3/cli.mjs");
+    const { lines, code } = await runV3Cli(args);
+    for (const l of lines) console.log(l);
+    process.exit(code);
+  }
   const dir = positionalDir(args);
   const findings =
     tier === "extended"
@@ -101,7 +109,7 @@ if (cmd === "owner-statement") {
   if (code) process.exit(code);
 } else {
   console.log(
-    "Usage: web-kit <doctor|audit|brand-pack|inquiry|guide-leaks|guide-check|owner-statement> [--tier required|extended] [siteDir]",
+    "Usage: web-kit <doctor|audit|brand-pack|inquiry|guide-leaks|guide-check|owner-statement> [--tier required|extended|v3] [siteDir]",
   );
   process.exit(cmd ? 1 : 0);
 }

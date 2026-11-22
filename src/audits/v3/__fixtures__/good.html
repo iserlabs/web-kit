@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Cedar Loft in Silverthorne</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">
+<meta name="description" content="Two bedroom loft four blocks from the lift.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"LodgingBusiness","name":"Cedar Loft","address":{"@type":"PostalAddress","addressLocality":"Silverthorne","addressRegion":"CO"}}</script>
+<style>
+:root{color-scheme:light;--text:#14110f;--muted:#4a443d;--hairline:rgb(20 17 15 / .16);--scrim:rgb(0 0 0 / .35);--hover:#000}
+*{box-sizing:border-box}
+body{margin:0;font:18px/1.5 Georgia,serif;color:var(--text);background:#fff;font-variant-numeric:tabular-nums}
+h1,h2{text-wrap:balance;margin:0 0 16px;font-weight:400}
+h1{font-size:48px;line-height:1.1;letter-spacing:-.02em}
+h2{font-size:32px;line-height:1.2}
+p{text-wrap:pretty;margin:0 0 16px;max-width:60ch}
+header{padding:16px 24px}
+nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+nav a{display:inline-block;padding:12px 16px;color:var(--text);font-size:16px}
+nav a.btn{border:1px solid var(--text);border-radius:8px}
+main>section{padding:96px 24px}
+.hero{padding:0 0 96px}
+.ph{position:relative;height:360px;background:#d9d2c8}
+.ph img{display:block;width:100%;height:100%;object-fit:cover}
+.scrim{position:absolute;inset:0;background:linear-gradient(in oklch,transparent,var(--scrim))}
+.copy{padding:48px 24px 0}
+button,.btn{font:16px Georgia,serif;min-height:48px;min-width:48px;padding:0 16px;border-radius:8px;cursor:pointer}
+.fill{background:#8a3b12;color:#fff;border:0}
+.line{background:transparent;color:var(--text);border:1px solid var(--text)}
+label{display:block;margin-bottom:16px;font-size:16px}
+input{display:block;width:100%;max-width:360px;min-height:48px;padding:12px;font:16px Georgia,serif;border:1px solid var(--hairline);border-radius:8px}
+.skeleton{background:#eee;border-radius:8px;padding:12px;max-width:240px}
+.more{display:inline-block;padding:12px 0;font-size:16px;color:var(--text)}
+iframe{border:0;border-radius:8px}
+footer{padding:24px;font-size:14px}
+</style></head><body>
+<header><nav aria-label="Main"><a href="/">Cedar Loft</a><a href="/stay">Stay</a><a href="/rules">Rules</a><a href="/contact">Contact</a><a class="btn" href="/book">Book</a></nav></header>
+<main>
+<section class="hero"><div class="ph"><img alt="Cedar Loft living room" width="1200" height="360" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='360'%3E%3Crect width='1200' height='360' fill='%23c9bfae'/%3E%3C/svg%3E"><div class="scrim"></div></div>
+<div class="copy"><h1>Cedar Loft sleeps 6</h1><p>Two bedrooms, a hot tub, 4 blocks from the lift.</p><p>$249 per night.</p>
+<button class="fill" type="button"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14"/></svg> Check availability</button> <button class="line" type="button">See the photos</button></div></section>
+<section><h2>Hot tub holds 6</h2><p>Open all year. Cedar deck, 4 steps from the kitchen.</p>
+<svg aria-hidden="true" width="24" height="24" viewBox="0 0 256 256" fill="currentColor"><path d="M128 24a104 104 0 1 0 104 104A104 104 0 0 0 128 24Z"/></svg></section>
+<section><h2>Request dates for the loft</h2>
+<form action="/inquiry" method="post"><label>Name<input name="name" autocomplete="name" required></label><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Dates<input name="dates" required></label><button class="line" type="submit">Send request</button></form></section>
+<section><h2>Where the loft sits</h2><div><figure style="margin:0"><iframe src="/embed" title="Map of the loft" width="320" height="160"></iframe></figure><p><a class="more" href="https://maps.google.test/cedar-loft">Open the map</a></p></div></section>
+<section><h2>Quiet hours and house rules</h2><button class="line" type="button" id="b1" aria-expanded="false" aria-controls="a1">House rules</button><div id="a1" hidden><p>Quiet hours start at 10 pm.</p></div></section>
+<section><h2>Nightly rate for the loft</h2><div id="rates"><p class="skeleton" aria-busy="true">Loading rates</p></div></section>
+</main>
+<footer><a class="more" href="/privacy">Privacy</a></footer>
+<script>
+document.getElementById('b1').addEventListener('click',function(){var o=this.getAttribute('aria-expanded')==='true';this.setAttribute('aria-expanded',String(!o));document.getElementById('a1').hidden=o;});
+fetch('/api/rates').then((r)=> {if(!r.ok)throw 0;return r.json()}).then((d)=> {document.getElementById('rates').innerHTML='<p>From <span data-fact-live>$'+d.nightly+'</span> per night.</p>'}).catch(()=> {document.getElementById('rates').innerHTML='<div role="alert"><p>Rates could not load. <a class="more" href="mailto:stay@cedarloft.test">Email us</a> and we will quote you.</p></div>'});
+</script></body></html>

@@ -94,6 +94,10 @@ The `web-kit` bin (used by consumers as `pnpm wk:doctor` / `wk:audit`):
 - `web-kit owner-statement validate|render` checks a statement model and renders it to a standalone
   HTML file (and a PDF through headless Chrome).
 - `web-kit inquiry init` scaffolds the inquiry flow component and an example config into a site.
+- `web-kit audit --tier v3 --url <live url>` — the 47 v3 design checks (C01 to C47) in a real browser,
+  tiered T1/T2/T3/warn, blocking only on failures that are not in `.web-kit/v3-baseline.json`;
+  `--record-baseline` writes that file. Reads `docs/design/{FACTS.md,scales.json,DECISIONS.md}` from the
+  site repo. See `docs/v3-checks.md`.
 - `web-kit audit --tier extended` — Lighthouse (perf/SEO/BP/a11y + CWV) + axe
   (WCAG), advisory `warn` by default. Browser deps (`lighthouse`,
   `chrome-launcher`, `@axe-core/playwright`, `playwright`) install on demand so
