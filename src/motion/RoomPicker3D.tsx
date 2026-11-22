@@ -50,7 +50,9 @@ export function RoomPicker3D({
 }: RoomPicker3DProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLButtonElement>(null);
-  const lastFocus = useRef<HTMLElement | null>(null);
+  // Room id whose chip had focus when a room opened. The chips unmount while a
+  // room is shown, so focus returns by id once the overview has re-rendered.
+  const returnTo = useRef<string | null>(null);
   const seen = useInView(rootRef);
   const reduced = useReducedMotion();
   const uid = useId();
@@ -93,7 +95,7 @@ export function RoomPicker3D({
     (id: string) => {
       const v = volumes.find((x) => x.id === id);
       if (!v || mode !== "overview") return;
-      lastFocus.current = document.activeElement as HTMLElement | null;
+      returnTo.current = rootRef.current?.contains(document.activeElement) ? id : null;
       setHoverId(null);
       setTip(null);
       setActiveId(id);
@@ -123,7 +125,6 @@ export function RoomPicker3D({
       focusBack();
     } else {
       setMode("overview");
-      lastFocus.current?.focus?.({ preventScroll: true });
     }
   }, []);
 
@@ -133,12 +134,21 @@ export function RoomPicker3D({
     if (reduced || !sceneReady) {
       setActiveId(null);
       setMode("overview");
-      lastFocus.current?.focus?.({ preventScroll: true });
     } else {
       setMode("flying");
       setTimeout(() => setActiveId(null), 320);
     }
   }, [mode, reduced, sceneReady]);
+
+  useEffect(() => {
+    if (mode !== "overview" || !returnTo.current) return;
+    const id = returnTo.current;
+    returnTo.current = null;
+    const chip = Array.from(
+      rootRef.current?.querySelectorAll<HTMLButtonElement>("button[data-room]") ?? [],
+    ).find((b) => b.dataset.room === id);
+    chip?.focus({ preventScroll: true });
+  }, [mode]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -224,6 +234,7 @@ export function RoomPicker3D({
             <button
               key={`${uid}-${v.id}`}
               type="button"
+              data-room={v.id}
               aria-current={hoverId === v.id}
               onClick={() => enter(v.id)}
               onMouseEnter={() => setHoverId(v.id)}
