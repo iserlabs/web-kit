@@ -287,6 +287,8 @@ export const C19 = {
           };
           const last = rectOf(ws[ws.length - 1]);
           const prev = rectOf(ws[ws.length - 2]);
+          /* No rendered text (hidden or zero-size runs) means nothing a reader sees is stranded. */
+          if (!el.innerText.trim()) continue;
           if (last && prev && last.top - prev.top > 4 && !window.__v3.exempt(el))
             out.push(el.innerText.trim().slice(-30));
         }
