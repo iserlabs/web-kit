@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **v3 design checks: `web-kit audit --tier v3 --url <live url>`.** 47 machine checks (C01 to C47) run in a real browser against a live or preview page, tagged T1, T2, T3 or warn, one plain line each (PASS, FAIL, WARN, UNPROVEN). A T1 or T3 failure passes when `docs/design/DECISIONS.md` records a reason for that check ID; T2 never does. A check that needs site data (the fact sheet, the brand scales) reports UNPROVEN when the file is missing, never a pass. `--record-baseline` writes `.web-kit/v3-baseline.json`; later runs fail only on failures not in it. Eight judgment-heavy checks (C14, C15, C16, C18, C22, C32, C38, C40) warn instead of block until 2026-12-22. Every check has a bad and a good fixture in `src/audits/v3/v3.test.ts`. See `docs/v3-checks.md`.
 - landstar donor-parity (replacing its general scripts with the kit): still pending.
 
 ## 0.19.0
