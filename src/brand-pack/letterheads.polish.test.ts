@@ -96,3 +96,15 @@ describe("finding 15: no email type under 13px", () => {
     });
   }
 });
+
+describe("2026-11-23: a pasted signature's contact lines read at 14px on a phone", () => {
+  it("raises a 12px email line to 14px and keeps small capitals at 13px", () => {
+    const sig =
+      '<div><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:1.7px">FOUNDER</div>' +
+      '<div style="font-size:12px"><a href="mailto:hello@example.com" style="font-size:12px">hello@example.com</a></div></div>';
+    const out = renderLetterhead("paper", config, person, email, sig);
+    expect(out).toMatch(/font-size:13px;text-transform:uppercase[^"]*">FOUNDER/);
+    expect(out).toMatch(/style="font-size:14px[^"]*"><a [^>]*font-size:14px/);
+    expect(out).not.toMatch(/font-size:(9\.5|12)px/);
+  });
+});

@@ -164,3 +164,5 @@ export declare function letterheadDocument(
   opts?: { subject?: string; fontsHref?: string },
 ): string;
 export declare function letterheadSignature(html: string): string;
+/** What Gmail on a phone would break in a finished letterhead email; empty means clean. */
+export declare function letterheadGmailProblems(html: string): string[];

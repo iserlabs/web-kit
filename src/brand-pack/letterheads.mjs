@@ -1,6 +1,9 @@
 /**
  * Letterheads: a whole business email, framed in the client's own brand.
  *
+ * `letterheadGmailProblems(html)` lists what Gmail on a phone would break in a finished email; the
+ * letterhead renderer refuses a draft that has any (2026-11-23).
+ *
  * The sibling of signatures.mjs, and bound by the same email rules: nested
  * presentation tables, inline styles only, no stylesheet, no classes, no flex,
  * no grid, no background images, never wider than 600px. Web fonts are named
@@ -81,6 +84,8 @@ const figureFont = (stack) => {
 
 /** Owner-statement polish finding 15: the least size any email text is set at. */
 const TYPE_FLOOR = 13;
+/** 2026-11-23: the least size a signature's contact line is set at, so a phone reads it unzoomed. */
+const CONTACT_FLOOR = 14;
 
 /** A table's row label gives way before its figures do: at a soft hyphen first, at any character as a last resort. */
 const LABEL_WRAP = "overflow-wrap:anywhere;";
@@ -315,6 +320,15 @@ function body(email, c, t, s) {
             `margin:0 0 22px 0;border-top:1px solid ${t.rule};border-bottom:1px solid ${t.rule};`,
           );
         }
+        case "image": {
+          // A photo in the body (a work report, a finding). The renderer swaps a local file for a cid
+          // part, so the picture travels inside the email; the caption is one short line under it.
+          const img = `<img src="${esc(b.src)}" width="560" alt="${esc(b.alt ?? b.caption ?? "")}" style="display:block;width:100%;max-width:560px;height:auto;border:0;border-radius:6px;">`;
+          const cap = b.caption
+            ? `<p style="margin:8px 0 0 0;font-family:${c.bodyFont};font-size:14px;line-height:1.45;color:${t.soft};">${esc(b.caption)}</p>`
+            : "";
+          return `<div style="margin:0 0 24px 0;">${img}${cap}</div>`;
+        }
         case "link":
           return s.link(b);
         case "button":
@@ -471,8 +485,18 @@ const nameBlock = (c, t, p, align = "left") =>
   `<div style="text-align:${align};font-family:${c.displayFont};font-size:22px;line-height:1.25;color:${c.ink};">${esc(p.name)}</div>` +
   `<div style="text-align:${align};font-family:${c.bodyFont};font-size:13px;line-height:1.5;letter-spacing:.14em;text-transform:uppercase;color:${t.soft};padding-top:3px;">${esc(p.title)}</div>`;
 
+/**
+ * The page around a letter: the surround, and the letter's column capped at 600px by a TABLE (Gmail
+ * keeps a table's max-width; Outlook ignores it, so Outlook gets a fixed 600px table of its own in a
+ * conditional comment). The surround is painted on the outer cell as well as the div, so a mail app
+ * that drops the div's background still shows it.
+ */
+const column = (inner, style = "") =>
+  `<!--[if mso]><table role="presentation" width="${MAX_WIDTH}" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->` +
+  `<table role="presentation" width="100%" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:${MAX_WIDTH}px;margin:0 auto;${style}"><tr><td style="padding:0;">${inner}</td></tr></table>` +
+  "<!--[if mso]></td></tr></table><![endif]-->";
 const shell = (c, t, inner) =>
-  `<div style="background-color:${t.surround};padding:20px 6px;">${table(`<tr><td align="center" style="padding:0;">${table(`<tr><td style="padding:0;">${inner}</td></tr>`, `max-width:${MAX_WIDTH}px;`)}</td></tr>`)}</div>`;
+  `<div style="background-color:${t.surround};padding:20px 6px;">${table(`<tr><td align="center" bgcolor="${esc(t.surround)}" style="padding:0;background-color:${t.surround};">${column(inner)}</td></tr>`)}</div>`;
 
 const footerLine = (c, t, color) =>
   t.footer
@@ -491,7 +515,7 @@ function setLetter(email, c, p, sig) {
     link: (b) =>
       `<p style="margin:0 0 18px 0;font-family:${c.displayFont};font-size:17px;line-height:1.6;color:${c.ink};">${b.label ? `${esc(b.label)}<br>` : ""}<a href="${esc(b.href)}" style="color:${t.link};${BREAK}">${url(b.href)}</a>${b.note ? `<br>${esc(b.note)}` : ""}</p>`,
   };
-  return `<div style="background-color:#ffffff;padding:24px 20px;">${table(`<tr><td style="padding:0;">${body(email, c, t, s)}<div style="padding-top:6px;">${sig}</div></td></tr>`, `max-width:${MAX_WIDTH}px;`)}</div>`;
+  return `<div style="background-color:#ffffff;padding:24px 20px;">${column(`${body(email, c, t, s)}<div style="padding-top:6px;">${sig}</div>`)}</div>`;
 }
 
 /** Paper: centered header on a paper sheet, a brand rule, serif text, ruled link panel. */
@@ -663,12 +687,54 @@ function phoneSafe(html) {
         Number(px) > 120 ? `${pre}width:100%` : m,
       )
       .replace(/(<span\b[^>]*>\s*(?:·|&middot;|&#183;)\s*<\/span>)(?!<wbr>)/gi, "$1<wbr>")
-      // Owner-statement polish finding 15: a signature's small capitals ("FOUNDER", a tagline)
-      // and contact line read at 13px or more; 0 to 2px spacer rows keep their size. No word changes.
-      .replace(/font-size:\s*(\d+(?:\.\d+)?)px/gi, (m, size) =>
-        Number(size) > 2 && Number(size) < TYPE_FLOOR ? `font-size:${TYPE_FLOOR}px` : m,
-      )
+      // A signature laid out as a table (logo cell beside a contact cell) cannot fold: its two
+      // cells side by side measured 468px and pushed a 390px phone sideways (2026-11-21, the
+      // Streamlined signature). Inline-block cells sit side by side when they fit and stack when
+      // they do not; Outlook ignores display on a cell and keeps the table, which is fine there.
+      .replace(/(<td\b[^>]*\bstyle=")(?!display:inline-block)/gi, "$1display:inline-block;")
+      // Owner-statement polish finding 15, raised 2026-11-23 ("janky on mobile"): a signature's small
+      // capitals and letterspaced taglines ("FOUNDER") read at 13px or more, and its contact lines
+      // (email, site, title) at 14px or more on a phone; 0 to 2px spacer rows keep their size. No word changes.
+      .replace(/style="([^"]*)"/gi, (m, st) => {
+        const floor = /text-transform:\s*uppercase|letter-spacing:\s*(?:0?\.[1-9]|[1-9])/i.test(st)
+          ? TYPE_FLOOR
+          : CONTACT_FLOOR;
+        return `style="${st.replace(/font-size:\s*(\d+(?:\.\d+)?)px/gi, (f, size) =>
+          Number(size) > 2 && Number(size) < floor ? `font-size:${floor}px` : f,
+        )}"`;
+      })
   );
+}
+
+/**
+ * What the Gmail iPhone app and Gmail web would break in a finished letterhead email (2026-11-23,
+ * "janky and wonky on mobile"), as a list of plain sentences; empty means clean. Gmail drops the
+ * <head> and every <style> and class, inline flex, grid and positioned layout, background images,
+ * CSS variables and SVG, and shows nothing for a data: image. Every picture must be a hosted https
+ * address (or a cid: part the draft carries) with a width attribute, so it keeps its size and shape.
+ */
+export function letterheadGmailProblems(html) {
+  const problems = [];
+  const body = String(html)
+    .replace(/<head>[\s\S]*?<\/head>/i, "")
+    .replace(/<!--[\s\S]*?-->/g, "");
+  const bad = (cond, msg) => cond && problems.push(msg);
+  bad(/display:\s*(inline-)?(flex|grid)/i.test(body), "flex or grid layout (Gmail drops it)");
+  bad(/<svg\b/i.test(body), "an inline SVG (Gmail drops it)");
+  bad(/[;"\s]position:\s*(absolute|relative|fixed|sticky)/i.test(body), "positioned layout (Gmail drops it)");
+  bad(/var\(--/.test(body), "a CSS variable (Gmail drops it)");
+  bad(/background-image|background:[^;"]*url\(/i.test(body), "a background image (Gmail drops it)");
+  bad(/<style\b/i.test(body), "a <style> block in the body (Gmail drops it)");
+  bad(/\sclass="/.test(body), "a class (Gmail drops classes)");
+  bad(/<div\b[^>]*\bmax-width:\s*600px/i.test(body), "the 600px column cap is on a div, not a table");
+  bad(!/<table\b[^>]*max-width:600px/.test(body), "no 600px column cap on a table");
+  for (const tag of body.match(/<img\b[^>]*>/gi) ?? []) {
+    const src = tag.match(/\bsrc="([^"]*)"/i)?.[1] ?? "";
+    bad(!/^(https:\/\/|cid:)/.test(src), `a picture Gmail will not show (${src.slice(0, 30)}): host it on https`);
+    bad(!/\bwidth="\d+"/.test(tag), `a picture with no width attribute (${src.slice(0, 60)})`);
+    bad(/max-width/.test(tag) && /[;"\s]height:\s*\d/.test(tag), `a picture that squashes on a narrow screen: max-width with a fixed height (${src.slice(0, 60)})`);
+  }
+  return problems;
 }
 
 /** The same email as plain text, the alternative part every letterhead ships with. */
@@ -681,6 +747,7 @@ export function letterheadPlainText(email, person) {
     if (b.type === "figures")
       return [b.intro, ...b.rows.map(([l, a]) => `${l} ${a}`)].filter(Boolean).join("\n");
     if (b.type === "heading") return b.text.toUpperCase();
+    if (b.type === "image") return `[Photo] ${b.caption ?? b.alt ?? ""}`.trim();
     if (b.type === "kpis")
       return b.tiles.map((k) => `${k.label}: ${k.value}${k.note ? ` (${k.note})` : ""}`).join("\n");
     if (b.type === "ledger")
