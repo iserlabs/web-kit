@@ -121,28 +121,52 @@ describe("letterhead variants", () => {
   });
 
   it("has nothing Gmail on a phone would break (2026-11-23, 'janky and wonky on mobile')", () => {
-    const hosted = { ...config, letterhead: { ...config.letterhead, headerUrl: "https://example-stays.com/header@3x.png" } };
+    const hosted = {
+      ...config,
+      letterhead: { ...config.letterhead, headerUrl: "https://example-stays.com/header@3x.png" },
+    };
     for (const id of LETTERHEAD_IDS as string[]) {
-      const html = letterheadDocument(renderLetterhead(id, hosted, person, email), { subject: email.subject });
+      const html = letterheadDocument(renderLetterhead(id, hosted, person, email), {
+        subject: email.subject,
+      });
       expect(letterheadGmailProblems(html), id).toEqual([]);
     }
   });
 
   it("the Gmail check catches each thing Gmail breaks", () => {
     const ok = letterheadDocument(
-      renderLetterhead("paper", { ...config, letterhead: { ...config.letterhead, headerUrl: "https://example-stays.com/h.png" } }, person, email),
+      renderLetterhead(
+        "paper",
+        {
+          ...config,
+          letterhead: { ...config.letterhead, headerUrl: "https://example-stays.com/h.png" },
+        },
+        person,
+        email,
+      ),
       { subject: "s" },
     );
-    const plant = (x: string) => letterheadGmailProblems(ok.replace("</body>", `${x}</body>`)).join(" | ");
+    const plant = (x: string) =>
+      letterheadGmailProblems(ok.replace("</body>", `${x}</body>`)).join(" | ");
     expect(plant('<div style="display:flex">x</div>')).toMatch(/flex or grid/);
     expect(plant("<svg></svg>")).toMatch(/SVG/);
-    expect(plant('<img src="data:image/png;base64,AAAA" width="10" alt="a">')).toMatch(/Gmail will not show/);
-    expect(plant('<img src="http://example.com/a.png" width="10" alt="a">')).toMatch(/Gmail will not show/);
+    expect(plant('<img src="data:image/png;base64,AAAA" width="10" alt="a">')).toMatch(
+      /Gmail will not show/,
+    );
+    expect(plant('<img src="http://example.com/a.png" width="10" alt="a">')).toMatch(
+      /Gmail will not show/,
+    );
     expect(plant('<img src="https://example.com/a.png" alt="a">')).toMatch(/no width attribute/);
-    expect(plant('<img src="https://example.com/a.png" width="180" alt="a" style="width:180px;max-width:100%;height:51px">')).toMatch(/squashes/);
+    expect(
+      plant(
+        '<img src="https://example.com/a.png" width="180" alt="a" style="width:180px;max-width:100%;height:51px">',
+      ),
+    ).toMatch(/squashes/);
     expect(plant('<p class="x">x</p>')).toMatch(/a class/);
     expect(plant('<div style="max-width:600px">x</div>')).toMatch(/column cap is on a div/);
-    expect(letterheadGmailProblems("<html><body><p>x</p></body></html>").join()).toMatch(/no 600px column cap/);
+    expect(letterheadGmailProblems("<html><body><p>x</p></body></html>").join()).toMatch(
+      /no 600px column cap/,
+    );
   });
 
   it("gives every image alt text so the words survive with images off", () => {

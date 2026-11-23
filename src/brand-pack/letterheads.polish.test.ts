@@ -41,7 +41,13 @@ const email = {
       ],
       strongColumn: 1,
     },
-    { type: "figures", rows: [["Revenue", "$3,746.79"], ["Sent to you", "$1,709.01"]] },
+    {
+      type: "figures",
+      rows: [
+        ["Revenue", "$3,746.79"],
+        ["Sent to you", "$1,709.01"],
+      ],
+    },
     { type: "ledger", rows: [{ label: "Hot tub", value: "($175.00)" }] },
   ],
 };
@@ -54,7 +60,8 @@ const signature =
   '<div style="font-size:12px;">hello@example.com<span style="font-size:11px;padding:0 7px">·</span></div>' +
   '<div style="width:100%;height:1px;font-size:1px;line-height:1px"> </div></td></tr></table>';
 
-const styleOf = (el: { getAttribute(n: string): string | undefined }) => el.getAttribute("style") ?? "";
+const styleOf = (el: { getAttribute(n: string): string | undefined }) =>
+  el.getAttribute("style") ?? "";
 const px = (style: string) => Number(/font-size:\s*([\d.]+)px/.exec(style)?.[1] ?? Number.NaN);
 
 describe("finding 14: money columns keep lining figures where Gmail drops the brand face", () => {
@@ -62,7 +69,9 @@ describe("finding 14: money columns keep lining figures where Gmail drops the br
     it(`${id}: every figure cell names a lining sans ahead of Georgia and asks for lining tabular digits`, () => {
       const root = parse(renderLetterhead(id, config, person, email, null));
       const figures = [
-        ...root.querySelectorAll("td").filter((td) => /^\(?\$[\d,]+\.\d{2}\)?$/.test(td.text.trim())),
+        ...root
+          .querySelectorAll("td")
+          .filter((td) => /^\(?\$[\d,]+\.\d{2}\)?$/.test(td.text.trim())),
       ];
       expect(figures.length).toBeGreaterThanOrEqual(7);
       for (const td of figures) {
@@ -106,5 +115,20 @@ describe("2026-11-23: a pasted signature's contact lines read at 14px on a phone
     expect(out).toMatch(/font-size:13px;text-transform:uppercase[^"]*">FOUNDER/);
     expect(out).toMatch(/style="font-size:14px[^"]*"><a [^>]*font-size:14px/);
     expect(out).not.toMatch(/font-size:(9\.5|12)px/);
+  });
+});
+
+describe("2026-11-23: a pasted signature's contact line can wrap on a 320px phone", () => {
+  it("turns the non-breaking spaces Gmail puts around a separator dot into plain spaces", () => {
+    const sig =
+      '<div style="font-size:14px"><a href="mailto:jake@example.com">jake@example.com</a>' +
+      '<span style="padding:0px 3px"><span> </span>·<span>&nbsp;</span></span>' +
+      '<a href="https://example.com/">example.com</a></div>' +
+      '<div style="height:4px;line-height:4px;font-size:1px">&nbsp;</div>';
+    const out = renderLetterhead("paper", config, person, email, sig);
+    expect(out).toContain("<span> </span>·<span> </span>");
+    expect(out).not.toMatch(/<span>( |&nbsp;)<\/span>/);
+    // a spacer row keeps its non-breaking space, or it would collapse to nothing
+    expect(out).toMatch(/font-size:1px">&nbsp;<\/div>/);
   });
 });

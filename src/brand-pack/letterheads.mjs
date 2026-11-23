@@ -687,6 +687,11 @@ function phoneSafe(html) {
         Number(px) > 120 ? `${pre}width:100%` : m,
       )
       .replace(/(<span\b[^>]*>\s*(?:·|&middot;|&#183;)\s*<\/span>)(?!<wbr>)/gi, "$1<wbr>")
+      // Gmail wraps the spaces around a separator dot in their own spans as non-breaking spaces,
+      // so "email · site" could never fold and ran 10px past a 320px phone at 14px (2026-11-23,
+      // the Streamlined signature). A span holding only that space gets a plain one; spacer rows
+      // (a div holding &nbsp;) keep theirs.
+      .replace(/<span>(?:\u00a0|&nbsp;|&#160;)<\/span>/gi, "<span> </span>")
       // A signature laid out as a table (logo cell beside a contact cell) cannot fold: its two
       // cells side by side measured 468px and pushed a 390px phone sideways (2026-11-21, the
       // Streamlined signature). Inline-block cells sit side by side when they fit and stack when
@@ -695,7 +700,7 @@ function phoneSafe(html) {
       // Owner-statement polish finding 15, raised 2026-11-23 ("janky on mobile"): a signature's small
       // capitals and letterspaced taglines ("FOUNDER") read at 13px or more, and its contact lines
       // (email, site, title) at 14px or more on a phone; 0 to 2px spacer rows keep their size. No word changes.
-      .replace(/style="([^"]*)"/gi, (m, st) => {
+      .replace(/style="([^"]*)"/gi, (_m, st) => {
         const floor = /text-transform:\s*uppercase|letter-spacing:\s*(?:0?\.[1-9]|[1-9])/i.test(st)
           ? TYPE_FLOOR
           : CONTACT_FLOOR;
@@ -721,18 +726,30 @@ export function letterheadGmailProblems(html) {
   const bad = (cond, msg) => cond && problems.push(msg);
   bad(/display:\s*(inline-)?(flex|grid)/i.test(body), "flex or grid layout (Gmail drops it)");
   bad(/<svg\b/i.test(body), "an inline SVG (Gmail drops it)");
-  bad(/[;"\s]position:\s*(absolute|relative|fixed|sticky)/i.test(body), "positioned layout (Gmail drops it)");
+  bad(
+    /[;"\s]position:\s*(absolute|relative|fixed|sticky)/i.test(body),
+    "positioned layout (Gmail drops it)",
+  );
   bad(/var\(--/.test(body), "a CSS variable (Gmail drops it)");
   bad(/background-image|background:[^;"]*url\(/i.test(body), "a background image (Gmail drops it)");
   bad(/<style\b/i.test(body), "a <style> block in the body (Gmail drops it)");
   bad(/\sclass="/.test(body), "a class (Gmail drops classes)");
-  bad(/<div\b[^>]*\bmax-width:\s*600px/i.test(body), "the 600px column cap is on a div, not a table");
+  bad(
+    /<div\b[^>]*\bmax-width:\s*600px/i.test(body),
+    "the 600px column cap is on a div, not a table",
+  );
   bad(!/<table\b[^>]*max-width:600px/.test(body), "no 600px column cap on a table");
   for (const tag of body.match(/<img\b[^>]*>/gi) ?? []) {
     const src = tag.match(/\bsrc="([^"]*)"/i)?.[1] ?? "";
-    bad(!/^(https:\/\/|cid:)/.test(src), `a picture Gmail will not show (${src.slice(0, 30)}): host it on https`);
+    bad(
+      !/^(https:\/\/|cid:)/.test(src),
+      `a picture Gmail will not show (${src.slice(0, 30)}): host it on https`,
+    );
     bad(!/\bwidth="\d+"/.test(tag), `a picture with no width attribute (${src.slice(0, 60)})`);
-    bad(/max-width/.test(tag) && /[;"\s]height:\s*\d/.test(tag), `a picture that squashes on a narrow screen: max-width with a fixed height (${src.slice(0, 60)})`);
+    bad(
+      /max-width/.test(tag) && /[;"\s]height:\s*\d/.test(tag),
+      `a picture that squashes on a narrow screen: max-width with a fixed height (${src.slice(0, 60)})`,
+    );
   }
   return problems;
 }
