@@ -1,6 +1,6 @@
 // GENERATED from the sign-kit src/lib/signer-email-core.ts (the Specimen). Do not edit by hand:
 // change the kit's file and run `pnpm emails:vendor-webkit <this repo>` in the kit.
-// kit-core-sha256: 7ab0275694fa3cfd0da9266141b7a199cdc9974565b7f5004f7a1ad8ce91b1ac (kit commit 2c0a8fc when generated)
+// kit-core-sha256: 802f833a3e39c4a0945ae00007e4cac73df05e5aa3fb5f5aff4d6d61267ed19e (kit commit 5245c83 when generated)
 /**
  * The Specimen: the ONE email design for every signing and form email across Jake's businesses
  * (picked by Jake on the round 2 board, 2026-11-14, over the Track, which was rejected).
@@ -22,9 +22,14 @@
  * one shows "Signature needed"), a quiet footer. No colored header band and no step track.
  *
  * Mechanics, chosen for the inboxes that actually exist:
- * - tables and inline styles; one small <style> for light-only and phone sizes (a progressive
- *   extra: the email is complete without it)
- * - 600px maximum, fluid under that; body copy 16px or more, nothing under 13px
+ * - nested presentation tables and inline styles; the one small <style> only declares light-only
+ *   and switches off text resizing. Nothing about the layout depends on it or on a class, because
+ *   Gmail (the iPhone app above all) drops both: side margins are percentages that shrink with the
+ *   screen, so a 320px phone and a 1280px desktop get the same markup (2026-11-23, "janky on mobile")
+ * - 600px maximum set on a TABLE (a table's max-width survives every Gmail), with a 600px table for
+ *   Outlook inside a conditional comment; fluid under that
+ * - body copy 16px or more; labels and small print 14px; only the status stamp is 13px
+ * - no flex, grid, position, background images, SVG, CSS variables or symbol glyphs anywhere
  * - every painted cell carries BOTH bgcolor and style, so Outlook's Word engine keeps the colors
  * - web font first with a deliberate system fallback (Iowan Old Style, Charter, Georgia; Helvetica
  *   Neue, Arial), never a Times New Roman fallback
@@ -33,7 +38,9 @@
  * - the button is a plain link in every client with a VML twin for Outlook
  * - the page declares itself light-only and switches off phone auto-linking
  * - the preview line is a hidden preheader, padded so body text cannot follow it into the list
- * - "book a call" is an inline text link in the footer, never a button
+ * - the booking link is the bare address alone in its own paragraph under a footer sentence that ends
+ *   in a colon, never a button and never buried in a sentence (Jake, 2026-11-20); an empty bookUrl
+ *   drops the booking line entirely (Palisade: no booking link in any email, 2026-11-14)
  * - a plain-text twin is always built, so no send ever goes out html-only
  *
  * No phone number appears anywhere on these emails. Contact is the reply.
@@ -153,6 +160,11 @@ function stack(s, generic) {
 const PAD = "&zwnj;&nbsp;".repeat(90);
 const T = (inner, attrs = "") => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" ${attrs}>${inner}</table>`;
 const gap = (h) => `<div style="height:${h}px;line-height:${h}px;font-size:1px">&nbsp;</div>`;
+/**
+ * A side margin that is `px` wide on the 600px email and shrinks with the screen (about half at 320),
+ * as a percentage of the cell's own width, so no media query is needed: Gmail drops those.
+ */
+const side = (px, box = 600) => `${+((px / box) * 100).toFixed(3)}%`;
 const sp = (h) => `<tr><td height="${h}" style="height:${h}px;font-size:1px;line-height:${h}px">&nbsp;</td></tr>`;
 function colors(p) {
     const tint = mix(p.bandAccent, p.paper, 0.14);
@@ -185,8 +197,8 @@ function stripLinks(text) {
 }
 function button(href, label, c, sans) {
     const safe = esc(href);
-    return `<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${safe}" style="height:56px;v-text-anchor:middle;width:544px" arcsize="10%" fillcolor="${c.deep}" stroke="f"><w:anchorlock/><center style="color:${c.onDeep};font-family:Arial,sans-serif;font-size:17px;font-weight:bold">${esc(label)}</center></v:roundrect><![endif]-->
-<!--[if !mso]><!--><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${c.deep}" style="background:${c.deep};border-radius:6px"><a href="${safe}" style="display:block;height:56px;line-height:56px;padding:0 28px;font-family:${sans};font-size:17px;font-weight:600;color:${c.onDeep};text-align:center;text-decoration:none">${esc(label)}</a></td></tr></table><!--<![endif]-->`;
+    return `<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${safe}" style="height:56px;v-text-anchor:middle;width:536px" arcsize="10%" fillcolor="${c.deep}" stroke="f"><w:anchorlock/><center style="color:${c.onDeep};font-family:Arial,sans-serif;font-size:17px;font-weight:bold">${esc(label)}</center></v:roundrect><![endif]-->
+<!--[if !mso]><!--><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${c.deep}" style="background:${c.deep};border-radius:6px"><a href="${safe}" style="display:block;height:56px;line-height:56px;padding:0 16px;font-family:${sans};font-size:17px;font-weight:600;color:${c.onDeep};text-align:center;text-decoration:none">${esc(label)}</a></td></tr></table><!--<![endif]-->`;
 }
 function para(t, c, font, o) {
     if (!t)
@@ -216,32 +228,32 @@ export function renderSpecimen(m) {
         head = `<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">${wordmark}</td></tr></table>`;
     }
     const rows = sheet.rows
-        .map((r) => `<tr><td valign="top" width="34%" style="padding:11px 12px 11px 0;border-top:1px solid ${c.rule};font-family:${sans};font-size:14px;line-height:21px;color:${c.muted}">${esc(r.label)}</td><td valign="top" style="padding:11px 0;border-top:1px solid ${c.rule};font-family:${serif};font-size:17px;line-height:24px;color:${c.ink};word-wrap:break-word">${esc(r.value)}</td></tr>`)
+        .map((r) => `<tr><td valign="top" width="34%" style="padding:11px 12px 11px 0;border-top:1px solid ${c.rule};font-family:${sans};font-size:14px;line-height:21px;color:${c.muted}">${esc(r.label)}</td><td valign="top" style="padding:11px 0;border-top:1px solid ${c.rule};font-family:${serif};font-size:17px;line-height:24px;color:${c.ink};word-wrap:break-word;overflow-wrap:anywhere">${esc(r.value)}</td></tr>`)
         .concat(sheet.reference
         ? [
-            `<tr><td valign="top" width="34%" style="padding:11px 12px 11px 0;border-top:1px solid ${c.rule};font-family:${sans};font-size:14px;line-height:21px;color:${c.muted}">${esc(sheet.reference.label)}</td><td valign="top" style="padding:11px 0;border-top:1px solid ${c.rule};font-family:${sans};font-size:16px;line-height:24px;letter-spacing:.04em;color:${c.ink};word-wrap:break-word">${esc(sheet.reference.value)}</td></tr>`,
+            `<tr><td valign="top" width="34%" style="padding:11px 12px 11px 0;border-top:1px solid ${c.rule};font-family:${sans};font-size:14px;line-height:21px;color:${c.muted}">${esc(sheet.reference.label)}</td><td valign="top" style="padding:11px 0;border-top:1px solid ${c.rule};font-family:${sans};font-size:16px;line-height:24px;letter-spacing:.04em;color:${c.ink};word-wrap:break-word;overflow-wrap:anywhere">${esc(sheet.reference.value)}</td></tr>`,
         ]
         : [])
         .join("");
     const sigs = (sheet.signatures ?? [])
         .map((p) => {
         const role = p.role ? `, ${esc(p.role)}` : "";
-        return `${sp(22)}<tr><td colspan="2" style="padding:0 0 4px;font-family:${serif};font-style:italic;font-size:${p.signed ? 28 : 17}px;line-height:34px;color:${p.signed ? c.deep : c.muted}">${p.signed ? esc(p.name) : "Signature needed"}</td></tr>
+        return `${sp(22)}<tr><td colspan="2" style="padding:0 0 4px;font-family:${serif};font-style:italic;font-size:${p.signed ? 28 : 17}px;line-height:34px;color:${p.signed ? c.deep : c.muted};word-wrap:break-word;overflow-wrap:anywhere">${p.signed ? esc(p.name) : "Signature needed"}</td></tr>
 <tr><td colspan="2" height="1" style="height:1px;font-size:1px;line-height:1px;border-top:1px ${p.signed ? "solid" : "dashed"} ${p.signed ? c.ink : "#8a8678"}">&nbsp;</td></tr>
-<tr><td colspan="2" style="padding:6px 0 0;font-family:${sans};font-size:13px;line-height:19px;color:${c.muted}">${esc(p.name)}${role}. ${p.signed ? (p.when ? `Signed ${esc(keepTogether(p.when))}` : "Signed") : "Has not signed yet"}</td></tr>`;
+<tr><td colspan="2" style="padding:6px 0 0;font-family:${sans};font-size:14px;line-height:20px;color:${c.muted};word-wrap:break-word">${esc(p.name)}${role}. ${p.signed ? (p.when ? `Signed ${esc(keepTogether(p.when))}` : "Signed") : "Has not signed yet"}</td></tr>`;
     })
         .join("");
-    const stamp = `<table role="presentation" align="right" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${c.tint}" style="background:${c.tint};border-radius:4px;padding:5px 10px;font-family:${sans};font-size:13px;line-height:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${c.accent};white-space:nowrap">${esc(m.status)}</td></tr></table>`;
-    const sheetHtml = `${T(`<tr><td class="px" bgcolor="${c.paper}" style="background:${c.paper};border:1px solid ${c.tint2};padding:30px 32px 30px">
-${T(`<tr><td valign="top" class="dt" style="font-family:${serif};font-size:26px;line-height:32px;color:${c.ink}">${esc(sheet.title)}</td><td valign="top" align="right" width="116">${stamp}</td></tr>${sheet.place ? `<tr><td colspan="2" style="padding:4px 0 0;font-family:${sans};font-size:15px;line-height:22px;color:${c.muted}">${sheet.place.split("\n").map(esc).join("<br>")}</td></tr>` : ""}${sheet.caption ? `<tr><td colspan="2" style="padding:4px 0 0;font-family:${sans};font-size:15px;line-height:22px;color:${c.muted}">${esc(sheet.caption)}</td></tr>` : ""}${sp(18)}`)}
+    const stamp = `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${c.tint}" style="background:${c.tint};border-radius:4px;padding:5px 10px;font-family:${sans};font-size:13px;line-height:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${c.accent};white-space:nowrap">${esc(m.status)}</td></tr></table>`;
+    const sheetHtml = `${T(`<tr><td bgcolor="${c.paper}" style="background:${c.paper};border:1px solid ${c.tint2};padding:28px ${side(30, 536)} 28px">
+${T(`<tr><td style="padding:0 0 12px">${stamp}</td></tr><tr><td valign="top" style="font-family:${serif};font-size:25px;line-height:31px;color:${c.ink};word-wrap:break-word">${esc(sheet.title)}</td></tr>${sheet.place ? `<tr><td style="padding:4px 0 0;font-family:${sans};font-size:15px;line-height:22px;color:${c.muted}">${sheet.place.split("\n").map(esc).join("<br>")}</td></tr>` : ""}${sheet.caption ? `<tr><td style="padding:4px 0 0;font-family:${sans};font-size:15px;line-height:22px;color:${c.muted}">${esc(sheet.caption)}</td></tr>` : ""}${sp(18)}`)}
 ${rows ? T(rows, 'style="border-collapse:collapse"') : ""}
 ${sheet.signatures?.length ? T(sigs) : ""}
 </td></tr>`)}${["96", "92"]
         .map((w) => T(`<tr><td align="center" style="padding:0">${T(`<tr><td width="${w}%" height="5" bgcolor="${c.paper}" style="width:${w}%;height:5px;font-size:1px;line-height:1px;background:${c.paper};border:1px solid ${c.tint2};border-top:0">&nbsp;</td></tr>`, `align="center" style="width:${w}%"`)}</td></tr>`))
         .join("")}`;
-    const body = T(`<tr><td class="px" bgcolor="${c.ground}" style="background:${c.ground};padding:40px 28px 36px;border-top:4px solid ${c.gold}">
+    const body = T(`<tr><td bgcolor="${c.ground}" style="background:${c.ground};padding:36px ${side(32)} 34px;border-top:4px solid ${c.gold}">
 ${head}
-<h1 class="h1" style="margin:30px 0 0;font-family:${serif};font-size:34px;line-height:40px;font-weight:400;color:${c.ink};text-align:center">${esc(m.headline)}</h1>
+<h1 style="margin:28px 0 0;font-family:${serif};font-size:31px;line-height:37px;font-weight:400;color:${c.ink};text-align:center">${esc(m.headline)}</h1>
 ${m.lead.map((t, i) => para(t, c, sans, { color: c.mutedOnGround, align: "center", mt: i ? 10 : 12 })).join("")}
 ${m.button ? `${gap(24)}${button(m.button.url, m.button.label, c, sans)}` : ""}
 ${gap(28)}
@@ -251,18 +263,19 @@ ${(m.after ?? []).map((t) => para(t, c, sans, { color: c.ink, align: "center", m
 ${m.signoff ? `<p style="margin:14px 0 0;text-align:center;font-family:${serif};font-style:italic;font-size:26px;line-height:32px;color:${c.deep}">${esc(m.signoff.name)}</p>${para(m.signoff.title, c, sans, { size: 14, lh: 20, color: c.mutedOnGround, align: "center" })}` : ""}
 ${gap(30)}
 ${para(m.footer.reply, c, sans, { size: 14, lh: 22, color: c.mutedOnGround, align: "center" })}
-${para(m.footer.fine, c, sans, { size: 13, lh: 20, color: c.mutedOnGround, align: "center", mt: 6 })}
-${para(m.footer.legal, c, sans, { size: 13, lh: 20, color: c.mutedOnGround, align: "center", mt: 6 })}
+${para(m.footer.book, c, sans, { size: 14, lh: 22, color: c.mutedOnGround, align: "center", mt: 8 })}
+${para(m.footer.fine, c, sans, { size: 14, lh: 21, color: c.mutedOnGround, align: "center", mt: 6 })}
+${para(m.footer.legal, c, sans, { size: 14, lh: 21, color: c.mutedOnGround, align: "center", mt: 6 })}
 </td></tr>`);
     const html = `<!doctype html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"><meta name="format-detection" content="telephone=no,date=no,address=no,email=no"><!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]--><title>${esc(m.subject)}</title>${m.fontsHref ? `<link href="${esc(m.fontsHref)}" rel="stylesheet">` : ""}
-<style>:root{color-scheme:light only;supported-color-schemes:light}body{margin:0;padding:0;-webkit-text-size-adjust:100%;text-size-adjust:100%}img{-ms-interpolation-mode:bicubic}@media (max-width:480px){.px{padding-left:20px!important;padding-right:20px!important}.h1{font-size:28px!important;line-height:34px!important}.dt{font-size:22px!important;line-height:28px!important}}</style></head>
+<style>:root{color-scheme:light only;supported-color-schemes:light}body{margin:0;padding:0;-webkit-text-size-adjust:100%;text-size-adjust:100%}img{-ms-interpolation-mode:bicubic}</style></head>
 <body style="margin:0;padding:0;background:${c.ground}" bgcolor="${c.ground}">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:13px;line-height:13px;color:${c.ground};mso-hide:all">${esc(m.preheader)}${PAD}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${c.ground}" style="background:${c.ground}"><tr><td align="center" style="padding:0">
-<!--[if mso]><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
-<div style="max-width:600px;margin:0 auto;text-align:left">${body}</div>
+<!--[if mso]><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+<table role="presentation" width="100%" align="center" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto"><tr><td align="left" style="padding:0">${body}</td></tr></table>
 <!--[if mso]></td></tr></table><![endif]--></td></tr></table>
 </body></html>`;
     const lines = [m.headline, ""];
@@ -293,6 +306,8 @@ ${para(m.footer.legal, c, sans, { size: 13, lh: 20, color: c.mutedOnGround, alig
     lines.push("");
     if (m.footer.reply)
         lines.push(stripLinks(m.footer.reply).text);
+    if (m.footer.book)
+        lines.push("", stripLinks(m.footer.book).text, "");
     if (m.footer.fine)
         lines.push(m.footer.fine);
     lines.push(m.footer.legal);
@@ -316,7 +331,9 @@ export function subjectFor(m) {
     const what = m.waiting.length === 0 ? "Fully signed" : `Signed by ${m.signedBy}`;
     return `${m.subjectPlace ? `${m.subjectPlace} | ` : ""}${m.docTitle} | ${what}${day ? `, ${day}` : ""}`;
 }
-const FOOTER_REPLY = (brand, bookUrl) => `Reply to this email and it reaches ${brand}. Or [book a call](${bookUrl}).`;
+const FOOTER_REPLY = (brand, book) => book ? `Reply to this email and it reaches ${brand}. To talk anything through, pick a time here:` : `Reply to this email and it reaches ${brand}.`;
+/** The booking address on its own: the link text is the address itself. */
+const FOOTER_BOOK = (bookUrl) => `[${bookUrl}](${bookUrl})`;
 /* ----------------------------------------------- the signer's email -- */
 /**
  * The confirmation a signer gets after signing. Pure: no network, no clock, no environment, so it
@@ -374,7 +391,7 @@ export function renderSignerEmail(m) {
             rows: m.terms.map((t) => ({ label: t.label, value: Array.isArray(t.value) ? t.value.join("; ") : t.value })),
             signatures,
         },
-        footer: { reply: FOOTER_REPLY(m.brandName, m.bookUrl), fine, legal: m.legalLine },
+        footer: { reply: FOOTER_REPLY(m.brandName, Boolean(m.bookUrl)), book: m.bookUrl ? FOOTER_BOOK(m.bookUrl) : undefined, fine, legal: m.legalLine },
     };
     return renderSpecimen(sm);
 }
@@ -468,10 +485,36 @@ export function lintSignerEmail(m) {
     bad(bare.length > 0, `a painted background with no bgcolor on <${bare[0]?.[1]}>`);
     const buttons = body.match(/height:56px;line-height:56px/g)?.length ?? 0;
     bad(buttons > 1, `${buttons} buttons`);
-    bad(/book a call<\/a>/.test(body) && !/Or <a [^>]*>book a call<\/a>\./.test(body), "book a call is not an inline link");
+    const meet = body.match(/<a [^>]*href="https:\/\/jakejjlee\.com\/meet"/g)?.length ?? 0;
+    bad(meet > 1, `${meet} booking links`);
+    bad(meet === 1 && !/<p [^>]*>\s*<a [^>]*href="https:\/\/jakejjlee\.com\/meet"[^>]*>https:\/\/jakejjlee\.com\/meet<\/a>\s*<\/p>/.test(body), "the booking link is not the bare address alone in its own paragraph");
+    bad(/https:\/\/jakejjlee\.com\/meet/.test(text) && !/^https:\/\/jakejjlee\.com\/meet$/m.test(text), "the booking link is not alone on its own line in the plain text");
     bad(/<a [^>]*href="(?!https:\/\/)[^"]*"/.test(body), "a link that is not https");
     bad(text.trim().length < 80, "the plain-text part is missing or empty");
     bad(/<[a-z][^>]*>|&nbsp;|&amp;|\u00a0/.test(text), "markup or a non-breaking space leaked into the plain text");
     bad(/>undefined<|\[object Object\]|NaN/.test(body + text), "an undefined value leaked into the email");
+    // What the Gmail iPhone app and Gmail web drop (2026-11-23): the layout must not lean on any of it.
+    bad(/display:\s*(inline-)?(flex|grid)/i.test(body), "flex or grid layout (Gmail drops it)");
+    bad(/<svg\b/i.test(html), "an inline SVG (Gmail drops it)");
+    bad(/[;"\s]position:\s*(absolute|relative|fixed|sticky)/i.test(body), "positioned layout (Gmail drops it)");
+    bad(/var\(--/.test(html), "a CSS variable (Gmail drops it)");
+    bad(/background-image|url\(/i.test(body), "a background image (Gmail and Outlook drop it)");
+    bad(/\sclass="/.test(body), "a class in the body (Gmail drops classes and the <style> they need)");
+    bad(/@media/i.test(html), "a media query (Gmail drops it, so the phone layout must not need one)");
+    bad(/<div\b[^>]*max-width/i.test(body), "the column cap is on a div (the cap must sit on a table)");
+    bad(!/<table\b[^>]*style="[^"]*max-width:600px/.test(body), "no 600px column cap on a table");
+    for (const tag of body.match(/<img\b[^>]*>/gi) ?? []) {
+        bad(!/\bsrc="https:\/\//.test(tag), `an image that is not an absolute https address: ${tag.slice(0, 80)}`);
+        bad(!/\bwidth="\d+"/.test(tag), `an image with no width attribute: ${tag.slice(0, 80)}`);
+        bad(!/height:auto/.test(tag), `an image that does not keep its shape (no height:auto): ${tag.slice(0, 80)}`);
+    }
+    const glyphs = body
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&#(\d+);/g, (_m, n) => String.fromCodePoint(Number(n)))
+        .replace(/&#x([0-9a-f]+);/gi, (_m, n) => String.fromCodePoint(parseInt(n, 16)))
+        .match(/[\u2190-\u21ff\u2300-\u23ff\u2460-\u24ff\u25a0-\u27bf\u2b00-\u2bff]/g);
+    bad(Boolean(glyphs), `a symbol glyph that each phone draws differently (${glyphs?.[0]})`);
+    const wide = [...body.matchAll(/padding:\s*(\d+)px\s+(\d+)px/g)].filter(([, , x]) => Number(x) > 24);
+    bad(wide.length > 0, `a fixed side padding over 24px (${wide[0]?.[0]}), which squeezes a 320px phone`);
     return problems;
 }

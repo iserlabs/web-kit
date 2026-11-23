@@ -10,6 +10,7 @@ export {
   LETTERHEAD_IDS,
   LETTERHEAD_VARIANTS,
   letterheadDocument,
+  letterheadGmailProblems,
   letterheadPlainText,
   letterheadSignature,
   renderLetterhead,

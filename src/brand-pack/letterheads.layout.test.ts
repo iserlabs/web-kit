@@ -103,6 +103,16 @@ const gmailSignature =
   '<tr><td style="padding:10px 0px 0px;font-size:12px;line-height:17px;white-space:nowrap"><a href="mailto:hello@example-stays.com" style="color:rgb(58,70,78);text-decoration:none" target="_blank"><span>hello@example-stays-management.com</span></a><span style="color:rgb(200,145,47);font-size:11px;padding:0px 7px">·</span><a href="https://example-stays.com/" style="color:rgb(13,35,24);text-decoration:none" target="_blank"><span>example-stays-management.com</span></a></td></tr>' +
   "</tbody></table></div>";
 
+/**
+ * The shape of a real signature that pushed a 390px phone sideways (2026-11-21): a wide logo cell
+ * beside a contact cell whose longest line is an email address, 468px side by side.
+ */
+const wideLogoSignature =
+  '<div dir="ltr"><table cellpadding="0" cellspacing="0" border="0" style="color:rgb(0,0,0);border-collapse:collapse"><tbody><tr>' +
+  '<td valign="middle" style="padding:0px 18px 0px 0px;vertical-align:middle"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="180" height="51" alt="Example Stays" style="display:block;border:0px;width:180px;height:51px"></td>' +
+  '<td valign="middle" style="padding:0px;vertical-align:middle;font-family:Arial,sans-serif"><div style="font-size:16px;font-weight:700">Pat Example</div><div style="font-size:13px">Founder, Example Stays</div><div style="font-size:13px"><a href="mailto:pat@example-stays-management.com">pat@example-stays-management.com</a></div></td>' +
+  "</tr></tbody></table></div>";
+
 interface Reading {
   width: number;
   scrollWidth: number;
@@ -151,6 +161,7 @@ describe.skipIf(!HAVE_CHROME)("letterhead email on the narrowest phones", () => 
     for (const [label, sig] of [
       ["its own signature", undefined],
       ["a pasted Gmail signature", gmailSignature],
+      ["a pasted signature with a wide logo beside the contact column", wideLogoSignature],
     ] as const) {
       it(`${id} with ${label}: no sideways scroll at 320, 360 and 390`, async () => {
         const html = letterheadDocument(renderLetterhead(id, config, person, email, sig), {

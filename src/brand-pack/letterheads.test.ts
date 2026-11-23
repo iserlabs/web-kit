@@ -4,6 +4,7 @@ import {
   LETTERHEAD_IDS,
   LETTERHEAD_VARIANTS,
   letterheadDocument,
+  letterheadGmailProblems,
   letterheadPlainText,
   letterheadSignature,
   renderLetterhead,
@@ -109,6 +110,63 @@ describe("letterhead variants", () => {
       for (const m of html.matchAll(/(?:max-)?width:\s*(\d+)px/g))
         expect(Number(m[1]), id).toBeLessThanOrEqual(600);
     }
+  });
+
+  it("caps the column at 600px with a table Gmail keeps, plus a fixed 600px table for Outlook", () => {
+    for (const [id, html] of all()) {
+      expect(html, id).toMatch(/<table\b[^>]*max-width:600px/);
+      expect(html, id).not.toMatch(/<div\b[^>]*max-width:\s*600px/);
+      expect(html, id).toContain('<!--[if mso]><table role="presentation" width="600"');
+    }
+  });
+
+  it("has nothing Gmail on a phone would break (2026-11-23, 'janky and wonky on mobile')", () => {
+    const hosted = {
+      ...config,
+      letterhead: { ...config.letterhead, headerUrl: "https://example-stays.com/header@3x.png" },
+    };
+    for (const id of LETTERHEAD_IDS as string[]) {
+      const html = letterheadDocument(renderLetterhead(id, hosted, person, email), {
+        subject: email.subject,
+      });
+      expect(letterheadGmailProblems(html), id).toEqual([]);
+    }
+  });
+
+  it("the Gmail check catches each thing Gmail breaks", () => {
+    const ok = letterheadDocument(
+      renderLetterhead(
+        "paper",
+        {
+          ...config,
+          letterhead: { ...config.letterhead, headerUrl: "https://example-stays.com/h.png" },
+        },
+        person,
+        email,
+      ),
+      { subject: "s" },
+    );
+    const plant = (x: string) =>
+      letterheadGmailProblems(ok.replace("</body>", `${x}</body>`)).join(" | ");
+    expect(plant('<div style="display:flex">x</div>')).toMatch(/flex or grid/);
+    expect(plant("<svg></svg>")).toMatch(/SVG/);
+    expect(plant('<img src="data:image/png;base64,AAAA" width="10" alt="a">')).toMatch(
+      /Gmail will not show/,
+    );
+    expect(plant('<img src="http://example.com/a.png" width="10" alt="a">')).toMatch(
+      /Gmail will not show/,
+    );
+    expect(plant('<img src="https://example.com/a.png" alt="a">')).toMatch(/no width attribute/);
+    expect(
+      plant(
+        '<img src="https://example.com/a.png" width="180" alt="a" style="width:180px;max-width:100%;height:51px">',
+      ),
+    ).toMatch(/squashes/);
+    expect(plant('<p class="x">x</p>')).toMatch(/a class/);
+    expect(plant('<div style="max-width:600px">x</div>')).toMatch(/column cap is on a div/);
+    expect(letterheadGmailProblems("<html><body><p>x</p></body></html>").join()).toMatch(
+      /no 600px column cap/,
+    );
   });
 
   it("gives every image alt text so the words survive with images off", () => {
