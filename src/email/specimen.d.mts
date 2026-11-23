@@ -1,6 +1,6 @@
 // GENERATED from the sign-kit src/lib/signer-email-core.ts (the Specimen). Do not edit by hand:
 // change the kit's file and run `pnpm emails:vendor-webkit <this repo>` in the kit.
-// kit-core-sha256: 7ab0275694fa3cfd0da9266141b7a199cdc9974565b7f5004f7a1ad8ce91b1ac (kit commit 2c0a8fc when generated)
+// kit-core-sha256: 802f833a3e39c4a0945ae00007e4cac73df05e5aa3fb5f5aff4d6d61267ed19e (kit commit 5245c83 when generated)
 /**
  * The Specimen: the ONE email design for every signing and form email across Jake's businesses
  * (picked by Jake on the round 2 board, 2026-11-14, over the Track, which was rejected).
@@ -22,9 +22,14 @@
  * one shows "Signature needed"), a quiet footer. No colored header band and no step track.
  *
  * Mechanics, chosen for the inboxes that actually exist:
- * - tables and inline styles; one small <style> for light-only and phone sizes (a progressive
- *   extra: the email is complete without it)
- * - 600px maximum, fluid under that; body copy 16px or more, nothing under 13px
+ * - nested presentation tables and inline styles; the one small <style> only declares light-only
+ *   and switches off text resizing. Nothing about the layout depends on it or on a class, because
+ *   Gmail (the iPhone app above all) drops both: side margins are percentages that shrink with the
+ *   screen, so a 320px phone and a 1280px desktop get the same markup (2026-11-23, "janky on mobile")
+ * - 600px maximum set on a TABLE (a table's max-width survives every Gmail), with a 600px table for
+ *   Outlook inside a conditional comment; fluid under that
+ * - body copy 16px or more; labels and small print 14px; only the status stamp is 13px
+ * - no flex, grid, position, background images, SVG, CSS variables or symbol glyphs anywhere
  * - every painted cell carries BOTH bgcolor and style, so Outlook's Word engine keeps the colors
  * - web font first with a deliberate system fallback (Iowan Old Style, Charter, Georgia; Helvetica
  *   Neue, Arial), never a Times New Roman fallback
@@ -33,7 +38,9 @@
  * - the button is a plain link in every client with a VML twin for Outlook
  * - the page declares itself light-only and switches off phone auto-linking
  * - the preview line is a hidden preheader, padded so body text cannot follow it into the list
- * - "book a call" is an inline text link in the footer, never a button
+ * - the booking link is the bare address alone in its own paragraph under a footer sentence that ends
+ *   in a colon, never a button and never buried in a sentence (Jake, 2026-11-20); an empty bookUrl
+ *   drops the booking line entirely (Palisade: no booking link in any email, 2026-11-14)
  * - a plain-text twin is always built, so no send ever goes out html-only
  *
  * No phone number appears anywhere on these emails. Contact is the reply.
@@ -127,6 +134,7 @@ export type EmailModel = {
     terms: Term[];
     /** Small-print sentences above "Keep this email for your records." */
     fineprint?: string[];
+    /** The booking page. Empty means this business shows no booking link at all. */
     bookUrl: string;
     /** Second footer line, e.g. the legal entity. */
     legalLine: string;
@@ -185,6 +193,7 @@ export type SpecimenModel = {
     };
     footer: {
         reply?: string;
+        book?: string;
         fine?: string;
         legal: string;
     };
