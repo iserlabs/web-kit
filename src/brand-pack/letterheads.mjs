@@ -311,8 +311,16 @@ function body(email, c, t, s) {
           // Several links in one ruled panel, so they never stack two panels' rules.
           const rows = b.rows
             .map(
-              (r, i) =>
-                `<tr><td style="padding:14px 0;${i ? `border-top:1px solid ${t.line};` : ""}font-family:${s.font};font-size:${s.size}px;line-height:1.5;color:${c.ink};">${esc(r.label)}<br><a href="${esc(r.href)}" style="color:${t.link};text-decoration:underline;word-break:break-word;">${esc(r.href)}</a></td></tr>`,
+              (r, i) => {
+                // 2026-11-24 (Phil Berger email): raw Amazon addresses broke mid-code on a phone and rows
+                // hand-typed "1)". A row may carry link text (`text`), and `numbered: true` prints the
+                // list numeral in its own column, as the list block does. The plain-text part keeps the URL.
+                const rule = i ? `border-top:1px solid ${t.line};` : "";
+                const num = b.numbered
+                  ? `<td valign="top" style="width:34px;padding:14px 0;${rule}font-family:${s.font};font-size:${s.size}px;line-height:1.5;color:${s.numeral ?? c.accent};">${i + 1})</td>`
+                  : "";
+                return `<tr>${num}<td style="padding:14px 0;${rule}font-family:${s.font};font-size:${s.size}px;line-height:1.5;color:${c.ink};">${esc(r.label)}<br><a href="${esc(r.href)}" style="color:${t.link};text-decoration:underline;word-break:break-word;">${esc(r.text ?? r.href)}</a></td></tr>`;
+              },
             )
             .join("");
           return table(
@@ -775,7 +783,7 @@ export function letterheadPlainText(email, person) {
             .join("\n"),
         )
         .join(b.rows.some((r) => r.href) ? "\n\n" : "\n");
-    if (b.type === "links") return b.rows.map((r) => `${r.label}\n${r.href}`).join("\n\n");
+    if (b.type === "links") return b.rows.map((r, i) => `${b.numbered ? `${i + 1}) ` : ""}${r.label}\n${r.href}`).join("\n\n");
     if (b.type === "table")
       return [b.intro, b.columns.join(" | "), ...b.rows.map((r) => r.join(" | ")), b.note]
         .filter(Boolean)
