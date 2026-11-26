@@ -27,7 +27,7 @@ export function recordBaseline(siteDir, results, meta = {}) {
   const failures = {};
   for (const r of results) {
     if (r.status === STATUS.FAIL && !r.waived)
-      failures[r.id] = { count: r.count, items: r.items.slice(0, 300) };
+      failures[r.id] = { count: r.count, items: [...r.items] };
   }
   const file = { version: 1, recordedAt: new Date().toISOString(), url: meta.url ?? "", failures };
   const p = baselinePath(siteDir);
