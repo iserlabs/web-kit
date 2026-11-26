@@ -8,6 +8,7 @@ export {
   useMotion,
 } from "./MotionProvider";
 export { PageTransitions, TransitionLink, useTransitionNavigate } from "./PageTransitions";
+export { ReadingProgress, type ReadingProgressProps } from "./ReadingProgress";
 export { RoomPicker3D, type RoomPicker3DProps, type RoomVolume } from "./RoomPicker3D";
 export * from "./reduced-motion";
 export { bounds, overviewPose, roomPose, stepIndex } from "./room-geometry";

@@ -101,9 +101,11 @@ title or tagline.
 
 `@iserlabs/web-kit/motion` is a small React + GSAP/Lenis/three.js layer for cinematic,
 motion-led sections: motion tokens, MotionProvider, ScrollSequence, RoomPicker3D,
-HeadlineReveal and page transitions. Every part has a reduced-motion version and a
-server-safe first render. Usage: `src/motion/DEMO.md`. React, GSAP (3.12.x), Lenis, three and
-@react-three/fiber are optional peers; install only what the site uses.
+HeadlineReveal, page transitions, ReadingProgress and the CSS-only `.wk-rise` photo reveal.
+`@iserlabs/web-kit/motion/splat-tour` is SplatTour, a 3D scan walk-through that loads only on a
+tap. Every part has a reduced-motion version and a server-safe first render. Usage:
+`src/motion/DEMO.md`. React, GSAP (3.12.5 to 3.15.x), Lenis, three, @react-three/fiber and
+@sparkjsdev/spark are optional peers; install only what the site uses.
 
 ## Artist module
 

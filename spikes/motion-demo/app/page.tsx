@@ -1,6 +1,6 @@
 import { HeadlineReveal, TransitionLink } from "@iserlabs/web-kit/motion";
 
-const pages = [["/sequence", "ScrollSequence"], ["/headline", "HeadlineReveal"], ["/rooms", "RoomPicker3D"], ["/transitions", "Page transitions"]];
+const pages = [["/sequence", "ScrollSequence"], ["/headline", "HeadlineReveal"], ["/rooms", "RoomPicker3D"], ["/transitions", "Page transitions"], ["/splat", "SplatTour"], ["/scroll", "Native scroll animation"]];
 
 export default function Home() {
   return (
