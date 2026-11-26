@@ -415,6 +415,68 @@ describe("decisions, baseline and printing", () => {
     expect(only.status).toBe("PASS");
   }, 60000);
 
+  it("real-site regression: a sideways photo strip is not a keyboard trap", async () => {
+    const items = Array.from({ length: 6 }, (_, i) => `<li><button class="ints-open" aria-label="Photo ${i + 1}"><img alt="Room ${i + 1}" width="280" height="60" src="data:image/gif;base64,R0lGODlhAQABAAAAACw="></button></li>`).join("");
+    const strip = await runOne(
+      server,
+      browser,
+      "C27",
+      doc(
+        `<a href="/a">Start</a><ul class="row">${items}</ul><a href="/b">After the strip</a>`,
+        ".row{display:flex;overflow-x:auto;width:300px;list-style:none;padding:0;margin:0}.row li{flex:0 0 300px}.row button{width:280px;height:60px}",
+      ),
+    );
+    expect(strip.status).toBe("PASS");
+  }, 60000);
+
+  it("real-site regression: a fact toggle is not a vague button, a long call to action still is", async () => {
+    const toggles = await runOne(
+      server,
+      browser,
+      "C23",
+      doc(
+        '<button aria-expanded="false">Best Overall Home, 2017 Parade of Homes</button><button aria-pressed="true">Colonial Park: Built in 1994, reimagined</button><button>Request a consultation</button>',
+      ),
+    );
+    expect(toggles.status).toBe("PASS");
+    const cta = await runOne(server, browser, "C23", doc("<button>Send us your lot details today</button>"));
+    expect(cta.status).toBe("FAIL");
+  }, 60000);
+
+  it("real-site regression: a tonal secondary beside the accent button is not a second accent", async () => {
+    const tonal = await runOne(
+      server,
+      browser,
+      "C21",
+      doc(
+        '<div style="background:#e6e1d6;padding:24px"><a href="#a" style="display:inline-block;background:#6b5420;color:#fff;padding:12px 20px">Ask about your date</a><br><a href="#b" style="display:inline-block;background:#f4f1e9;color:#1e1c18;padding:12px 20px">See the spaces</a></div>',
+      ),
+    );
+    expect(tonal.status).toBe("PASS");
+    const two = await runOne(
+      server,
+      browser,
+      "C21",
+      doc(
+        '<div style="background:#e6e1d6;padding:24px"><a href="#a" style="display:inline-block;background:#6b5420;color:#fff;padding:12px 20px">Ask about your date</a><br><a href="#b" style="display:inline-block;background:#123b8a;color:#fff;padding:12px 20px">Book now</a></div>',
+      ),
+    );
+    expect(two.status).toBe("FAIL");
+  }, 60000);
+
+  it("real-site regression: a link inside a closed details box is not unreachable", async () => {
+    const r = await runOne(
+      server,
+      browser,
+      "C27",
+      doc(
+        '<a href="/a">Start</a><details><summary>Six Parades</summary><div class="b"><a href="/src">Read the feature</a></div></details><a href="/b">End</a>',
+        ".b{display:block !important}",
+      ),
+    );
+    expect(r.status).toBe("PASS");
+  }, 60000);
+
   it("a reason too short to mean anything does not waive", () => {
     const site = makeSite({ "docs/design/DECISIONS.md": "C01 ok\n" });
     expect(loadDecisions(site).has("C01")).toBe(false);

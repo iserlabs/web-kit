@@ -61,6 +61,11 @@ export const C21 = {
           Math.abs(par[0] - bg[0]) + Math.abs(par[1] - bg[1]) + Math.abs(par[2] - bg[2]) < 24
         )
           continue; // same as the surface behind it
+        // A tonal fill (a quiet secondary one step off its surface, such as plaster on paper) is
+        // not an accent button: count a fill only when it stands out from its surface by 1.5:1 or
+        // more. A real accent clears that easily (brass on paper is about 4:1). Real-site
+        // regression, 90 North, 2026-11-26.
+        if (par && window.__v3.contrast(par, bg.slice(0, 3)) < 1.5) continue;
         const r = el.getBoundingClientRect();
         if (r.width < 40 || r.height < 24) continue;
         const fixed =
@@ -117,6 +122,14 @@ export const C23 = {
         ),
       ]
         .filter((el) => window.__v3.vis(el))
+        /* A toggle (disclosure, pressed or tab) is labeled by what it shows, not by an
+           outcome: a fact line that opens its source is not a vague call to action. */
+        .filter(
+          (el) =>
+            !el.hasAttribute("aria-expanded") &&
+            !el.hasAttribute("aria-pressed") &&
+            el.getAttribute("role") !== "tab",
+        )
         .map((el) =>
           (el.innerText || el.value || el.getAttribute("aria-label") || "")
             .replace(/\s+/g, " ")
@@ -316,8 +329,12 @@ export const C27 = {
         const without = sig();
         e.focus({ preventScroll: true });
         const r = e.getBoundingClientRect();
+        /* Each element keeps its own identity: label plus position collided in a sideways
+           scroll strip, where every item scrolls into the same spot as focus moves (a false
+           trap on a live site's six-photo strip, 2026-11-22). */
+        if (!e.__v3id) e.__v3id = window.__v3nextId = (window.__v3nextId || 0) + 1;
         return {
-          key: window.__v3.label(e) + "@" + Math.round(r.left) + "," + Math.round(r.top + scrollY),
+          key: "#" + e.__v3id + " " + window.__v3.label(e) + "@" + Math.round(r.left) + "," + Math.round(r.top + scrollY),
           visible: outline || withFocus !== without || c.boxShadow !== "none",
           label: window.__v3.label(e),
         };
@@ -351,6 +368,9 @@ export const C27 = {
               window.__v3.vis(e) &&
               !e.__v3seen &&
               !e.closest("[aria-hidden=true],[inert]") &&
+              /* Inside a closed <details> (other than its own summary) a control is not shown
+                 and is skipped by Tab, even when a style still gives it a layout box. */
+              !(e.closest("details:not([open])") && e.closest("details:not([open])").querySelector(":scope > summary") !== e) &&
               e.tabIndex >= 0,
           )
           .map((e) => window.__v3.label(e)),
