@@ -443,6 +443,27 @@ describe("decisions, baseline and printing", () => {
     expect(cta.status).toBe("FAIL");
   }, 60000);
 
+  it("real-site regression: a tonal secondary beside the accent button is not a second accent", async () => {
+    const tonal = await runOne(
+      server,
+      browser,
+      "C21",
+      doc(
+        '<div style="background:#e6e1d6;padding:24px"><a href="#a" style="display:inline-block;background:#6b5420;color:#fff;padding:12px 20px">Ask about your date</a><br><a href="#b" style="display:inline-block;background:#f4f1e9;color:#1e1c18;padding:12px 20px">See the spaces</a></div>',
+      ),
+    );
+    expect(tonal.status).toBe("PASS");
+    const two = await runOne(
+      server,
+      browser,
+      "C21",
+      doc(
+        '<div style="background:#e6e1d6;padding:24px"><a href="#a" style="display:inline-block;background:#6b5420;color:#fff;padding:12px 20px">Ask about your date</a><br><a href="#b" style="display:inline-block;background:#123b8a;color:#fff;padding:12px 20px">Book now</a></div>',
+      ),
+    );
+    expect(two.status).toBe("FAIL");
+  }, 60000);
+
   it("real-site regression: a link inside a closed details box is not unreachable", async () => {
     const r = await runOne(
       server,

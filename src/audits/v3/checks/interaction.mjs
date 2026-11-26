@@ -61,6 +61,11 @@ export const C21 = {
           Math.abs(par[0] - bg[0]) + Math.abs(par[1] - bg[1]) + Math.abs(par[2] - bg[2]) < 24
         )
           continue; // same as the surface behind it
+        // A tonal fill (a quiet secondary one step off its surface, such as plaster on paper) is
+        // not an accent button: count a fill only when it stands out from its surface by 1.5:1 or
+        // more. A real accent clears that easily (brass on paper is about 4:1). Real-site
+        // regression, 90 North, 2026-11-26.
+        if (par && window.__v3.contrast(par, bg.slice(0, 3)) < 1.5) continue;
         const r = el.getBoundingClientRect();
         if (r.width < 40 || r.height < 24) continue;
         const fixed =
