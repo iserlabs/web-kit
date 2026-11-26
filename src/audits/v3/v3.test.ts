@@ -420,6 +420,17 @@ describe("decisions, baseline and printing", () => {
     expect(loadDecisions(site).has("C01")).toBe(false);
   });
 
+  it("the baseline keeps every item, so a check with more than 300 items can still be known", () => {
+    const site = makeSite({});
+    const items = Array.from({ length: 1422 }, (_, i) => `.token-${i} color: #0000000a`);
+    const big = { id: "C08", tier: "T1", status: "FAIL", count: items.length, items };
+    recordBaseline(site, [big as any], { url: "x" });
+    const saved = JSON.parse(readFileSync(join(site, ".web-kit", "v3-baseline.json"), "utf8"));
+    expect(saved.failures.C08.items).toHaveLength(1422);
+    const [again] = applyBaseline([{ ...big, items: [...items] } as any], saved);
+    expect(again.known).toBe(true);
+  });
+
   it("the baseline hides old failures and still catches new ones", async () => {
     const site = makeSite({});
     const old = doc("<h2>Hot tub holds six.</h2>");
