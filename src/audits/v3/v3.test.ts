@@ -333,6 +333,19 @@ describe("each bad page fails its check", () => {
     120000,
   );
 
+  it("C29 does not count a link prefetch as a fetching area", async () => {
+    const r = await runOne(
+      server,
+      browser,
+      "C29",
+      doc(
+        '<p>Plain page</p><script>fetch("/api/rates",{headers:{"Next-Router-Prefetch":"1"}})</script>',
+      ),
+      { today: "2027-01-01" },
+    );
+    expect(r.status, r.reason).toBe("PASS");
+  }, 120000);
+
   it("C46 fails on an email wider than the phone", async () => {
     const dir = makeSite({
       "emails/wide.html":
