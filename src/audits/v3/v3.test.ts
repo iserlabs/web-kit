@@ -477,6 +477,29 @@ describe("decisions, baseline and printing", () => {
     expect(r.status).toBe("PASS");
   }, 60000);
 
+  it("real-site regression: photo shading in another layer than its photo passes; shading over nothing still fails", async () => {
+    const img =
+      '<img alt="Front door" width="800" height="300" style="display:block" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">';
+    const css =
+      ".hero{position:relative}.panel{position:absolute;inset:0}.fade{position:absolute;inset:0;background:radial-gradient(in oklch,#0008,#0000)}";
+    const layered = await runOne(
+      server,
+      browser,
+      "C06",
+      doc(`<section class="hero"><div class="media">${img}</div><div class="panel"><div class="fade"></div><h1>Gather here</h1></div></section>`, css),
+    );
+    expect(layered.status).toBe("PASS");
+    const unused = await runOne(server, browser, "C06", doc("<p>No hero on this page</p>", css));
+    expect(unused.status).toBe("PASS");
+    const bare = await runOne(
+      server,
+      browser,
+      "C06",
+      doc(`<section class="hero"><div class="panel"><div class="fade" style="height:200px"></div><h1>Gather here</h1></div></section><section>${img}</section>`, css),
+    );
+    expect(bare.status).toBe("FAIL");
+  }, 60000);
+
   it("a reason too short to mean anything does not waive", () => {
     const site = makeSite({ "docs/design/DECISIONS.md": "C01 ok\n" });
     expect(loadDecisions(site).has("C01")).toBe(false);

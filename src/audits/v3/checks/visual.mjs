@@ -40,8 +40,21 @@ export const C06 = {
         if (/scrim|overlay|shade|darken|veil|gradient-mask/i.test(sel)) return true;
         let els = [];
         try { els = [...document.querySelectorAll(sel.replace(/::?(before|after|hover|focus|active)\\b/g, '')) ]; } catch (e) { return false; }
-        if (!els.length) return false;
-        return els.every((e) => e.closest('svg,canvas,[class*=chart i],[data-chart]') || e.parentElement?.querySelector(':scope > img,:scope > picture,:scope > video') || e.querySelector('img,video,picture') || e.tagName === 'IMG' || e.tagName === 'VIDEO');
+        /* A rule in a shared stylesheet that nothing on this page uses draws nothing here;
+           the page that does use it is the one judged. */
+        if (!els.length) return true;
+        /* Shading often sits in a text layer above the photo, not beside it: a photo or film in
+           the same section whose box overlaps the shaded box counts as being under it. */
+        const underMedia = (e) => {
+          const b = e.getBoundingClientRect();
+          if (b.width < 1 || b.height < 1) return false;
+          const scope = e.closest('section,header,footer,article,aside,figure') || e.parentElement;
+          return !!scope && [...scope.querySelectorAll('img,picture,video')].some((m) => {
+            const r = m.getBoundingClientRect();
+            return Math.min(b.right, r.right) - Math.max(b.left, r.left) > 1 && Math.min(b.bottom, r.bottom) - Math.max(b.top, r.top) > 1;
+          });
+        };
+        return els.every((e) => e.closest('svg,canvas,[class*=chart i],[data-chart]') || e.parentElement?.querySelector(':scope > img,:scope > picture,:scope > video') || e.querySelector('img,video,picture') || e.tagName === 'IMG' || e.tagName === 'VIDEO' || underMedia(e));
       };
       for (const r of rules) {
         for (const [p, v] of decls(r.css)) {
