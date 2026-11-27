@@ -4,17 +4,16 @@ Guidance for Claude Code in the **`@iserlabs/web-kit`** repository.
 
 ## Project
 
-`@iserlabs/web-kit` is the shared toolkit for the Iser Labs marketing sites
-(`../*` siblings under `websites/`): config presets, SEO/schema/forms helpers,
+`@iserlabs/web-kit` is the shared toolkit for the Iser Labs sites (separate
+repos): config presets, SEO/schema/forms helpers,
 audit + conformance CLIs, and a token contract. It is **consumed as source via a
 git ref — there is no build, `dist/`, or npm release**. Consumers pin a git tag
 or commit SHA in their `package.json` (`github:iserlabs/web-kit#<ref>`).
 
 ## Consumption model
 
-- Sites depend on `github:iserlabs/web-kit#<tag-or-SHA>`. Some pin tags
-  (`v0.3.x`), some pin commit SHAs (to dodge version-coordination with the
-  concurrent observability work). Both are valid.
+- Sites pin a git tag or a commit SHA in `package.json`
+  (`github:iserlabs/web-kit#<tag-or-SHA>`); both are valid.
 - App-consumed code is `.ts` (transpiled by the consuming app). CLI code is
   `.mjs` (runs under bare Node — no `tsx` available to consumers).
 - To upgrade a consumer: bump its pinned ref, `pnpm install`, re-run its
@@ -22,8 +21,7 @@ or commit SHA in their `package.json` (`github:iserlabs/web-kit#<ref>`).
 
 ## Exports
 
-`@iserlabs/web-kit/{biome, tsconfig, tsconfig-next, tailwind, seo, schema, forms,
-env, utils, audits, brand-pack, artist, inquiry, owner-portal, owner-statement, email, desk/*, motion, motion/tokens, motion/css, motion/splat-tour, observability, observability/env, observability/server}`. Notes:
+The full export list is `exports` in `package.json`. Notes:
 - `tsconfig` is **lib-oriented** (ES2022 / `noUncheckedIndexedAccess` /
   `verbatimModuleSyntax`) and breaks Next apps — Next sites extend
   `tsconfig-next` instead (the Next-safe preset).
