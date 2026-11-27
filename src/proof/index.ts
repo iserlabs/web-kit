@@ -45,13 +45,13 @@ export const OPERATING_RECORD: OperatingRecord = {
   eyebrow: "The operating record behind the work",
   stamp: "Attested · as of 2026",
   stats: [
-    { value: "297+", label: "short-term rentals operated" },
-    { value: "120+", label: "listings launched" },
+    { value: "300+", label: "short-term rentals operated" },
+    { value: "130+", label: "listings launched" },
     { value: "17,000+", label: "reservations handled" },
-    { value: "$97.5M+", label: "in property value managed" },
-    { value: "83", label: "owners served" },
+    { value: "$100M+", label: "in property value managed" },
+    { value: "84", label: "owners served" },
     { value: "31+", label: "markets · 10 states" },
     { value: "9", label: "hospitality companies built, run, or scaled" },
-    { value: "680+", label: "claims filed" },
+    { value: "700+", label: "claims filed" },
   ],
 } as const;
