@@ -30,6 +30,8 @@ const wordRe = (list) => new RegExp(`(^|[^\\w-])(${list.map(esc).join("|")})(?![
 const BUZZ_RE = wordRe(BUZZ);
 const SPARKLE_RE = wordRe(SPARKLE);
 const SUPER_RE = wordRe(SUPERLATIVES);
+const LEADING_AS_VERB =
+  /^\s+(your|the|a|an|their|his|her|its|my|our|them|you|it|this|that|these|those)\b/i;
 
 const NOT_X_Y = [
   /\b(it'?s|it is|this is|we are|we're|that'?s|this isn'?t)\s+not\s+(just\s+|only\s+|merely\s+|about\s+)?[^.!?\n]{2,50}[,;:]?\s*(it'?s|it is|but|this is|we're|that'?s)\b/i,
@@ -132,6 +134,9 @@ export const C35 = {
       const m = SUPER_RE.exec(sentence);
       if (!m) continue;
       const w = m[2].toLowerCase();
+      /* "leading your care team" is the verb, not a claim to be the leading anything: a
+         determiner or pronoun straight after it means it takes an object. */
+      if (w === "leading" && LEADING_AS_VERB.test(sentence.slice(m.index + m[0].length))) continue;
       if (!ctx.facts.text.includes(w))
         fails.push(
           fail(

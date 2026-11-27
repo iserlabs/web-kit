@@ -333,6 +333,26 @@ describe("each bad page fails its check", () => {
     120000,
   );
 
+  it("C35 reads leading-as-a-verb as a verb and the leading-anything as a claim", async () => {
+    const siteDir = makeSite({ "docs/design/FACTS.md": FACTS });
+    const verb = await runOne(
+      server,
+      browser,
+      "C35",
+      doc("<p>You will be vetting guests and leading your care team.</p>"),
+      { siteDir, today: "2027-01-01" },
+    );
+    expect(verb.status, verb.reason).toBe("PASS");
+    const claim = await runOne(
+      server,
+      browser,
+      "C35",
+      doc("<p>We are the leading cabin company in town.</p>"),
+      { siteDir, today: "2027-01-01" },
+    );
+    expect(claim.status).toBe("FAIL");
+  }, 120000);
+
   it("C29 does not count a link prefetch as a fetching area", async () => {
     const r = await runOne(
       server,
