@@ -50,7 +50,7 @@ export const OPERATING_RECORD: OperatingRecord = {
     { value: "17,000+", label: "reservations handled" },
     { value: "$100M+", label: "in property value managed" },
     { value: "84", label: "owners served" },
-    { value: "31+", label: "markets · 10 states" },
+    { value: "33", label: "markets · 10 states" },
     { value: "9", label: "hospitality companies built, run, or scaled" },
     { value: "700+", label: "claims filed" },
   ],
