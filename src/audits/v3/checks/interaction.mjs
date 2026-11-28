@@ -500,8 +500,23 @@ export const C29 = {
       });
       const noise =
         /google-analytics|googletagmanager|_vercel|sentry|doubleclick|facebook|hotjar|clarity|\/_next\/image|fonts\.g/i;
+      /* A link prefetch (the framework warming the next page before anyone taps) fills no
+         area on this page, so it has nothing to show a loading shape in. It is named by the
+         request itself, never guessed from the address. */
+      const isPrefetch = (rq) => {
+        const h = rq.headers();
+        return (
+          h["next-router-prefetch"] === "1" ||
+          /prefetch/i.test(h["sec-purpose"] ?? "") ||
+          /prefetch/i.test(h.purpose ?? "")
+        );
+      };
       page.on("request", (rq) => {
-        if (["fetch", "xhr"].includes(rq.resourceType()) && !noise.test(rq.url())) {
+        if (
+          ["fetch", "xhr"].includes(rq.resourceType()) &&
+          !noise.test(rq.url()) &&
+          !isPrefetch(rq)
+        ) {
           pending.set(rq, Date.now());
           if (!seen.includes(rq.url())) seen.push(rq.url());
         }
